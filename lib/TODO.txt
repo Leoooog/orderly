@@ -1,5 +1,1 @@
-- Validazione dati
-- Ordinamento piatti e categorie
-- Aggiunta foto menu
-- Aggiungi piatto in ogni categoria
-- PIN in password
+- Gestione stato e router

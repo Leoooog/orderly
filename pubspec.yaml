@@ -1,5 +1,5 @@
 name: orderly
-description: "App per ordinazioni rapide in cucina"
+description: "Un pacchetto completo per la gestione di un locale"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -35,6 +35,7 @@ dependencies:
   qr_code_scanner_plus: ^2.0.14
   intl: ^0.20.2
   http: ^1.6.0
+  flutter_riverpod: ^3.1.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
