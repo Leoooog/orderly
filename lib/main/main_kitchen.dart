@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../modules/kitchen/KitchenApp.dart';
 import '../orderly_app.dart';
 
 void main() {
