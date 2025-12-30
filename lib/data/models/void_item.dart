@@ -6,6 +6,7 @@ class VoidItem {
   final double unitPrice;    // Prezzo al momento dello storno
   final int quantity;        // Quanti ne sono stati tolti
   final String reason;       // "Errore", "Cliente andato via", ecc.
+  final bool isRefunded; // Se è stato rimborsato o no
   final DateTime timestamp;  // Quando è successo
 
   VoidItem({
@@ -16,6 +17,7 @@ class VoidItem {
     required this.unitPrice,
     required this.quantity,
     required this.reason,
+    required this.isRefunded,
     required this.timestamp,
   });
 
@@ -44,6 +46,7 @@ class VoidItem {
       unitPrice: (json['unitPrice'] as num).toDouble(),
       quantity: json['quantity'],
       reason: json['reason'],
+      isRefunded: json['isRefunded'] ?? false,
       timestamp: DateTime.parse(json['timestamp']),
     );
   }

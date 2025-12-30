@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/themes.dart';
 import '../../../../data/models/cart_item.dart';
 import '../../../../data/models/course.dart';
-import '../../../../data/models/extra.dart';
 import '../../../../shared/widgets/quantity_button.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/menu_provider.dart';
+import 'item_edit_dialog.dart'; // Importa il widget
 
 class CartSheet extends ConsumerStatefulWidget {
   final AnimationController controller;
@@ -30,7 +30,6 @@ class CartSheet extends ConsumerStatefulWidget {
 }
 
 class _CartSheetState extends ConsumerState<CartSheet> {
-  final TextEditingController noteController = TextEditingController();
 
   void _updateQty(int internalId, int delta) {
     if (delta > 0) {
@@ -41,79 +40,24 @@ class _CartSheetState extends ConsumerState<CartSheet> {
   }
 
   void _openEditDialog(CartItem item) {
-    noteController.text = item.notes;
-    Course selectedCourse = item.course;
-    List<Extra> currentSelectedExtras = List.from(item.selectedExtras);
-
     final menuItems = ref.read(menuProvider);
     final menuItem = menuItems.firstWhere((m) => m.id == item.id, orElse: () => menuItems[0]);
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setStateDialog) => AlertDialog(
-          backgroundColor: AppColors.cWhite,
-          title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text("Modifica", style: TextStyle(fontWeight: FontWeight.bold)),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx))
-          ]),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(shrinkWrap: true, children: [
-              const Text("Sposta in:", style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Wrap(spacing: 8, children: Course.values.map((course) {
-                final isSel = selectedCourse == course;
-                return ChoiceChip(
-                  label: Text(course.label, style: TextStyle(fontSize: 12, color: isSel ? AppColors.cWhite : AppColors.cSlate800)),
-                  selected: isSel, selectedColor: AppColors.cIndigo600, backgroundColor: AppColors.cSlate100, side: BorderSide.none,
-                  onSelected: (v) => setStateDialog(() => selectedCourse = course),
-                );
-              }).toList()),
-              if (menuItem.availableExtras.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text("Aggiunte:", style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Wrap(spacing: 8, runSpacing: 8, children: menuItem.availableExtras.map((extra) {
-                  final isSelected = currentSelectedExtras.any((e) => e.id == extra.id);
-                  return FilterChip(
-                    label: Text("${extra.name} (+€${extra.price.toStringAsFixed(2)})"),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setStateDialog(() {
-                        if (selected) {
-                          currentSelectedExtras.add(extra);
-                        } else {
-                          currentSelectedExtras.removeWhere((e) => e.id == extra.id);
-                        }
-                      });
-                    },
-                    backgroundColor: AppColors.cSlate50, selectedColor: AppColors.cAmber100, checkmarkColor: AppColors.cAmber700,
-                    labelStyle: TextStyle(fontSize: 12, color: isSelected ? AppColors.cAmber700 : AppColors.cSlate800), side: BorderSide.none,
-                  );
-                }).toList()),
-              ],
-              const SizedBox(height: 16),
-              const Text("Note Cucina:", style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              TextField(controller: noteController, maxLines: 2, decoration: InputDecoration(hintText: "Es. No cipolla...", filled: true, fillColor: AppColors.cSlate50)),
-            ]),
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.cIndigo600, foregroundColor: AppColors.cWhite),
-              onPressed: () {
-                ref.read(cartProvider.notifier).updateItemConfig(item, noteController.text, selectedCourse, currentSelectedExtras);
-                Navigator.pop(ctx);
-              },
-              child: const Text("Salva Modifiche"),
-            )
-          ],
-        ),
+      builder: (ctx) => ItemEditDialog(
+        cartItem: item,
+        menuItem: menuItem,
+        onSave: (qty, note, course, extras) {
+          // Passiamo anche la quantità al provider, che ora supporta la modifica/split
+          ref.read(cartProvider.notifier).updateItemConfig(item, qty, note, course, extras);
+          Navigator.pop(ctx);
+        },
       ),
     );
   }
 
+  // ... (Resto del file build identico a prima, usando _openEditDialog aggiornato) ...
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
@@ -133,15 +77,6 @@ class _CartSheetState extends ConsumerState<CartSheet> {
         );
       },
       child: GestureDetector(
-        onTap: () {
-          if (!widget.isExpanded) {
-            widget.controller.animateTo(1, curve: Curves.easeOutQuint);
-            widget.onExpandChange(true);
-          }else {
-            widget.controller.animateTo(0, curve: Curves.easeOutQuint);
-            widget.onExpandChange(false);
-          }
-        },
         onVerticalDragUpdate: (d) => widget.controller.value -= d.primaryDelta! / (widget.maxHeight - widget.minHeight),
         onVerticalDragEnd: (d) {
           if (widget.controller.value > 0.3) {

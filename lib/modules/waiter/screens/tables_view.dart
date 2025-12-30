@@ -9,6 +9,7 @@ import '../../../shared/widgets/payment_method_button.dart';
 import '../providers/tables_provider.dart';
 import '../providers/auth_provider.dart';
 import 'bill_screen.dart';
+import 'table_card.dart';
 
 class TablesView extends ConsumerStatefulWidget {
   const TablesView({super.key});
@@ -32,6 +33,18 @@ class _TablesViewState extends ConsumerState<TablesView> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Tavoli uniti con successo")));
+  }
+
+  void _performCancel(TableItem table) {
+    ref.read(tablesProvider.notifier).cancelTable(table.id);
+    Navigator.pop(context); // Chiude dialog
+    Navigator.pop(context); // Chiude bottom sheet azioni
+
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      backgroundColor: AppColors.cRose500,
+      content: Text("Tavolo annullato e resettato"),
+      duration: Duration(seconds: 2),
+    ));
   }
 
   void _performPayment(TableItem table, List<CartItem> paidItems) {
@@ -86,7 +99,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
             ),
             ListTile(
               leading:
-              const Icon(Icons.compare_arrows, color: AppColors.cIndigo600),
+                  const Icon(Icons.compare_arrows, color: AppColors.cIndigo600),
               title: const Text("Sposta Tavolo"),
               subtitle: const Text("Trasferisci su un tavolo libero"),
               onTap: () {
@@ -115,8 +128,8 @@ class _TablesViewState extends ConsumerState<TablesView> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.attach_money,
-                  color: AppColors.cEmerald500),
+              leading:
+                  const Icon(Icons.attach_money, color: AppColors.cEmerald500),
               title: const Text("Cassa / Divisione Conto"),
               subtitle: const Text("Gestisci pagamenti parziali"),
               onTap: () {
@@ -124,6 +137,13 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 _openSplitBillScreen(table);
               },
             ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.close, color: AppColors.cRose500),
+              title: const Text("Annulla Tavolo"),
+              subtitle: const Text("Chiudi il tavolo senza incasso"),
+              onTap: () => _showConfirmCancelDialog(table),
+            )
           ],
         ),
       ),
@@ -154,6 +174,75 @@ class _TablesViewState extends ConsumerState<TablesView> {
     );
   }
 
+  void _showConfirmCancelDialog(TableItem table) {
+    final TextEditingController pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (context, setStateDialog) {
+        return AlertDialog(
+          backgroundColor: AppColors.cWhite,
+          surfaceTintColor: AppColors.cWhite,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: AppColors.cRose500),
+              SizedBox(width: 8),
+              Text("Attenzione", style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Stai per annullare il tavolo ${table.name}.\n\nTutti gli ordini correnti verranno persi e il tavolo tornerà libero senza registrare incasso.\n\nSei sicuro?",
+                style: const TextStyle(color: AppColors.cSlate600),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: pinController,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 4,
+                decoration: const InputDecoration(
+                    hintText: "PIN (1234)",
+                    counterText: "",
+                    filled: true,
+                    fillColor: AppColors.cSlate50),
+                onChanged: (v) => setStateDialog(() {}),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Indietro",
+                  style: TextStyle(color: AppColors.cSlate500)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.cRose500,
+                  foregroundColor: Colors.white),
+              onPressed: pinController.text.length == 4
+                  ? () => {
+                        if (pinController.text == '1234')
+                          _performCancel(table)
+                        else
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            backgroundColor: AppColors.cRose500,
+                            content: Text("PIN errato. Riprova."),
+                            duration: Duration(seconds: 2),
+                          ))
+                      }
+                  : null,
+              child: const Text("CONFERMA ANNULLAMENTO"),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
   void _showPaymentDialog(TableItem table) {
     showDialog(
       context: context,
@@ -164,7 +253,8 @@ class _TablesViewState extends ConsumerState<TablesView> {
         title: Column(
           children: [
             Text("Incasso ${table.name}",
-                style: const TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                style:
+                    const TextStyle(fontSize: 16, color: AppColors.cSlate500)),
             const SizedBox(height: 8),
             const Text("Totale da incassare",
                 style: TextStyle(
@@ -224,7 +314,9 @@ class _TablesViewState extends ConsumerState<TablesView> {
 
     final candidates = allTables.where((t) {
       if (t.id == source.id) return false;
-      return isMerge ? t.status != TableStatus.free : t.status == TableStatus.free;
+      return isMerge
+          ? t.status != TableStatus.free
+          : t.status == TableStatus.free;
     }).toList();
 
     showDialog(
@@ -238,39 +330,40 @@ class _TablesViewState extends ConsumerState<TablesView> {
           child: candidates.isEmpty
               ? const Center(child: Text("Nessun tavolo disponibile"))
               : GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8),
-            itemCount: candidates.length,
-            itemBuilder: (context, index) {
-              final t = candidates[index];
-              return InkWell(
-                onTap: () {
-                  if (isMerge) {
-                    _performMerge(source, t);
-                  } else {
-                    _performMove(source, t);
-                  }
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.cSlate100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.cSlate300),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(t.name,
-                      style:
-                      const TextStyle(fontWeight: FontWeight.bold)),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8),
+                  itemCount: candidates.length,
+                  itemBuilder: (context, index) {
+                    final t = candidates[index];
+                    return InkWell(
+                      onTap: () {
+                        if (isMerge) {
+                          _performMerge(source, t);
+                        } else {
+                          _performMove(source, t);
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.cSlate100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.cSlate300),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(t.name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text("Annulla")),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Annulla")),
         ],
       ),
     );
@@ -288,19 +381,19 @@ class _TablesViewState extends ConsumerState<TablesView> {
             backgroundColor: AppColors.cWhite,
             surfaceTintColor: AppColors.cWhite,
             shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             title: Center(
                 child: Column(
-                  children: [
-                    Text("Apertura ${table.name}",
-                        style:
-                        const TextStyle(fontSize: 16, color: AppColors.cSlate500)),
-                    const SizedBox(height: 4),
-                    const Text("Quanti Coperti?",
-                        style:
+              children: [
+                Text("Apertura ${table.name}",
+                    style: const TextStyle(
+                        fontSize: 16, color: AppColors.cSlate500)),
+                const SizedBox(height: 4),
+                const Text("Quanti Coperti?",
+                    style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                  ],
-                )),
+              ],
+            )),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -346,13 +439,14 @@ class _TablesViewState extends ConsumerState<TablesView> {
                   backgroundColor: AppColors.cIndigo600,
                   foregroundColor: AppColors.cWhite,
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => _performOccupy(table, guests),
                 child: const Text("Apri Tavolo",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               )
             ],
           );
@@ -411,231 +505,12 @@ class _TablesViewState extends ConsumerState<TablesView> {
         itemCount: tables.length,
         itemBuilder: (context, index) {
           final table = tables[index];
-          return _TableCard(
+          return TableCard(
             table: table,
             onTap: () => _handleTableTap(table),
             onLongPress: () => _handleTableLongPress(table),
           );
         },
-      ),
-    );
-  }
-}
-
-class _TableCard extends StatefulWidget {
-  final TableItem table;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-
-  const _TableCard({
-    required this.table,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  @override
-  State<_TableCard> createState() => _TableCardState();
-}
-
-class _TableCardState extends State<_TableCard> with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-
-    if (widget.table.status == TableStatus.ready) {
-      _pulseController.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(_TableCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Gestione dinamica dell'animazione al cambio di stato
-    if (widget.table.status == TableStatus.ready) {
-      if (!_pulseController.isAnimating) {
-        _pulseController.repeat(reverse: true);
-      }
-    } else {
-      _pulseController.stop();
-      _pulseController.reset();
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isOccupied = widget.table.status != TableStatus.free;
-
-    // DEFINIZIONE COLORI E STILI IN BASE ALLO STATO
-    Color cardBgColor = AppColors.cWhite;
-    Color borderColor = AppColors.cSlate200;
-    Color contentColor = AppColors.cSlate800;
-    Color accentColor = AppColors.cSlate500;
-
-    Widget? statusIcon;
-    String statusLabel = "";
-
-    switch (widget.table.status) {
-      case TableStatus.seated:
-        cardBgColor = AppColors.cRose50;
-        borderColor = AppColors.cRose500;
-        contentColor = AppColors.cRose500;
-        accentColor = AppColors.cRose500;
-        statusIcon = const Icon(Icons.hourglass_empty, size: 10, color: AppColors.cRose500);
-        statusLabel = "ATTESA";
-        break;
-      case TableStatus.ordered:
-        cardBgColor = AppColors.cAmber50;
-        borderColor = AppColors.cAmber500;
-        contentColor = AppColors.cAmber500;
-        accentColor = AppColors.cAmber500;
-        statusIcon = const Icon(Icons.sticky_note_2, size: 10, color: AppColors.cAmber500);
-        statusLabel = "ORDINATO";
-        break;
-      case TableStatus.ready:
-        cardBgColor = AppColors.cWhite;
-        borderColor = AppColors.cEmerald500;
-        contentColor = AppColors.cSlate800;
-        accentColor = AppColors.cEmerald500;
-        statusIcon = const Icon(Icons.notifications_active, size: 10, color: AppColors.cEmerald500);
-        statusLabel = "PRONTO";
-        break;
-      case TableStatus.eating:
-        cardBgColor = AppColors.cWhite;
-        borderColor = AppColors.cIndigo100;
-        contentColor = AppColors.cSlate800;
-        accentColor = AppColors.cIndigo600;
-        statusIcon = const Icon(Icons.restaurant, size: 10, color: AppColors.cIndigo600);
-        statusLabel = "SERVITO";
-        break;
-      case TableStatus.free:
-        cardBgColor = AppColors.cWhite;
-        borderColor = AppColors.cEmerald100;
-        contentColor = AppColors.cSlate400;
-        accentColor = AppColors.cEmerald500;
-        break;
-    }
-
-    // Usiamo ScaleTransition per far pulsare l'intera card
-    return ScaleTransition(
-      scale: Tween(begin: 1.0, end: 1.04).animate(
-        CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-      ),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: cardBgColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: borderColor,
-              width: widget.table.status == TableStatus.ready ? 3 : 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                  color: AppColors.cBlack.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2))
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Icona statica in alto a destra se READY (non pulsa più l'icona)
-              if (widget.table.status == TableStatus.ready)
-                Positioned(
-                  top: 8, right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                        color: AppColors.cEmerald500, shape: BoxShape.circle),
-                    child: const Icon(Icons.notifications_active,
-                        color: Colors.white, size: 12),
-                  ),
-                ),
-
-              // PUNTINO DI STATO SE NON READY
-              if (isOccupied && widget.table.status != TableStatus.ready)
-                Positioned(
-                  top: 10, right: 10,
-                  child: Container(
-                    width: 6, height: 6,
-                    decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.5), shape: BoxShape.circle),
-                  ),
-                ),
-
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    widget.table.name,
-                    style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: isOccupied ? contentColor : AppColors.cSlate800),
-                  ),
-                  const SizedBox(height: 8),
-                  if (isOccupied) ...[
-                    Column(
-                      children: [
-                        // BADGE STATO DINAMICO
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (statusIcon != null) statusIcon,
-                              const SizedBox(width: 4),
-                              Text(
-                                statusLabel,
-                                style: TextStyle(
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.w900,
-                                    color: accentColor),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        // COPERTI E TOTALE
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.people, size: 12, color: contentColor.withValues(alpha: 0.7)),
-                            const SizedBox(width: 4),
-                            Text("${widget.table.guests}", style: TextStyle(fontWeight: FontWeight.bold, color: contentColor, fontSize: 11)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ] else
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.cEmerald100, borderRadius: BorderRadius.circular(8)),
-                      child: const Text("LIBERO", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.cEmerald500)),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

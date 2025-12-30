@@ -69,7 +69,7 @@ final List<MenuItem> menuItems = [
 final List<TableItem> globalTables = List.generate(15, (i) => TableItem(
     id: i + 1,
     name: 'T${i + 1}',
-    status: (i + 1) % 4 == 0 ? TableStatus.seated : TableStatus.free,
+    status: (i + 1) % 4 == 0 ? TableStatus.ordered : TableStatus.free,
     guests: (i + 1) % 4 == 0 ? ((i % 3) + 2) : 0,
     orders: (i + 1) % 4 == 0 ? [
       CartItem(internalId: i, id: 1, name: 'Acqua Nat. 50cl', basePrice: 1.50, qty: (i % 3) + 2),

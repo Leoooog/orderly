@@ -13,6 +13,7 @@ void main() async {
   await Hive.initFlutter();
 
   await Hive.openBox(kTablesBox);
+  await Hive.openBox(kVoidsBox);
 
 
   runApp(
