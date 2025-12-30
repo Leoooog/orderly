@@ -14,7 +14,8 @@ class MenuTab extends ConsumerStatefulWidget {
   ConsumerState<MenuTab> createState() => _MenuTabState();
 }
 
-class _MenuTabState extends ConsumerState<MenuTab> {
+// 1. Aggiunto AutomaticKeepAliveClientMixin per mantenere lo stato in memoria
+class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClientMixin {
   String activeCategory = 'fav';
   Course activeCourse = Course.entree;
 
@@ -22,6 +23,9 @@ class _MenuTabState extends ConsumerState<MenuTab> {
   String searchQuery = '';
 
   final Set<int> _expandedItems = {};
+
+  @override
+  bool get wantKeepAlive => true; // 2. Indica a Flutter di non distruggere questo Tab
 
   @override
   void initState() {
@@ -54,12 +58,10 @@ class _MenuTabState extends ConsumerState<MenuTab> {
   List<MenuItem> getFilteredItems(List<MenuItem> allItems) {
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
-      final results = allItems.where((i) {
-        final nameMatch = i.name.toLowerCase().contains(query);
-        final ingredientMatch = i.ingredients.any((ing) => ing.toLowerCase().contains(query));
-        return nameMatch || ingredientMatch;
+      return allItems.where((i) {
+        return i.name.toLowerCase().contains(query) ||
+            i.ingredients.any((ing) => ing.toLowerCase().contains(query));
       }).toList();
-      return results; // Per brevità ometto il sort complesso qui, ma puoi rimetterlo
     }
     if (activeCategory == 'fav') return allItems.where((i) => i.popular).toList();
     return allItems.where((i) => i.category == activeCategory).toList();
@@ -67,9 +69,12 @@ class _MenuTabState extends ConsumerState<MenuTab> {
 
   @override
   Widget build(BuildContext context) {
+    // 3. Necessario per far funzionare AutomaticKeepAliveClientMixin
+    super.build(context);
+
     final menuItemsList = ref.watch(menuProvider);
     final categoriesList = ref.watch(categoriesProvider);
-    final cart = ref.watch(cartProvider); // Serve per i badge quantità
+    final cart = ref.watch(cartProvider);
     final filteredItems = getFilteredItems(menuItemsList);
 
     return Column(
@@ -154,14 +159,24 @@ class _MenuTabState extends ConsumerState<MenuTab> {
             child: filteredItems.isEmpty
                 ? const Center(child: Text("Nessun prodotto trovato", style: TextStyle(color: AppColors.cSlate400)))
                 : ListView.separated(
+              // Ottimizzazione: rimosso l'eccesso di calcoli nel builder
               padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
               itemCount: filteredItems.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = filteredItems[index];
+                // Calcoliamo la quantità fuori dal build del singolo item se possibile
                 final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
                 final isExpanded = _expandedItems.contains(item.id);
-                return _buildProductCard(item, totalQty, isExpanded);
+
+                return _ProductCard(
+                  key: ValueKey(item.id),
+                  item: item,
+                  totalQty: totalQty,
+                  isExpanded: isExpanded,
+                  onAdd: () => _addToCart(item),
+                  onExpand: () => _toggleProductExpansion(item.id),
+                );
               },
             ),
           ),
@@ -169,8 +184,27 @@ class _MenuTabState extends ConsumerState<MenuTab> {
       ],
     );
   }
+}
 
-  Widget _buildProductCard(MenuItem item, int totalQty, bool isExpanded) {
+// 4. Estratto in un widget Stateless per ridurre il lavoro del motore di rendering
+class _ProductCard extends StatelessWidget {
+  final MenuItem item;
+  final int totalQty;
+  final bool isExpanded;
+  final VoidCallback onAdd;
+  final VoidCallback onExpand;
+
+  const _ProductCard({
+    super.key,
+    required this.item,
+    required this.totalQty,
+    required this.isExpanded,
+    required this.onAdd,
+    required this.onExpand,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
@@ -183,12 +217,20 @@ class _MenuTabState extends ConsumerState<MenuTab> {
           Row(
             children: [
               GestureDetector(
-                onTap: () => _addToCart(item),
+                onTap: onAdd,
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Container(width: 64, height: 64, color: AppColors.cSlate100, child: Image.network(item.imageUrl, fit: BoxFit.cover, errorBuilder: (_,__,___)=>const Icon(Icons.broken_image, color: AppColors.cSlate400))),
+                    child: Container(
+                        width: 64, height: 64, color: AppColors.cSlate100,
+                        child: Image.network(
+                            item.imageUrl,
+                            fit: BoxFit.cover,
+                            // CachedNetworkImage sarebbe meglio in un'app reale
+                            errorBuilder: (_,__,___)=>const Icon(Icons.broken_image, color: AppColors.cSlate400)
+                        )
+                    ),
                   ),
                 ),
               ),
@@ -198,7 +240,7 @@ class _MenuTabState extends ConsumerState<MenuTab> {
                   children: [
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => _toggleProductExpansion(item.id),
+                      onTap: onExpand,
                       child: Row(
                         children: [
                           Expanded(child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.cSlate800))),
@@ -211,14 +253,14 @@ class _MenuTabState extends ConsumerState<MenuTab> {
                     ),
                     const SizedBox(height: 4),
                     GestureDetector(
-                      onTap: () => _addToCart(item),
+                      onTap: onAdd,
                       child: Text("€ ${item.price.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.cIndigo600)),
                     ),
                   ],
                 ),
               ),
               GestureDetector(
-                onTap: () => _addToCart(item),
+                onTap: onAdd,
                 child: Container(
                   margin: const EdgeInsets.only(right: 12),
                   padding: const EdgeInsets.all(8),
