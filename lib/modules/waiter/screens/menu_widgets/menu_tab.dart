@@ -175,8 +175,8 @@ class _MenuTabState extends ConsumerState<MenuTab> {
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
         color: AppColors.cWhite, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isExpanded ? AppColors.cIndigo600.withOpacity(0.3) : AppColors.cSlate200),
-        boxShadow: [BoxShadow(color: AppColors.cBlack.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+        border: Border.all(color: isExpanded ? AppColors.cIndigo600.withValues(alpha: 0.3) : AppColors.cSlate200),
+        boxShadow: [BoxShadow(color: AppColors.cBlack.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -259,7 +259,7 @@ class _MenuTabState extends ConsumerState<MenuTab> {
   Widget _buildTag(String text, Color bg, Color textCol, {bool isWarning = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: isWarning ? textCol.withOpacity(0.2) : AppColors.cSlate200)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: isWarning ? textCol.withValues(alpha: 0.2) : AppColors.cSlate200)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         if(isWarning) ...[const Icon(Icons.warning_amber, size: 12, color: AppColors.cRose500), const SizedBox(width: 4)],
         Text(text, style: TextStyle(fontSize: 11, color: textCol, fontWeight: isWarning ? FontWeight.bold : FontWeight.normal))

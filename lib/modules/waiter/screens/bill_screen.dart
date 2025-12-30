@@ -54,8 +54,11 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
     setState(() {
       int current = selection[id] ?? 0;
       int next = (current + delta).clamp(0, maxQty);
-      if (next == 0) selection.remove(id);
-      else selection[id] = next;
+      if (next == 0) {
+        selection.remove(id);
+      } else {
+        selection[id] = next;
+      }
     });
   }
 
@@ -241,7 +244,7 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: done ? AppColors.cSlate200 : isSelected ? AppColors.cIndigo100.withOpacity(0.3) : AppColors.cWhite,
+                    color: done ? AppColors.cSlate200 : isSelected ? AppColors.cIndigo100.withValues(alpha: 0.3) : AppColors.cWhite,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color: isSelected ? AppColors.cIndigo600 : AppColors.cSlate200,
@@ -331,78 +334,82 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
 
     return Column(
       children: [
+        // USIAMO SingleChildScrollView PER EVITARE OVERFLOW SU SCHERMI PICCOLI
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("In quante parti dividere?", style: TextStyle(fontSize: 18, color: AppColors.cSlate500)),
-                const SizedBox(height: 24),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24), // Padding ridotto per mobile
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 16),
+                  const Text("In quante parti dividere?", style: TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                  const SizedBox(height: 16),
 
-                // Slider Persone
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularIconButton(icon: Icons.remove, onTap: () => setState(() {
-                      if (_splitParts > 1) {
-                        _splitParts--;
-                        if (_payingParts > _splitParts) _payingParts = _splitParts;
-                      }
-                    })),
-                    Container(
-                      width: 120,
-                      alignment: Alignment.center,
-                      child: Text("$_splitParts", style: const TextStyle(fontSize: 64, fontWeight: FontWeight.bold, color: AppColors.cSlate900)),
-                    ),
-                    CircularIconButton(icon: Icons.add, onTap: () => setState(() => _splitParts++)),
-                  ],
-                ),
-                const Text("Persone totali", style: TextStyle(color: AppColors.cSlate400)),
-
-                const SizedBox(height: 48),
-                Container(width: double.infinity, height: 1, color: AppColors.cSlate200),
-                const SizedBox(height: 48),
-
-                const Text("Quote da pagare ora:", style: TextStyle(fontSize: 18, color: AppColors.cSlate500)),
-                const SizedBox(height: 16),
-
-                // Slider Quote
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularIconButton(icon: Icons.remove, small: true, onTap: () => setState(() { if(_payingParts > 1) _payingParts--; })),
-                    Container(
-                      width: 80,
-                      alignment: Alignment.center,
-                      child: Text("$_payingParts", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.cIndigo600)),
-                    ),
-                    CircularIconButton(icon: Icons.add, small: true, onTap: () => setState(() { if(_payingParts < _splitParts) _payingParts++; })),
-                  ],
-                ),
-                Text("$_payingParts su $_splitParts quote", style: const TextStyle(color: AppColors.cIndigo600, fontWeight: FontWeight.bold)),
-
-                const Spacer(),
-
-                // Info Box
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: AppColors.cIndigo100.withOpacity(0.5), borderRadius: BorderRadius.circular(16)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Slider Persone
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Quota singola:", style: TextStyle(color: AppColors.cIndigo600)),
-                      Text("€ ${amountPerPerson.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.cIndigo600)),
+                      CircularIconButton(icon: Icons.remove, onTap: () => setState(() {
+                        if (_splitParts > 1) {
+                          _splitParts--;
+                          if (_payingParts > _splitParts) _payingParts = _splitParts;
+                        }
+                      })),
+                      Container(
+                        width: 100, // Larghezza ridotta
+                        alignment: Alignment.center,
+                        child: Text("$_splitParts", style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold, color: AppColors.cSlate900)),
+                      ),
+                      CircularIconButton(icon: Icons.add, onTap: () => setState(() => _splitParts++)),
                     ],
                   ),
-                )
-              ],
+                  const Text("Persone totali", style: TextStyle(color: AppColors.cSlate400)),
+
+                  const SizedBox(height: 32),
+                  Container(width: double.infinity, height: 1, color: AppColors.cSlate200),
+                  const SizedBox(height: 32),
+
+                  const Text("Quote da pagare ora:", style: TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                  const SizedBox(height: 16),
+
+                  // Slider Quote
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularIconButton(icon: Icons.remove, small: true, onTap: () => setState(() { if(_payingParts > 1) _payingParts--; })),
+                      Container(
+                        width: 80,
+                        alignment: Alignment.center,
+                        child: Text("$_payingParts", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.cIndigo600)),
+                      ),
+                      CircularIconButton(icon: Icons.add, small: true, onTap: () => setState(() { if(_payingParts < _splitParts) _payingParts++; })),
+                    ],
+                  ),
+                  Text("$_payingParts su $_splitParts quote", style: const TextStyle(color: AppColors.cIndigo600, fontWeight: FontWeight.bold)),
+
+                  const SizedBox(height: 32), // Spazio fisso invece di Spacer()
+
+                  // Info Box
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: AppColors.cIndigo100.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(16)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Quota singola:", style: TextStyle(color: AppColors.cIndigo600)),
+                        Text("€ ${amountPerPerson.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.cIndigo600)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),
 
         _buildPaymentFooter(payingNow, remaining, () {
-          // Qui non abbiamo item reali, è una simulazione per "alla romana"
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pagamento alla romana registrato (Simulazione)")));
         }),

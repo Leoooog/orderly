@@ -1,3 +1,4 @@
 - Design login screen
 - Inserire logo
 - Backend
+- Migliorare la gestione del servizio ai tavoli

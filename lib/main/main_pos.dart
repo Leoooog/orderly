@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../modules/pos/POSApp.dart';
-import '../orderly_app.dart';
+// import '../modules/pos/pos_app.dart';
+// import '../orderly_app.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

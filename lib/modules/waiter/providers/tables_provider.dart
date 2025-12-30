@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_ce/hive.dart';
+import '../../../data/hive_keys.dart';
 import '../../../data/models/table_item.dart';
 import '../../../data/models/cart_item.dart';
 import '../../../data/models/course.dart';
@@ -7,22 +9,64 @@ import '../../../data/mock_data.dart';
 final tablesProvider = NotifierProvider<TablesNotifier, List<TableItem>>(TablesNotifier.new);
 
 class TablesNotifier extends Notifier<List<TableItem>> {
+  late Box _box;
 
   @override
   List<TableItem> build() {
+    _box = Hive.box(kTablesBox);
+    return _loadFromDisk();
+  }
+
+  // --- PERSISTENZA ---
+
+  List<TableItem> _loadFromDisk() {
+    final dynamic data = _box.get(kTablesKey);
+    if (data != null && data is List) {
+      return data.map((e) => TableItem.fromJson(Map<String, dynamic>.from(e))).toList();
+    }
+    _saveToDisk(globalTables);
     return globalTables;
   }
 
-  // ... (Metodi occupyTable, addOrdersToTable, moveTable, mergeTable, processPayment rimangono uguali a prima) ...
-  // Li ometto per brevità ma devono esserci nel file finale.
+  void _saveToDisk(List<TableItem> tables) {
+    final jsonList = tables.map((t) => t.toJson()).toList();
+    _box.put(kTablesKey, jsonList);
+  }
 
-  // Riscrivo quelli rilevanti per questa modifica:
+  @override
+  set state(List<TableItem> newState) {
+    super.state = newState;
+    _saveToDisk(newState);
+  }
+
+  // --- LOGICA MACRO-STATO TAVOLO ---
+
+  TableStatus _calculateTableStatus(TableStatus currentStatus, List<CartItem> orders) {
+    if (currentStatus == TableStatus.free) return TableStatus.free;
+    if (orders.isEmpty) return TableStatus.seated;
+
+    if (orders.any((o) => o.status == ItemStatus.ready)) {
+      return TableStatus.ready;
+    }
+
+    if (orders.any((o) => o.status == ItemStatus.pending || o.status == ItemStatus.fired || o.status == ItemStatus.cooking)) {
+      return TableStatus.ordered;
+    }
+
+    if (orders.every((o) => o.status == ItemStatus.served)) {
+      return TableStatus.eating;
+    }
+
+    return currentStatus;
+  }
+
+  // --- AZIONI ---
 
   void occupyTable(int tableId, int guests) {
     state = [
       for (final table in state)
         if (table.id == tableId)
-          TableItem(id: table.id, name: table.name, status: 'occupied', guests: guests, orders: table.orders)
+          table.copyWith(status: TableStatus.seated, guests: guests)
         else
           table
     ];
@@ -32,72 +76,131 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     state = [
       for (final table in state)
         if (table.id == tableId)
-          TableItem(id: table.id, name: table.name, status: 'occupied', guests: table.guests, orders: [...table.orders, ...newOrders])
+          _updateTableWithNewOrders(table, newOrders)
         else
           table
     ];
   }
 
-  // --- NUOVI METODI PER GESTIONE PORTATE ---
+  TableItem _updateTableWithNewOrders(TableItem table, List<CartItem> newOrders) {
+    final updatedOrders = [...table.orders, ...newOrders];
+    return table.copyWith(
+      orders: updatedOrders,
+      status: _calculateTableStatus(table.status, updatedOrders),
+    );
+  }
 
-  // 1. DARE IL VIA (Waiter -> Kitchen)
   void fireCourse(int tableId, Course course) {
     state = [
       for (final table in state)
         if (table.id == tableId)
-          _updateItemsStatus(table, (item) => item.course == course && item.status == ItemStatus.pending, ItemStatus.fired)
+          _updateItemsInTable(table,
+                  (item) => item.course == course && item.status == ItemStatus.pending,
+              ItemStatus.fired
+          )
         else
           table
     ];
 
-    // SIMULAZIONE: Dopo 3 secondi la cucina finisce i piatti!
-    // In un'app vera questo non ci sarebbe, arriverebbe una push notification.
-    Future.delayed(const Duration(seconds: 3), () {
-      mockKitchenReady(tableId, course);
-    });
+    // Simuliamo il tempo di preparazione in cucina
+
+    // Dopo 2 secondi, gli elementi passano a "cooking"
+    Future.delayed(const Duration(seconds: 5), () => mockKitchenCooking(tableId, course));
+    // Dopo 4 secondi, gli elementi passano a "ready"
+    Future.delayed(const Duration(seconds: 5), () => mockKitchenReady(tableId, course));
   }
 
-  // 2. SIMULAZIONE CUCINA (Kitchen -> Waiter)
   void mockKitchenReady(int tableId, Course course) {
     state = [
       for (final table in state)
         if (table.id == tableId)
-          _updateItemsStatus(table, (item) => item.course == course && item.status == ItemStatus.fired, ItemStatus.ready)
+          _updateItemsInTable(table,
+                  (item) => item.course == course && item.status == ItemStatus.cooking,
+              ItemStatus.ready
+          )
         else
           table
     ];
   }
 
-  // 3. SEGNA COME SERVITO (Waiter -> System)
+  mockKitchenCooking(int tableId, Course course) {
+    state = [
+      for (final table in state)
+        if (table.id == tableId)
+          _updateItemsInTable(table,
+                  (item) => item.course == course && item.status == ItemStatus.fired,
+              ItemStatus.cooking
+          )
+        else
+          table
+    ];
+  }
+
   void markAsServed(int tableId, int itemInternalId) {
     state = [
       for (final table in state)
         if (table.id == tableId)
-          _updateItemsStatus(table, (item) => item.internalId == itemInternalId, ItemStatus.served)
+          _updateItemsInTable(table,
+                  (item) => item.internalId == itemInternalId,
+              ItemStatus.served
+          )
         else
           table
     ];
   }
 
-  // Helper generico per aggiornare status
-  TableItem _updateItemsStatus(TableItem table, bool Function(CartItem) condition, ItemStatus newStatus) {
-    final updatedOrders = table.orders.map((item) {
-      if (condition(item)) {
-        return item.copyWith(status: newStatus);
-      }
-      return item;
-    }).toList();
+  void moveTable(int sourceId, int targetId) {
+    final sourceTable = state.firstWhere((t) => t.id == sourceId);
 
-    return TableItem(
-        id: table.id,
-        name: table.name,
-        status: table.status,
-        guests: table.guests,
-        orders: updatedOrders
+    state = [
+      for (final table in state)
+        if (table.id == targetId)
+          table.copyWith(
+            status: sourceTable.status,
+            guests: sourceTable.guests,
+            orders: List.from(sourceTable.orders),
+          )
+        else if (table.id == sourceId)
+          table.copyWith(status: TableStatus.free, guests: 0, orders: [])
+        else
+          table
+    ];
+  }
+
+  void mergeTable(int sourceId, int targetId) {
+    final sourceTable = state.firstWhere((t) => t.id == sourceId);
+
+    state = [
+      for (final table in state)
+        if (table.id == targetId)
+          _performMerge(table, sourceTable)
+        else if (table.id == sourceId)
+          table.copyWith(status: TableStatus.free, guests: 0, orders: [])
+        else
+          table
+    ];
+  }
+
+  TableItem _performMerge(TableItem target, TableItem source) {
+    final combinedOrders = [...target.orders, ...source.orders];
+    return target.copyWith(
+      guests: target.guests + source.guests,
+      orders: combinedOrders,
+      status: _calculateTableStatus(TableStatus.ordered, combinedOrders),
     );
   }
 
-  // Per completezza, includo i metodi di business critici minimi per far compilare se copi-incolli tutto
+  TableItem _updateItemsInTable(TableItem table, bool Function(CartItem) condition, ItemStatus newStatus) {
+    final updatedOrders = table.orders.map((item) {
+      return condition(item) ? item.copyWith(status: newStatus) : item;
+    }).toList();
+
+    return table.copyWith(
+      orders: updatedOrders,
+      status: _calculateTableStatus(table.status, updatedOrders),
+    );
+  }
+
   void processPayment(int tableId, List<CartItem> paidItems) {
     state = [
       for (final table in state)
@@ -112,12 +215,17 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     final remaining = List<CartItem>.from(table.orders);
     for (var paid in paidItems) {
       final index = remaining.indexWhere((o) => o.internalId == paid.internalId);
-      if (index != -1) remaining[index].qty -= paid.qty;
+      if (index != -1) {
+        remaining[index] = remaining[index].copyWith(qty: remaining[index].qty - paid.qty);
+      }
     }
     remaining.removeWhere((o) => o.qty <= 0);
-    return TableItem(id: table.id, name: table.name, status: remaining.isEmpty ? 'free' : 'occupied', guests: remaining.isEmpty ? 0 : table.guests, orders: remaining);
+
+    return table.copyWith(
+      orders: remaining,
+      status: remaining.isEmpty ? TableStatus.free : _calculateTableStatus(table.status, remaining),
+      guests: remaining.isEmpty ? 0 : table.guests,
+    );
   }
 
-  void moveTable(int sId, int tId) { /* ... logica move ... */ }
-  void mergeTable(int sId, int tId) { /* ... logica merge ... */ }
 }

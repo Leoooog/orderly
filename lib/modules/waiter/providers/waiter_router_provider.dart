@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Screens (Import relativi interni al modulo)
 import '../screens/login_screen.dart';
+import '../screens/seettings_screen.dart';
 import '../screens/tables_view.dart';
 import '../screens/menu_view.dart';
 import '../screens/success_view.dart';
@@ -92,6 +93,10 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
 
           return SuccessView(tableName: tableName);
         },
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );

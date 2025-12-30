@@ -180,7 +180,7 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
           ignoring: _controller.value == 0,
           child: GestureDetector(
             onTap: () { _controller.animateTo(0, curve: Curves.easeOutQuint); setState(() => _isExpanded = false); },
-            child: Container(color: AppColors.cBlack.withOpacity(0.4 * _controller.value)),
+            child: Container(color: AppColors.cBlack.withValues(alpha: 0.4 * _controller.value)),
           ),
         );
       },
