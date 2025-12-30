@@ -1,42 +1,75 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // Importa GoRouter
 
 import '../../../config/themes.dart';
 import '../../../data/models/cart_item.dart';
 import '../../../data/models/table_item.dart';
 import '../../../shared/widgets/circle_button.dart';
 import '../../../shared/widgets/payment_method_button.dart';
+import '../providers/tables_provider.dart';
+import '../providers/auth_provider.dart'; // Accesso al provider di Auth per il logout
 import 'bill_screen.dart';
 
-class TablesView extends StatefulWidget {
-  final List<TableItem> tables;
-  final Function(TableItem) onTableSelected;
-  final Function(TableItem, TableItem) onMoveTable;
-  final Function(TableItem, TableItem) onMergeTable;
-  final Function(TableItem, List<CartItem>) onPayment;
-  final VoidCallback onLogout; // Callback per il logout
-
-  const TablesView({
-    super.key,
-    required this.tables,
-    required this.onTableSelected,
-    required this.onMoveTable,
-    required this.onMergeTable,
-    required this.onPayment,
-    required this.onLogout, // Richiesto nel costruttore
-  });
+class TablesView extends ConsumerStatefulWidget {
+  // Rimosse le callback passate dal padre: ora la vista è autonoma
+  const TablesView({super.key});
 
   @override
-  State<TablesView> createState() => _TablesViewState();
+  ConsumerState<TablesView> createState() => _TablesViewState();
 }
 
-class _TablesViewState extends State<TablesView> {
+class _TablesViewState extends ConsumerState<TablesView> {
+
+  // --- LOGICA INTERNA (Interfaccia con Riverpod) ---
+
+  void _performMove(TableItem source, TableItem target) {
+    ref.read(tablesProvider.notifier).moveTable(source.id, target.id);
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tavolo spostato con successo")));
+  }
+
+  void _performMerge(TableItem source, TableItem target) {
+    ref.read(tablesProvider.notifier).mergeTable(source.id, target.id);
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tavoli uniti con successo")));
+  }
+
+  void _performPayment(TableItem table, List<CartItem> paidItems) {
+    ref.read(tablesProvider.notifier).processPayment(table.id, paidItems);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.cEmerald500,
+          content: Text("Pagamento registrato"),
+          duration: Duration(seconds: 2),
+        )
+    );
+  }
+
+  void _performOccupy(TableItem table, int guests) {
+    ref.read(tablesProvider.notifier).occupyTable(table.id, guests);
+    Navigator.pop(context); // Chiudi dialog ospiti
+
+    // NAVIGAZIONE GOROUTER
+    context.push('/menu/${table.id}');
+  }
+
+  // --- GESTORI UI ---
 
   void _handleTableTap(TableItem table) {
     if (table.status == 'free') {
       _showGuestsDialog(table);
     } else {
-      widget.onTableSelected(table);
+      // NAVIGAZIONE GOROUTER
+      context.push('/menu/${table.id}');
     }
+  }
+
+  void _handleLogout() {
+    // LOGICA LOGOUT DIRETTA
+    ref.read(authProvider.notifier).logout();
+    // Il router (configurato con redirect) gestirà il ritorno al login automaticamente
   }
 
   void _handleTableLongPress(TableItem table) {
@@ -72,14 +105,13 @@ class _TablesViewState extends State<TablesView> {
               },
             ),
             const Divider(),
-            // --- NUOVO TASTO PER INCASSO RAPIDO ---
             ListTile(
               leading: const Icon(Icons.check_circle_outline, color: AppColors.cIndigo600),
               title: const Text("Incasso Rapido (Totale)"),
               subtitle: const Text("Paga tutto senza dividere"),
               onTap: () {
                 Navigator.pop(ctx);
-                _showPaymentDialog(table); // Ora viene utilizzato qui!
+                _showPaymentDialog(table);
               },
             ),
             ListTile(
@@ -97,6 +129,8 @@ class _TablesViewState extends State<TablesView> {
     );
   }
 
+  // --- DIALOGHI ---
+
   void _openSplitBillScreen(TableItem table) {
     showModalBottomSheet(
       context: context,
@@ -106,10 +140,11 @@ class _TablesViewState extends State<TablesView> {
       builder: (ctx) => BillScreen(
           table: table,
           onConfirmPayment: (paidItems) {
-            widget.onPayment(table, paidItems);
+            _performPayment(table, paidItems);
 
-            // Se il tavolo è diventato libero (pagamento totale), chiudi il sheet
-            if (table.status == 'free') {
+            final updatedTable = ref.read(tablesProvider).firstWhere((t) => t.id == table.id, orElse: () => table);
+
+            if (updatedTable.status == 'free') {
               Navigator.pop(ctx);
             }
           }
@@ -117,7 +152,6 @@ class _TablesViewState extends State<TablesView> {
     );
   }
 
-  // Dialogo per il pagamento rapido (Totale)
   void _showPaymentDialog(TableItem table) {
     showDialog(
       context: context,
@@ -144,11 +178,11 @@ class _TablesViewState extends State<TablesView> {
               children: [
                 PaymentMethodButton(icon: Icons.credit_card, label: "Carta", color: AppColors.cIndigo600, onTap: () {
                   Navigator.pop(ctx);
-                  widget.onPayment(table, table.orders); // Paga l'intera lista ordini
+                  _performPayment(table, table.orders);
                 }),
                 PaymentMethodButton(icon: Icons.money, label: "Contanti", color: AppColors.cEmerald500, onTap: () {
                   Navigator.pop(ctx);
-                  widget.onPayment(table, table.orders); // Paga l'intera lista ordini
+                  _performPayment(table, table.orders);
                 }),
               ],
             )
@@ -165,7 +199,9 @@ class _TablesViewState extends State<TablesView> {
   }
 
   void _showTableSelectionDialog(TableItem source, {required bool isMerge}) {
-    final candidates = widget.tables.where((t) {
+    final allTables = ref.read(tablesProvider);
+
+    final candidates = allTables.where((t) {
       if (t.id == source.id) return false;
       return isMerge ? t.status == 'occupied' : t.status == 'free';
     }).toList();
@@ -188,9 +224,9 @@ class _TablesViewState extends State<TablesView> {
               return InkWell(
                 onTap: () {
                   if (isMerge) {
-                    widget.onMergeTable(source, t);
+                    _performMerge(source, t);
                   } else {
-                    widget.onMoveTable(source, t);
+                    _performMove(source, t);
                   }
                 },
                 child: Container(
@@ -267,13 +303,7 @@ class _TablesViewState extends State<TablesView> {
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () {
-                      // Nota: Qui modifichiamo l'oggetto, ma il setState vero avverrà nel padre o al ritorno
-                      table.status = 'occupied';
-                      table.guests = guests;
-                      Navigator.pop(ctx);
-                      widget.onTableSelected(table);
-                    },
+                    onPressed: () => _performOccupy(table, guests),
                     child: const Text("Apri Tavolo", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   )
                 ],
@@ -286,6 +316,9 @@ class _TablesViewState extends State<TablesView> {
 
   @override
   Widget build(BuildContext context) {
+    // RIVERPOD: Ascolta la lista tavoli
+    final tables = ref.watch(tablesProvider);
+
     return Scaffold(
       backgroundColor: AppColors.cSlate50,
       appBar: AppBar(
@@ -301,10 +334,9 @@ class _TablesViewState extends State<TablesView> {
         ),
         actions: [
           IconButton(icon: const Icon(Icons.refresh, color: AppColors.cSlate400), onPressed: () {}),
-          // Pulsante Logout
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.cRose500),
-            onPressed: widget.onLogout,
+            onPressed: _handleLogout, // Usa la funzione interna
           ),
           const SizedBox(width: 16),
         ],
@@ -321,9 +353,9 @@ class _TablesViewState extends State<TablesView> {
           mainAxisSpacing: 12,
           childAspectRatio: 0.9,
         ),
-        itemCount: widget.tables.length,
+        itemCount: tables.length,
         itemBuilder: (context, index) {
-          final table = widget.tables[index];
+          final table = tables[index];
           final isOccupied = table.status == 'occupied';
 
           return GestureDetector(
@@ -347,7 +379,6 @@ class _TablesViewState extends State<TablesView> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Nome Tavolo
                       Center(
                         child: Text(
                           table.name,
@@ -356,7 +387,6 @@ class _TablesViewState extends State<TablesView> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Status Badge
                       if (isOccupied)
                         Column(
                           children: [
@@ -373,7 +403,6 @@ class _TablesViewState extends State<TablesView> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            // Totale Parziale
                             Text("€ ${table.totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.cSlate800)),
                           ],
                         )
@@ -385,7 +414,6 @@ class _TablesViewState extends State<TablesView> {
                         )
                     ],
                   ),
-                  // Indicatore Long Press
                   if (isOccupied)
                     Positioned(
                       top: 8, right: 8,

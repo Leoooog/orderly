@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // Importa go_router
 import 'config/themes.dart';
 
-class OrderlyApp extends StatelessWidget {
-  final Widget home; // Widget iniziale iniettato dal main
-  final String title; // NUOVO: Titolo specifico per l'app (es. "Camerieri")
+class OrderlyApp extends ConsumerWidget {
+  // Non serve più passare "home", passiamo il routerConfig
+  final GoRouter router;
+  final String title;
 
   const OrderlyApp({
     super.key,
-    required this.home,
-    this.title = 'Orderly Pocket', // Valore di default
+    required this.router, // Obbligatorio
+    required this.title,
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Impostiamo lo stile della barra di stato del sistema per coerenza
+  Widget build(BuildContext context, WidgetRef ref) {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
@@ -22,12 +24,34 @@ class OrderlyApp extends StatelessWidget {
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
 
-    return MaterialApp(
-      // Usiamo il titolo passato come parametro
+    return MaterialApp.router( // .router invece di costruttore normale
       title: title,
       debugShowCheckedModeBanner: false,
 
-      // Configurazione del Tema condivisa
+      // Colleghiamo il router passato
+      routerConfig: router,
+      builder: (context, child) {
+        return Scaffold(
+          // Sfondo scuro per il desktop ("fuori" dal telefono)
+          backgroundColor: AppColors.cSlate900,
+          body: Center(
+            child: Container(
+              // Forziamo la larghezza massima a quella di un tablet/telefono grande
+              constraints: const BoxConstraints(maxWidth: 450),
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                  color: AppColors.cSlate50, // Sfondo dell'app vera e propria
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20)
+                  ]
+              ),
+              // 'child' qui è il Navigator gestito da GoRouter
+              child: child,
+            ),
+          ),
+        );
+      },
+
       theme: ThemeData(
         fontFamily: 'Roboto',
         scaffoldBackgroundColor: AppColors.cSlate50,
@@ -76,9 +100,6 @@ class OrderlyApp extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
-
-      // Qui carichiamo il modulo specifico
-      home: home,
     );
   }
 }

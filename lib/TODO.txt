@@ -1,1 +1,3 @@
-- Gestione stato e router
+- Design login screen
+- Inserire logo
+- Backend

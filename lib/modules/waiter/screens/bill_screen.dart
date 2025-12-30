@@ -233,15 +233,15 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
               final item = widget.table.orders[index];
               final selectedQty = selection[item.internalId] ?? 0;
               final isSelected = selectedQty > 0;
-              final isFullySelected = selectedQty == item.qty;
+              final done = item.qty == 0;
 
               return GestureDetector(
-                onTap: () => _toggleItemFull(item.internalId, item.qty),
+                onTap: () => !done ? _toggleItemFull(item.internalId, item.qty) : {},
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.cIndigo100.withOpacity(0.3) : AppColors.cWhite,
+                    color: done ? AppColors.cSlate200 : isSelected ? AppColors.cIndigo100.withOpacity(0.3) : AppColors.cWhite,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color: isSelected ? AppColors.cIndigo600 : AppColors.cSlate200,

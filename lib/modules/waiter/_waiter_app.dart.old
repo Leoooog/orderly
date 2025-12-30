@@ -1,0 +1,138 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+
+// Config
+import '../../../config/themes.dart';
+import 'providers/tables_provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/menu_view.dart';
+import 'screens/success_view.dart';
+import 'screens/tables_view.dart';
+
+// Providers
+
+/// --- STATO DELLA NAVIGAZIONE (LOCALE AL MODULO) ---
+class WaiterNavState {
+  final String currentView; // 'login', 'tables', 'menu', 'success'
+  final int? selectedTableId;
+
+  const WaiterNavState({this.currentView = 'login', this.selectedTableId});
+
+  WaiterNavState copyWith({String? currentView, int? selectedTableId}) {
+    return WaiterNavState(
+      currentView: currentView ?? this.currentView,
+      selectedTableId: selectedTableId ?? this.selectedTableId,
+    );
+  }
+}
+
+/// --- PROVIDER DI NAVIGAZIONE ---
+final waiterNavProvider = NotifierProvider<WaiterNavNotifier, WaiterNavState>(WaiterNavNotifier.new);
+
+class WaiterNavNotifier extends Notifier<WaiterNavState> {
+  @override
+  WaiterNavState build() {
+    return const WaiterNavState();
+  }
+
+  void login() => state = const WaiterNavState(currentView: 'tables');
+
+  void logout() => state = const WaiterNavState(currentView: 'login');
+
+  void goToTables() => state = const WaiterNavState(currentView: 'tables');
+
+  void goToMenu(int tableId) {
+    state = WaiterNavState(currentView: 'menu', selectedTableId: tableId);
+  }
+
+  void goToSuccess() {
+    // Manteniamo l'ID del tavolo per mostrare il nome nella success view
+    final currentTableId = state.selectedTableId;
+    state = WaiterNavState(currentView: 'success', selectedTableId: currentTableId);
+
+    // Timer automatico gestito qui nella business logic
+    Future.delayed(const Duration(seconds: 2), () {
+      // Controlliamo se siamo ancora in success (l'utente potrebbe aver fatto altro)
+      if (state.currentView == 'success') {
+        goToTables();
+      }
+    });
+  }
+}
+
+/// --- UI PRINCIPALE (ORCHESTRATOR) ---
+class WaiterApp extends ConsumerWidget {
+  const WaiterApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Ascoltiamo lo stato della navigazione
+    final navState = ref.watch(waiterNavProvider);
+    final navNotifier = ref.read(waiterNavProvider.notifier);
+
+    return Scaffold(
+      backgroundColor: AppColors.cSlate900,
+      body: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450),
+          clipBehavior: Clip.hardEdge,
+          decoration: BoxDecoration(
+              color: AppColors.cSlate50,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20)
+              ]
+          ),
+          child: _buildCurrentView(ref, navState, navNotifier),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentView(WidgetRef ref, WaiterNavState navState, WaiterNavNotifier navNotifier) {
+    switch (navState.currentView) {
+      case 'login':
+        return LoginScreen(onLoginSuccess: navNotifier.login);
+
+      case 'tables':
+        return TablesView(
+        );
+
+      case 'menu':
+        if (navState.selectedTableId == null) return const SizedBox();
+
+        // Recuperiamo il tavolo aggiornato dal Provider dei Dati
+        final tables = ref.watch(tablesProvider);
+
+        // Fallback sicuro
+        final table = tables.firstWhere(
+                (t) => t.id == navState.selectedTableId,
+            orElse: () => tables.first
+        );
+
+        return MenuView(
+          table: table,
+          onBack: navNotifier.goToTables,
+          onSuccess: (newOrders) {
+            // 1. Aggiorniamo i dati (TablesProvider)
+            ref.read(tablesProvider.notifier).addOrdersToTable(table.id, newOrders);
+            // 2. Aggiorniamo la navigazione
+            navNotifier.goToSuccess();
+          },
+        );
+
+      case 'success':
+      // Recuperiamo il nome del tavolo
+        final tables = ref.read(tablesProvider);
+        final tableName = tables.firstWhere(
+                (t) => t.id == navState.selectedTableId,
+            orElse: () => tables.first
+        ).name;
+
+        return SuccessView(tableName  : tableName);
+
+      default:
+        return const Center(child: Text("Errore: Vista non trovata"));
+    }
+  }
+}

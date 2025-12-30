@@ -6,8 +6,5 @@ import '../orderly_app.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Implementazione specifica per il POS
-  runApp(const OrderlyApp(
-    home: POSApp(),
-    title: 'Orderly POS',
-  ));
+  //TODO: sostituire con POSApp quando pronto
 }

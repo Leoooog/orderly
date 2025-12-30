@@ -1,17 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/modules/waiter/providers/waiter_router_provider.dart';
 
-import '../modules/waiter/waiter_app.dart';
 import '../orderly_app.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Qui potresti inizializzare servizi specifici per i camerieri
 
-  runApp(const ProviderScope(
-    child: OrderlyApp(
-      home: WaiterApp(),
-      title: 'Orderly Sala',
+  runApp(
+    const ProviderScope(
+      child: WaiterAppEntry(),
     ),
-  ));
+  );
+}
+
+// Piccolo widget wrapper per leggere il provider del router
+// (Necessario perché non puoi leggere un provider prima di essere dentro un ProviderScope)
+class WaiterAppEntry extends ConsumerWidget {
+  const WaiterAppEntry({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(waiterRouterProvider);
+
+    return OrderlyApp(
+      router: router,
+      title: 'Orderly - Sala',
+    );
+  }
 }
