@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:orderly/l10n/app_localizations.dart';
-import '../../../../config/themes.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 import '../../../../data/models/cart_item.dart';
 import '../../../../data/models/course.dart';
 import '../../../../data/models/extra.dart';
@@ -50,11 +50,12 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final int maxQty = widget.cartItem.qty;
 
     return AlertDialog(
-      backgroundColor: AppColors.cWhite,
-      surfaceTintColor: AppColors.cWhite,
+      backgroundColor: colors.surface,
+      surfaceTintColor: colors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -73,7 +74,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
           children: [
             Text(
                 AppLocalizations.of(context)!.cartEditingItem(widget.menuItem.name),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.cIndigo600)
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colors.primary)
             ),
             const SizedBox(height: 16),
 
@@ -82,20 +83,20 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(AppLocalizations.of(context)!.cartEditingQuantity, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context)!.cartEditingQuantity, style: TextStyle(fontSize: 12, color: colors.textSecondary, fontWeight: FontWeight.bold)),
                   Row(
                     children: [
                       IconButton(
-                          icon: Icon(Icons.remove_circle_outline, color: _qtyToModify > 1 ? AppColors.cIndigo600 : AppColors.cSlate300),
+                          icon: Icon(Icons.remove_circle_outline, color: _qtyToModify > 1 ? colors.primary : colors.textTertiary),
                           onPressed: _qtyToModify > 1 ? () => setState(() => _qtyToModify--) : null
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(color: AppColors.cSlate100, borderRadius: BorderRadius.circular(8)),
-                        child: Text("$_qtyToModify / $maxQty", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.cSlate900)),
+                        decoration: BoxDecoration(color: colors.background, borderRadius: BorderRadius.circular(8)),
+                        child: Text("$_qtyToModify / $maxQty", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: colors.textPrimary)),
                       ),
                       IconButton(
-                          icon: Icon(Icons.add_circle_outline, color: _qtyToModify < maxQty ? AppColors.cIndigo600 : AppColors.cSlate300),
+                          icon: Icon(Icons.add_circle_outline, color: _qtyToModify < maxQty ? colors.primary : colors.textTertiary),
                           onPressed: _qtyToModify < maxQty ? () => setState(() => _qtyToModify++) : null
                       ),
                     ],
@@ -106,17 +107,17 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
             ],
 
             // --- SCELTA PORTATA ---
-            Text(AppLocalizations.of(context)!.dialogMoveToCourse, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.dialogMoveToCourse, style: TextStyle(fontSize: 12, color: colors.textSecondary, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: Course.values.map((course) {
                 final isSel = _selectedCourse == course;
                 return ChoiceChip(
-                  label: Text(course.label, style: TextStyle(fontSize: 12, color: isSel ? AppColors.cWhite : AppColors.cSlate800)),
+                  label: Text(course.label, style: TextStyle(fontSize: 12, color: isSel ? colors.onPrimary : colors.textPrimary)),
                   selected: isSel,
-                  selectedColor: AppColors.cIndigo600,
-                  backgroundColor: AppColors.cSlate100,
+                  selectedColor: colors.primary,
+                  backgroundColor: colors.background,
                   side: BorderSide.none,
                   onSelected: (v) => setState(() => _selectedCourse = course),
                 );
@@ -126,7 +127,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
             // --- SCELTA EXTRA ---
             if (widget.menuItem.availableExtras.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Text(AppLocalizations.of(context)!.labelExtras, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context)!.labelExtras, style: TextStyle(fontSize: 12, color: colors.textSecondary, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -145,15 +146,15 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
                         }
                       });
                     },
-                    backgroundColor: AppColors.cSlate50,
-                    selectedColor: AppColors.cAmber100,
-                    checkmarkColor: AppColors.cAmber700,
+                    backgroundColor: colors.background,
+                    selectedColor: colors.warningContainer,
+                    checkmarkColor: colors.warning,
                     labelStyle: TextStyle(
                         fontSize: 12,
-                        color: isSelected ? AppColors.cAmber700 : AppColors.cSlate800,
+                        color: isSelected ? colors.warning : colors.textPrimary,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
                     ),
-                    side: BorderSide(color: isSelected ? AppColors.cAmber700 : AppColors.cSlate200),
+                    side: BorderSide(color: isSelected ? colors.warning : colors.divider),
                   );
                 }).toList(),
               ),
@@ -161,7 +162,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
 
             // --- NOTE ---
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.labelNotesTitle, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.labelNotesTitle, style: TextStyle(fontSize: 12, color: colors.textSecondary, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(
               controller: _noteController,
@@ -169,7 +170,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
               decoration: InputDecoration(
                   filled: true,
                   hint: Text(AppLocalizations.of(context)!.fieldNotesPlaceholder),
-                  fillColor: AppColors.cSlate50
+                  fillColor: colors.background
               ),
             )
           ],
@@ -178,8 +179,8 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
       actions: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.cIndigo600,
-            foregroundColor: AppColors.cWhite,
+            backgroundColor: colors.primary,
+            foregroundColor: colors.onPrimary,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onPressed: () {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
-import '../../../config/themes.dart';
 import '../../../data/models/cart_item.dart';
 import '../../../data/models/table_item.dart';
 
@@ -56,7 +56,7 @@ class _MenuViewState extends ConsumerState<MenuView>
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.cWhite,
+          backgroundColor: context.colors.surface,
           title: Text(AppLocalizations.of(context)!.msgChangesNotSaved),
           content: Text(AppLocalizations.of(context)!.msgExitWithoutSaving),
           actions: [
@@ -65,8 +65,8 @@ class _MenuViewState extends ConsumerState<MenuView>
                 child: Text(AppLocalizations.of(context)!.dialogCancel)),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.cRose500,
-                  foregroundColor: AppColors.cWhite),
+                  backgroundColor: context.colors.danger,
+                  foregroundColor: context.colors.textInverse),
               onPressed: () {
                 widget.onBack();
               },
@@ -88,6 +88,7 @@ class _MenuViewState extends ConsumerState<MenuView>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final size = MediaQuery.of(context).size;
     _maxHeight = size.height * 0.75;
 
@@ -113,7 +114,7 @@ class _MenuViewState extends ConsumerState<MenuView>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: AppColors.cWhite,
+        backgroundColor: colors.background,
         body: Stack(
           children: [
             Column(
@@ -124,30 +125,30 @@ class _MenuViewState extends ConsumerState<MenuView>
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                         border: Border(
-                            bottom: BorderSide(color: AppColors.cSlate100))),
+                            bottom: BorderSide(color: colors.divider))),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                            icon: const Icon(Icons.chevron_left,
-                                color: AppColors.cSlate500),
+                            icon: Icon(Icons.chevron_left,
+                                color: colors.textSecondary),
                             onPressed: _handleBack),
                         Column(
                           children: [
                             Text(
                                 AppLocalizations.of(context)!
                                     .tableName(currentTable.name),
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.cSlate800)),
+                                    color: colors.textPrimary)),
                             Text(
                                 AppLocalizations.of(context)!
                                     .labelGuests(currentTable.guests),
-                                style: const TextStyle(
-                                    fontSize: 12, color: AppColors.cSlate500)),
+                                style: TextStyle(
+                                    fontSize: 12, color: colors.textSecondary)),
                           ],
                         ),
                         const SizedBox(width: 48),
@@ -158,9 +159,9 @@ class _MenuViewState extends ConsumerState<MenuView>
 
                 // TAB BAR
                 TabBar(
-                  labelColor: AppColors.cIndigo600,
-                  unselectedLabelColor: AppColors.cSlate500,
-                  indicatorColor: AppColors.cIndigo600,
+                  labelColor: colors.primary,
+                  unselectedLabelColor: colors.textSecondary,
+                  indicatorColor: colors.primary,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                   tabs: [
                     Tab(text: AppLocalizations.of(context)!.navMenu),
@@ -212,7 +213,7 @@ class _MenuViewState extends ConsumerState<MenuView>
               setState(() => _isExpanded = false);
             },
             child: Container(
-                color: AppColors.cBlack
+                color: context.colors.backdrop
                     .withValues(alpha: 0.4 * _controller.value)),
           ),
         );
@@ -232,13 +233,13 @@ class _MenuViewState extends ConsumerState<MenuView>
             offset: Offset(0, 100 * (1 - _controller.value)),
             child: Container(
               padding: const EdgeInsets.all(16),
-              color: AppColors.cWhite,
+              color: context.colors.surface,
               child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.cEmerald500,
-                        foregroundColor: AppColors.cWhite,
+                        backgroundColor: context.colors.success,
+                        foregroundColor: context.colors.textInverse,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16))),

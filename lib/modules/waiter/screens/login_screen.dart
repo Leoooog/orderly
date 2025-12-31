@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../config/themes.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 import '../../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(AppLocalizations.of(context)!.loginPinError),
-              backgroundColor: AppColors.cRose500,
+              backgroundColor: context.colors.danger,
               duration: Duration(milliseconds: 500),
             )
         );
@@ -51,27 +51,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.cSlate900,
+      backgroundColor: colors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.restaurant_menu, size: 64, color: AppColors.cIndigo600),
+            Icon(Icons.restaurant_menu, size: 64, color: colors.primary),
             const SizedBox(height: 24),
             Text(
               AppLocalizations.of(context)!.waiterAppName,
               style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.cWhite,
+                  color: colors.textPrimary,
                   letterSpacing: 1.5
               ),
             ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.loginInsertPin,
-              style: TextStyle(color: AppColors.cSlate500),
+              style: TextStyle(color: colors.textSecondary),
             ),
             const SizedBox(height: 48),
 
@@ -85,9 +86,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 16,
                   decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: index < _pin.length ? AppColors.cIndigo600 : AppColors.cSlate800,
+                      color: index < _pin.length ? colors.primary : colors.surface,
                       border: Border.all(
-                          color: index < _pin.length ? AppColors.cIndigo600 : AppColors.cSlate600,
+                          color: index < _pin.length ? colors.primary : colors.divider,
                           width: 2
                       )
                   ),
@@ -122,8 +123,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildKeypadBtn(String label, VoidCallback onTap) {
+    final colors = context.colors;
     return Material(
-      color: AppColors.cSlate800,
+      color: colors.surface,
       borderRadius: BorderRadius.circular(40),
       child: InkWell(
         onTap: onTap,
@@ -131,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.cWhite),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colors.textPrimary),
           ),
         ),
       ),
@@ -139,14 +141,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildIconBtn(IconData icon, VoidCallback onTap) {
+    final colors = context.colors;
     return Material(
-      color: AppColors.cTransparent,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(40),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(40),
         child: Center(
-          child: Icon(icon, color: AppColors.cSlate500, size: 28),
+          child: Icon(icon, color: colors.textSecondary, size: 28),
         ),
       ),
     );

@@ -17,7 +17,7 @@ void main() async {
 
   await Hive.openBox(kTablesBox);
   await Hive.openBox(kVoidsBox);
-
+  await Hive.openBox(kSettingsBox);
 
   runApp(
     const ProviderScope(

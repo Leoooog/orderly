@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orderly/l10n/app_localizations.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
-import '../../../../config/themes.dart';
 import '../../../../data/models/table_item.dart';
 
 class TableCard extends StatefulWidget {
@@ -65,60 +65,61 @@ class _TableCardState extends State<TableCard>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final bool isOccupied = widget.table.status != TableStatus.free;
     final bool isReady = widget.table.status == TableStatus.ready;
 
     // DEFINIZIONE COLORI E STILI IN BASE ALLO STATO
-    Color cardBgColor = AppColors.cWhite;
-    Color borderColor = AppColors.cSlate200;
-    Color contentColor = AppColors.cSlate800;
-    Color accentColor = AppColors.cSlate500;
+    Color cardBgColor = colors.surface;
+    Color borderColor = colors.divider;
+    Color contentColor = colors.textPrimary;
+    Color accentColor = colors.textSecondary;
 
     Widget? statusIcon;
     String statusLabel = "";
 
     switch (widget.table.status) {
       case TableStatus.seated:
-        cardBgColor = AppColors.cRose50;
-        borderColor = AppColors.cRose500;
-        contentColor = AppColors.cRose500;
-        accentColor = AppColors.cRose500;
-        statusIcon = const Icon(Icons.hourglass_empty,
-            size: 10, color: AppColors.cRose500);
+        cardBgColor = colors.dangerContainer;
+        borderColor = colors.danger;
+        contentColor = colors.danger;
+        accentColor = colors.danger;
+        statusIcon = Icon(Icons.hourglass_empty,
+            size: 10, color: colors.danger);
         statusLabel = AppLocalizations.of(context)!.tableStatusSeated;
         break;
       case TableStatus.ordered:
-        cardBgColor = AppColors.cAmber50;
-        borderColor = AppColors.cAmber500;
-        contentColor = AppColors.cAmber500;
-        accentColor = AppColors.cAmber500;
-        statusIcon = const Icon(Icons.sticky_note_2,
-            size: 10, color: AppColors.cAmber500);
+        cardBgColor = colors.warningContainer;
+        borderColor = colors.warning;
+        contentColor = colors.warning;
+        accentColor = colors.warning;
+        statusIcon = Icon(Icons.sticky_note_2,
+            size: 10, color: colors.warning);
         statusLabel = AppLocalizations.of(context)!.tableStatusOrdered;
         break;
       case TableStatus.ready:
-        cardBgColor = AppColors.cWhite;
-        borderColor = AppColors.cEmerald500;
-        contentColor = AppColors.cSlate800;
-        accentColor = AppColors.cEmerald500;
-        statusIcon = const Icon(Icons.notifications_active,
-            size: 10, color: AppColors.cEmerald500);
+        cardBgColor = colors.surface;
+        borderColor = colors.success;
+        contentColor = colors.textPrimary;
+        accentColor = colors.success;
+        statusIcon = Icon(Icons.notifications_active,
+            size: 10, color: colors.success);
         statusLabel = AppLocalizations.of(context)!.tableStatusReady;
         break;
       case TableStatus.eating:
-        cardBgColor = AppColors.cWhite;
-        borderColor = AppColors.cIndigo100;
-        contentColor = AppColors.cSlate800;
-        accentColor = AppColors.cIndigo600;
+        cardBgColor = colors.surface;
+        borderColor = colors.infoContainer;
+        contentColor = colors.textPrimary;
+        accentColor = colors.primary;
         statusIcon =
-            const Icon(Icons.restaurant, size: 10, color: AppColors.cIndigo600);
+            Icon(Icons.restaurant, size: 10, color: colors.primary);
         statusLabel = AppLocalizations.of(context)!.tableStatusEating;
         break;
       case TableStatus.free:
-        cardBgColor = AppColors.cWhite;
-        borderColor = AppColors.cEmerald100;
-        contentColor = AppColors.cSlate400;
-        accentColor = AppColors.cEmerald500;
+        cardBgColor = colors.surface;
+        borderColor = colors.successContainer;
+        contentColor = colors.textTertiary;
+        accentColor = colors.success;
         break;
     }
 
@@ -151,7 +152,7 @@ class _TableCardState extends State<TableCard>
                   ),
                   boxShadow: [
                     BoxShadow(
-                        color: AppColors.cBlack.withValues(alpha: 0.05),
+                        color: colors.shadow,
                         blurRadius: 4,
                         offset: const Offset(0, 2))
                   ],
@@ -168,10 +169,10 @@ class _TableCardState extends State<TableCard>
                     scale: _bellScaleAnimation,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                          color: AppColors.cEmerald500, shape: BoxShape.circle),
-                      child: const Icon(Icons.notifications_active,
-                          color: Colors.white, size: 12),
+                      decoration: BoxDecoration(
+                          color: colors.success, shape: BoxShape.circle),
+                      child: Icon(Icons.notifications_active,
+                          color: colors.textInverse, size: 12),
                     ),
                   ),
                 ),
@@ -198,7 +199,7 @@ class _TableCardState extends State<TableCard>
                     style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: isOccupied ? contentColor : AppColors.cSlate800),
+                        color: isOccupied ? contentColor : colors.textPrimary),
                   ),
                   const SizedBox(height: 8),
                   if (isOccupied) ...[
@@ -250,13 +251,13 @@ class _TableCardState extends State<TableCard>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                          color: AppColors.cEmerald100,
+                          color: colors.successContainer,
                           borderRadius: BorderRadius.circular(8)),
                       child: Text(AppLocalizations.of(context)!.tableStatusFree,
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.cEmerald500)),
+                              color: colors.success)),
                     ),
                 ],
               ),

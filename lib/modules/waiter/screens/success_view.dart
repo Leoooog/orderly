@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:orderly/l10n/app_localizations.dart';
-
-import '../../../config/themes.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
 class SuccessView extends StatelessWidget {
   final String tableName;
@@ -10,27 +9,26 @@ class SuccessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-        backgroundColor: AppColors.cEmerald500,
+        backgroundColor: colors.success,
         body: Center(
             child:
                 Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Container(
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                  color: AppColors.cWhite, shape: BoxShape.circle),
-              child: const Icon(Icons.check_circle,
-                  size: 48, color: AppColors.cEmerald500)),
+              decoration:
+                  BoxDecoration(color: colors.surface, shape: BoxShape.circle),
+              child: Icon(Icons.check_circle, size: 48, color: colors.success)),
           const SizedBox(height: 24),
           Text(AppLocalizations.of(context)!.msgOrderSent,
               style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.cWhite)),
+                  color: colors.textInverse)),
           const SizedBox(height: 8),
           Text(AppLocalizations.of(context)!.tableName(tableName),
-              style:
-                  const TextStyle(fontSize: 20, color: AppColors.cEmerald100))
+              style: TextStyle(fontSize: 20, color: colors.successContainer))
         ])));
   }
 }

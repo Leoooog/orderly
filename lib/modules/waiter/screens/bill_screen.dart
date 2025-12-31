@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:orderly/config/restaurant_settings.dart';
 import 'package:orderly/l10n/app_localizations.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 import 'package:orderly/shared/widgets/circle_button.dart';
 import 'package:orderly/shared/widgets/quantity_control_button.dart';
 import 'package:orderly/shared/widgets/payment_method_button.dart'; // Assicurati che questo file esista in shared/widgets
 
-import '../../../config/themes.dart';
 import '../../../data/models/cart_item.dart';
 import '../../../data/models/table_item.dart';
 
@@ -111,12 +111,13 @@ class _BillScreenState extends State<BillScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final double totalAmount = widget.table.totalAmount;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
-      decoration: const BoxDecoration(
-        color: AppColors.cSlate50,
+      decoration: BoxDecoration(
+        color: colors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -128,7 +129,7 @@ class _BillScreenState extends State<BillScreen>
                 width: 48,
                 height: 6,
                 decoration: BoxDecoration(
-                    color: AppColors.cSlate200,
+                    color: colors.divider,
                     borderRadius: BorderRadius.circular(3))),
           ),
 
@@ -144,22 +145,22 @@ class _BillScreenState extends State<BillScreen>
                     Text(
                         AppLocalizations.of(context)!
                             .tableName(widget.table.name),
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.cSlate900)),
+                            color: colors.textPrimary)),
                     Text(
                         AppLocalizations.of(context)!
                             .infoTotalAmount(widget.table.totalAmount.toCurrency()),
-                        style: const TextStyle(
-                            fontSize: 16, color: AppColors.cSlate500)),
+                        style: TextStyle(
+                            fontSize: 16, color: colors.textSecondary)),
                   ],
                 ),
                 // Tab Selector Compatto
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                      color: AppColors.cSlate200,
+                      color: colors.divider,
                       borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
@@ -176,7 +177,7 @@ class _BillScreenState extends State<BillScreen>
             ),
           ),
 
-          const Divider(height: 1, color: AppColors.cSlate200),
+          Divider(height: 1, color: colors.divider),
 
           // BODY (TABS)
           Expanded(
@@ -196,6 +197,7 @@ class _BillScreenState extends State<BillScreen>
   }
 
   Widget _buildTabBtn(String label, int index) {
+    final colors = context.colors;
     return AnimatedBuilder(
         animation: _tabController,
         builder: (context, _) {
@@ -205,10 +207,10 @@ class _BillScreenState extends State<BillScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.cWhite : Colors.transparent,
+                color: isSelected ? colors.surface : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: isSelected
-                    ? [const BoxShadow(color: Colors.black12, blurRadius: 4)]
+                    ? [BoxShadow(color: colors.shadow, blurRadius: 4)]
                     : [],
               ),
               child: Text(
@@ -217,8 +219,8 @@ class _BillScreenState extends State<BillScreen>
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     color: isSelected
-                        ? AppColors.cIndigo600
-                        : AppColors.cSlate500),
+                        ? colors.primary
+                        : colors.textSecondary),
               ),
             ),
           );
@@ -227,6 +229,7 @@ class _BillScreenState extends State<BillScreen>
 
   // --- VISTA 1: PER PIATTO ---
   Widget _buildByItemView(double totalAmount) {
+    final colors = context.colors;
     final double toPay = _selectedTotalByItems;
     final double remaining = totalAmount - toPay;
 
@@ -242,8 +245,8 @@ class _BillScreenState extends State<BillScreen>
                   _isAllSelected
                       ? AppLocalizations.of(context)!.allSelected
                       : AppLocalizations.of(context)!.selectToPay,
-                  style: const TextStyle(
-                      color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: colors.textSecondary, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: _toggleSelectAll,
                 child: Text(_isAllSelected
@@ -275,15 +278,15 @@ class _BillScreenState extends State<BillScreen>
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: done
-                        ? AppColors.cSlate200
+                        ? colors.divider
                         : isSelected
-                            ? AppColors.cIndigo100.withValues(alpha: 0.3)
-                            : AppColors.cWhite,
+                            ? colors.infoSurfaceMedium
+                            : colors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color: isSelected
-                            ? AppColors.cIndigo600
-                            : AppColors.cSlate200,
+                            ? colors.primary
+                            : colors.divider,
                         width: isSelected ? 2 : 1),
                   ),
                   child: Row(
@@ -298,19 +301,19 @@ class _BillScreenState extends State<BillScreen>
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                     color: isSelected
-                                        ? AppColors.cIndigo600
-                                        : AppColors.cSlate800)),
+                                        ? colors.primary
+                                        : colors.textPrimary)),
                             if (item.selectedExtras.isNotEmpty)
                               Text(
                                   "+ ${item.selectedExtras.map((e) => e.name).join(', ')}",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.cSlate500)),
+                                      color: colors.textSecondary)),
                             Text(
                                 AppLocalizations.of(context)!
                                     .infoPriceEach(item.unitPrice.toCurrency()),
-                                style: const TextStyle(
-                                    fontSize: 12, color: AppColors.cSlate400)),
+                                style: TextStyle(
+                                    fontSize: 12, color: colors.textTertiary)),
                           ],
                         ),
                       ),
@@ -323,12 +326,12 @@ class _BillScreenState extends State<BillScreen>
                         behavior: HitTestBehavior.opaque,
                         child: Container(
                           decoration: BoxDecoration(
-                              color: AppColors.cWhite,
+                              color: colors.surface,
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
                                   color: isSelected
-                                      ? AppColors.cIndigo600
-                                      : AppColors.cSlate300)),
+                                      ? colors.primary
+                                      : colors.divider)), // Slate300 -> divider
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -350,8 +353,8 @@ class _BillScreenState extends State<BillScreen>
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                         color: isSelected
-                                            ? AppColors.cIndigo600
-                                            : AppColors.cSlate400)),
+                                            ? colors.primary
+                                            : colors.textTertiary)),
                               ),
                               QuantityControlButton(
                                   icon: Icons.add,
@@ -381,6 +384,7 @@ class _BillScreenState extends State<BillScreen>
 
   // --- VISTA 2: ALLA ROMANA ---
   Widget _buildSplitEvenlyView(double totalAmount) {
+    final colors = context.colors;
     // Calcoli
     final double amountPerPerson = totalAmount / _splitParts;
     final double payingNow = amountPerPerson * _payingParts;
@@ -400,7 +404,7 @@ class _BillScreenState extends State<BillScreen>
                   Text(
                       AppLocalizations.of(context)!.labelSplitEvenlyDescription,
                       style:
-                          TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                          TextStyle(fontSize: 16, color: colors.textSecondary)),
                   const SizedBox(height: 16),
 
                   // Slider Persone
@@ -421,10 +425,10 @@ class _BillScreenState extends State<BillScreen>
                         width: 100, // Larghezza ridotta
                         alignment: Alignment.center,
                         child: Text("$_splitParts",
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 56,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.cSlate900)),
+                                color: colors.textPrimary)),
                       ),
                       CircularIconButton(
                           icon: Icons.add,
@@ -432,18 +436,18 @@ class _BillScreenState extends State<BillScreen>
                     ],
                   ),
                   Text(AppLocalizations.of(context)!.totalPeople,
-                      style: TextStyle(color: AppColors.cSlate400)),
+                      style: TextStyle(color: colors.textTertiary)),
 
                   const SizedBox(height: 32),
                   Container(
                       width: double.infinity,
                       height: 1,
-                      color: AppColors.cSlate200),
+                      color: colors.divider),
                   const SizedBox(height: 32),
 
                   Text(AppLocalizations.of(context)!.labelPartsToPay,
                       style:
-                          TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                          TextStyle(fontSize: 16, color: colors.textSecondary)),
                   const SizedBox(height: 16),
 
                   // Slider Quote
@@ -460,10 +464,10 @@ class _BillScreenState extends State<BillScreen>
                         width: 80,
                         alignment: Alignment.center,
                         child: Text("$_payingParts",
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 40,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.cIndigo600)),
+                                color: colors.primary)),
                       ),
                       CircularIconButton(
                           icon: Icons.add,
@@ -474,8 +478,8 @@ class _BillScreenState extends State<BillScreen>
                     ],
                   ),
                   Text(AppLocalizations.of(context)!.infoPartsPaying(_payingParts, _splitParts),
-                      style: const TextStyle(
-                          color: AppColors.cIndigo600,
+                      style: TextStyle(
+                          color: colors.primary,
                           fontWeight: FontWeight.bold)),
 
                   const SizedBox(height: 32), // Spazio fisso invece di Spacer()
@@ -484,18 +488,18 @@ class _BillScreenState extends State<BillScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                        color: AppColors.cIndigo100.withValues(alpha: 0.5),
+                        color: colors.infoSurfaceStrong,
                         borderRadius: BorderRadius.circular(16)),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(AppLocalizations.of(context)!.labelSinglePart,
-                            style: TextStyle(color: AppColors.cIndigo600)),
+                            style: TextStyle(color: colors.primary)),
                         Text(amountPerPerson.toCurrency(),
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
-                                color: AppColors.cIndigo600)),
+                                color: colors.primary)),
                       ],
                     ),
                   ),
@@ -518,13 +522,14 @@ class _BillScreenState extends State<BillScreen>
   // --- FOOTER PAGAMENTO (Carta/Contanti) ---
   Widget _buildPaymentFooter(
       double toPay, double remaining, VoidCallback onPay) {
+    final colors = context.colors;
     final bool canPay = toPay > 0.01;
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.cWhite,
-        border: Border(top: BorderSide(color: AppColors.cSlate200)),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.divider)),
       ),
       child: SafeArea(
         child: Column(
@@ -539,12 +544,12 @@ class _BillScreenState extends State<BillScreen>
                         style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.cSlate400)),
+                            color: colors.textTertiary)),
                     Text(remaining.toCurrency(),
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.cSlate500)),
+                            color: colors.textSecondary)),
                   ],
                 ),
                 Column(
@@ -554,12 +559,12 @@ class _BillScreenState extends State<BillScreen>
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.cIndigo600)),
+                            color: colors.primary)),
                     Text("€ ${toPay.toStringAsFixed(2)}",
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.cIndigo600)),
+                            color: colors.primary)),
                   ],
                 ),
               ],
@@ -575,7 +580,7 @@ class _BillScreenState extends State<BillScreen>
                     child: PaymentMethodButton(
                         icon: Icons.credit_card,
                         label: AppLocalizations.of(context)!.cardPayment,
-                        color: AppColors.cIndigo600,
+                        color: colors.primary,
                         onTap: canPay ? onPay : () {}),
                   ),
                 ),
@@ -586,7 +591,7 @@ class _BillScreenState extends State<BillScreen>
                     child: PaymentMethodButton(
                         icon: Icons.money,
                         label: AppLocalizations.of(context)!.cashPayment,
-                        color: AppColors.cEmerald500,
+                        color: colors.success,
                         onTap: canPay ? onPay : () {}),
                   ),
                 ),

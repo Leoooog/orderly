@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:orderly/l10n/app_localizations.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
-import '../../../../config/themes.dart';
 import '../../../../data/models/cart_item.dart';
 import '../../../../data/models/course.dart';
 import '../../../../shared/widgets/quantity_button.dart';
@@ -65,6 +65,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
   // ... (Resto del file build identico a prima, usando _openEditDialog aggiornato) ...
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final cart = ref.watch(cartProvider);
     Map<Course, List<CartItem>> groupedCart = {};
     for (var c in Course.values) {
@@ -98,10 +99,10 @@ class _CartSheetState extends ConsumerState<CartSheet> {
         },
         child: Container(
           decoration: BoxDecoration(
-              color: AppColors.cWhite,
+              color: colors.surface,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20)]),
+              boxShadow: [BoxShadow(color: colors.shadow, blurRadius: 20)]),
           child: Column(
             children: [
               Container(
@@ -113,7 +114,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                       width: 48,
                       height: 6,
                       decoration: BoxDecoration(
-                          color: AppColors.cSlate200,
+                          color: colors.divider,
                           borderRadius: BorderRadius.circular(3))),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -122,8 +123,8 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(children: [
-                            const Icon(Icons.shopping_bag,
-                                color: AppColors.cIndigo600),
+                            Icon(Icons.shopping_bag,
+                                color: colors.primary),
                             const SizedBox(width: 12),
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,8 +134,8 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                                           fontWeight: FontWeight.bold)),
                                   Text(
                                     AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
-                                      style: const TextStyle(
-                                          color: AppColors.cSlate500,
+                                      style: TextStyle(
+                                          color: colors.textSecondary,
                                           fontSize: 12)),
                                 ]),
                           ]),
@@ -150,10 +151,10 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                                 SizedBox(width: 16),
                                 CircleAvatar(
                                   radius: 20,
-                                  backgroundColor: AppColors.cEmerald500,
+                                  backgroundColor: colors.success,
                                   child: IconButton(
-                                      icon: const Icon(Icons.send,
-                                          color: AppColors.cWhite),
+                                      icon: Icon(Icons.send,
+                                          color: colors.textInverse),
                                       onPressed: () => widget.onSendOrder()),
                                 ),
         ]
@@ -165,7 +166,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
               ),
               Expanded(
                 child: Container(
-                  color: AppColors.cSlate50,
+                  color: colors.background,
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
@@ -174,13 +175,13 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                           Padding(
                               padding: const EdgeInsets.only(bottom: 8, top: 8),
                               child: Text(course.label.toUpperCase(),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.cSlate500,
+                                      color: colors.textSecondary,
                                       letterSpacing: 1))),
                           ...groupedCart[course]!
-                              .map((item) => _buildCartItemRow(item)),
+                              .map((item) => _buildCartItemRow(context, item)),
                           const SizedBox(height: 8),
                         ],
                       const SizedBox(height: 80),
@@ -195,7 +196,8 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     );
   }
 
-  Widget _buildCartItemRow(CartItem item) {
+  Widget _buildCartItemRow(BuildContext context, CartItem item) {
+    final colors = context.colors;
     bool hasExtras = item.selectedExtras.isNotEmpty;
     bool hasNotes = item.notes.isNotEmpty;
     return Container(
@@ -203,17 +205,17 @@ class _CartSheetState extends ConsumerState<CartSheet> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
           color:
-              (hasNotes || hasExtras) ? AppColors.cAmber50 : AppColors.cWhite,
+              (hasNotes || hasExtras) ? colors.warningContainer : colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: (hasNotes || hasExtras)
-                  ? AppColors.cAmber100
-                  : AppColors.cSlate200)),
+                  ? colors.warningContainer
+                  : colors.divider)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
           Text("€ ${(item.unitPrice * item.qty).toStringAsFixed(2)}",
-              style: const TextStyle(fontSize: 12, color: AppColors.cSlate500)),
+              style: TextStyle(fontSize: 12, color: colors.textSecondary)),
         ]),
         if (hasExtras)
           Padding(
@@ -222,27 +224,27 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                   spacing: 4,
                   children: item.selectedExtras
                       .map((e) => Text("+${e.name}",
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.cAmber700,
+                              color: colors.warning,
                               fontWeight: FontWeight.bold)))
                       .toList())),
         if (hasNotes)
           Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Row(children: [
-                const Icon(Icons.error_outline,
-                    size: 12, color: AppColors.cAmber700),
+                Icon(Icons.error_outline,
+                    size: 12, color: colors.warning),
                 const SizedBox(width: 4),
                 Text(item.notes,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.cAmber700))
+                    style: TextStyle(
+                        fontSize: 12, color: colors.warning))
               ])),
         const SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Container(
               decoration: BoxDecoration(
-                  color: AppColors.cSlate100,
+                  color: colors.background,
                   borderRadius: BorderRadius.circular(8)),
               child: Row(children: [
                 QuantityButton(
@@ -261,16 +263,16 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                        color: AppColors.cSlate100,
+                        color: colors.background,
                         borderRadius: BorderRadius.circular(6)),
                     child: Row(children: [
-                      const Icon(Icons.edit, size: 14, color: AppColors.cSlate600),
+                      Icon(Icons.edit, size: 14, color: colors.textSecondary),
                       const SizedBox(width: 4),
                       Text(AppLocalizations.of(context)!.btnEdit,
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.cSlate600))
+                              color: colors.textSecondary))
                     ]))),
             const SizedBox(width: 8),
             GestureDetector(
@@ -279,10 +281,10 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                 child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                        color: AppColors.cRose50,
+                        color: colors.dangerContainer,
                         borderRadius: BorderRadius.circular(6)),
-                    child: const Icon(Icons.delete_outline,
-                        size: 16, color: AppColors.cRose500))),
+                    child: Icon(Icons.delete_outline,
+                        size: 16, color: colors.danger))),
           ]),
         ]),
       ]),

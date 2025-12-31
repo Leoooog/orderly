@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:orderly/l10n/app_localizations.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 import 'package:vibration/vibration.dart';
 
-import '../../../config/themes.dart';
 import '../../../data/models/cart_item.dart';
 import '../../../data/models/table_item.dart';
 import '../../../shared/widgets/payment_method_button.dart';
@@ -43,7 +43,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     Navigator.pop(context); // Chiude bottom sheet azioni
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: AppColors.cRose500,
+      backgroundColor: context.colors.danger,
       content: Text(AppLocalizations.of(context)!.tableReset),
       duration: Duration(seconds: 2),
     ));
@@ -53,7 +53,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     ref.read(tablesProvider.notifier).processPayment(table.id, paidItems);
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: AppColors.cEmerald500,
+      backgroundColor: context.colors.success,
       content: Text(AppLocalizations.of(context)!.msgPaymentSuccess),
       duration: Duration(seconds: 2),
     ));
@@ -84,7 +84,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.cWhite,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
@@ -94,18 +94,18 @@ class _TablesViewState extends ConsumerState<TablesView> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(AppLocalizations.of(context)!.tableActions(table.name),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
-                      color: AppColors.cSlate800)),
+                      color: context.colors.textPrimary)),
             ),
             ListView(
               scrollDirection: Axis.vertical,
               shrinkWrap: true,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.compare_arrows,
-                      color: AppColors.cIndigo600),
+                  leading: Icon(Icons.compare_arrows,
+                      color: context.colors.primary),
                   title: Text(AppLocalizations.of(context)!.actionMove),
                   subtitle:  Text(AppLocalizations.of(context)!.actionTransfer),
                   onTap: () {
@@ -115,7 +115,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 ),
                 ListTile(
                   leading:
-                      const Icon(Icons.merge_type, color: AppColors.cAmber700),
+                      Icon(Icons.merge_type, color: context.colors.warning),
                   title: Text(AppLocalizations.of(context)!.actionMerge),
                   subtitle: Text(AppLocalizations.of(context)!.actionMergeDesc),
                   onTap: () {
@@ -125,8 +125,8 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 ),
                 const Divider(),
                 ListTile(
-                  leading: const Icon(Icons.check_circle_outline,
-                      color: AppColors.cIndigo600),
+                  leading: Icon(Icons.check_circle_outline,
+                      color: context.colors.primary),
                   title: Text(AppLocalizations.of(context)!.actionQuickPay),
                   subtitle: Text(AppLocalizations.of(context)!.actionPayTotalDesc),
                   onTap: () {
@@ -135,8 +135,8 @@ class _TablesViewState extends ConsumerState<TablesView> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.attach_money,
-                      color: AppColors.cEmerald500),
+                  leading: Icon(Icons.attach_money,
+                      color: context.colors.success),
                   title: Text(AppLocalizations.of(context)!.actionSplitPay),
                   subtitle: Text(AppLocalizations.of(context)!.actionSplitDesc),
                   onTap: () {
@@ -146,7 +146,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 ),
                 const Divider(),
                 ListTile(
-                  leading: const Icon(Icons.close, color: AppColors.cRose500),
+                  leading: Icon(Icons.close, color: context.colors.danger),
                   title: Text(AppLocalizations.of(context)!.actionCancelTable),
                   subtitle: Text(AppLocalizations.of(context)!.actionResetDesc),
                   onTap: () => _showConfirmCancelDialog(table),
@@ -165,7 +165,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.cSlate50,
+      backgroundColor: context.colors.background,
       useRootNavigator: true,
       builder: (ctx) => BillScreen(
           table: table,
@@ -189,13 +189,13 @@ class _TablesViewState extends ConsumerState<TablesView> {
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (context, setStateDialog) {
         return AlertDialog(
-          backgroundColor: AppColors.cWhite,
-          surfaceTintColor: AppColors.cWhite,
+          backgroundColor: context.colors.surface,
+          surfaceTintColor: context.colors.surface,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.cRose500),
+              Icon(Icons.warning_amber_rounded, color: context.colors.danger),
               const SizedBox(width: 8),
               Text(AppLocalizations.of(context)!.msgAttention, style: TextStyle(fontWeight: FontWeight.bold)),
             ],
@@ -205,7 +205,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
             children: [
               Text(
                 AppLocalizations.of(context)!.msgConfirmCancelTable(table.name),
-                style: const TextStyle(color: AppColors.cSlate600),
+                style: TextStyle(color: context.colors.textSecondary),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -213,11 +213,11 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 keyboardType: TextInputType.number,
                 obscureText: true,
                 maxLength: 4,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                     hintText: "PIN (1234)",
                     counterText: "",
                     filled: true,
-                    fillColor: AppColors.cSlate50),
+                    fillColor: context.colors.background),
                 onChanged: (v) => setStateDialog(() {}),
               ),
             ],
@@ -226,11 +226,11 @@ class _TablesViewState extends ConsumerState<TablesView> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(AppLocalizations.of(context)!.msgBack,
-                  style: TextStyle(color: AppColors.cSlate500)),
+                  style: TextStyle(color: context.colors.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.cRose500,
+                  backgroundColor: context.colors.danger,
                   foregroundColor: Colors.white),
               onPressed: pinController.text.length == 4
                   ? () => {
@@ -239,7 +239,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                         else
                           ScaffoldMessenger.of(context)
                               .showSnackBar(SnackBar(
-                            backgroundColor: AppColors.cRose500,
+                            backgroundColor: context.colors.danger,
                             content: Text(AppLocalizations.of(context)!.loginPinError),
                             duration: Duration(seconds: 2),
                           ))
@@ -257,33 +257,33 @@ class _TablesViewState extends ConsumerState<TablesView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cWhite,
-        surfaceTintColor: AppColors.cWhite,
+        backgroundColor: context.colors.surface,
+        surfaceTintColor: context.colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Column(
           children: [
             Text(AppLocalizations.of(context)!.dialogPaymentTable(table.name),
                 style:
-                    const TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                    TextStyle(fontSize: 16, color: context.colors.textSecondary)),
             const SizedBox(height: 8),
             Text(AppLocalizations.of(context)!.labelPaymentTotal,
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.cSlate800)),
+                    color: context.colors.textPrimary)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text("€ ${table.totalAmount.toStringAsFixed(2)}",
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.cIndigo600)),
+                    color: context.colors.primary)),
             const SizedBox(height: 24),
             Text(AppLocalizations.of(context)!.dialogSelectPaymentMethod,
-                style: TextStyle(color: AppColors.cSlate500, fontSize: 12)),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -291,7 +291,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 PaymentMethodButton(
                     icon: Icons.credit_card,
                     label: AppLocalizations.of(context)!.cardPayment,
-                    color: AppColors.cIndigo600,
+                    color: context.colors.primary,
                     onTap: () {
                       Navigator.pop(ctx);
                       _performPayment(table, table.orders);
@@ -299,7 +299,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 PaymentMethodButton(
                     icon: Icons.money,
                     label: AppLocalizations.of(context)!.cashPayment,
-                    color: AppColors.cEmerald500,
+                    color: context.colors.success,
                     onTap: () {
                       Navigator.pop(ctx);
                       _performPayment(table, table.orders);
@@ -312,7 +312,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(AppLocalizations.of(context)!.dialogCancel,
-                style: TextStyle(color: AppColors.cSlate500)),
+                style: TextStyle(color: context.colors.textSecondary)),
           ),
         ],
       ),
@@ -332,7 +332,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cWhite,
+        backgroundColor: context.colors.surface,
         title: Text(isMerge ? AppLocalizations.of(context)!.dialogMergeTable : AppLocalizations.of(context)!.dialogMoveTable),
         content: SizedBox(
           width: double.maxFinite,
@@ -357,9 +357,9 @@ class _TablesViewState extends ConsumerState<TablesView> {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.cSlate100,
+                          color: context.colors.divider, // Slate100
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.cSlate300),
+                          border: Border.all(color: context.colors.divider), // Slate300 -> divider
                         ),
                         alignment: Alignment.center,
                         child: Text(t.name,
@@ -388,16 +388,16 @@ class _TablesViewState extends ConsumerState<TablesView> {
       builder: (ctx) {
         return StatefulBuilder(builder: (context, setStateDialog) {
           return AlertDialog(
-            backgroundColor: AppColors.cWhite,
-            surfaceTintColor: AppColors.cWhite,
+            backgroundColor: context.colors.surface,
+            surfaceTintColor: context.colors.surface,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             title: Center(
                 child: Column(
               children: [
                 Text(AppLocalizations.of(context)!.dialogOpenTable(table.name),
-                    style: const TextStyle(
-                        fontSize: 16, color: AppColors.cSlate500)),
+                    style: TextStyle(
+                        fontSize: 16, color: context.colors.textSecondary)),
                 const SizedBox(height: 4),
                 Text(AppLocalizations.of(context)!.dialogGuests,
                     style:
@@ -411,10 +411,10 @@ class _TablesViewState extends ConsumerState<TablesView> {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   alignment: Alignment.center,
                   child: Text("$guests",
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 64,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.cIndigo600)),
+                          color: context.colors.primary)),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -423,16 +423,16 @@ class _TablesViewState extends ConsumerState<TablesView> {
                       onPressed: () {
                         if (guests > 1) setStateDialog(() => guests--);
                       },
-                      icon: const Icon(Icons.remove_circle_outline,
-                          size: 32, color: AppColors.cSlate500),
+                      icon: Icon(Icons.remove_circle_outline,
+                          size: 32, color: context.colors.textSecondary),
                     ),
                     const SizedBox(width: 32),
                     IconButton(
                       onPressed: () {
                         if (guests < 20) setStateDialog(() => guests++);
                       },
-                      icon: const Icon(Icons.add_circle_outline,
-                          size: 32, color: AppColors.cIndigo600),
+                      icon: Icon(Icons.add_circle_outline,
+                          size: 32, color: context.colors.primary),
                     ),
                   ],
                 ),
@@ -442,12 +442,12 @@ class _TablesViewState extends ConsumerState<TablesView> {
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text(AppLocalizations.of(context)!.dialogCancel,
-                    style: TextStyle(color: AppColors.cSlate500)),
+                    style: TextStyle(color: context.colors.textSecondary)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.cIndigo600,
-                  foregroundColor: AppColors.cWhite,
+                  backgroundColor: context.colors.primary,
+                  foregroundColor: context.colors.onPrimary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -488,39 +488,39 @@ class _TablesViewState extends ConsumerState<TablesView> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.cSlate50,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.cWhite,
+        backgroundColor: context.colors.surface,
         elevation: 0,
         titleSpacing: 24,
         centerTitle: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text("Sala",
                 style: TextStyle(
-                    color: AppColors.cSlate800,
+                    color: context.colors.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 24)),
             Text("Mario R. • Turno Pranzo",
-                style: TextStyle(color: AppColors.cSlate500, fontSize: 12)),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
           ],
         ),
         actions: [
           IconButton(
-              icon: const Icon(Icons.settings, color: AppColors.cSlate400),
+              icon: Icon(Icons.settings, color: context.colors.textTertiary),
               onPressed: () {
                 context.push('/settings');
               }),
           IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.cRose500),
+            icon: Icon(Icons.logout, color: context.colors.danger),
             onPressed: _performLogout,
           ),
           const SizedBox(width: 16),
         ],
         bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(color: AppColors.cSlate100, height: 1)),
+            child: Container(color: context.colors.divider, height: 1)),
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
-// 1. PALETTE STATICA (I tuoi colori di base rimangono qui)
+// 1. PALETTE STATICA
 class AppColors {
   static const Color cIndigo600 = Color(0xFF4F46E5);
   static const Color cIndigo400 = Color(0xFF818CF8); // Variante per dark mode
@@ -30,102 +31,40 @@ class AppColors {
   static const Color cAmber100 = Color(0xFFFEF3C7);
   static const Color cAmber50 = Color(0xFFFFFBEB);
   static const Color cAmber700 = Color(0xFFB45309);
-  static const Color cAmber500 = Color(0xFFF59E0B);
+
+  // Colori extra specifici per Dark Mode (Hardcoded per precisione)
+  static const Color cEmerald900 = Color(0xFF064E3B);
+  static const Color cEmerald400 = Color(0xFF34D399);
+  static const Color cOrange950 = Color(0xFF431407);
+  static const Color cOrange400 = Color(0xFFFB923C);
+  static const Color cRose400 = Color(0xFFFB7185);
+  static const Color cAmber400 = Color(0xFFFBBF24);
   static const Color cTransparent = Colors.transparent;
-}
-
-// 2. ESTENSIONE SEMANTICA (Il "Vocabolario" dei colori della tua app)
-@immutable
-class OrderlyColors extends ThemeExtension<OrderlyColors> {
-  final Color tableFreeBg;
-  final Color tableFreeBorder;
-  final Color tableOccupiedBg;
-  final Color tableOccupiedBorder;
-  final Color tableTextPrimary;
-  final Color tableTextSecondary;
-  final Color success;
-  final Color danger;
-  final Color warning;
-  final Color info;
-  final Color cardBg;
-
-  const OrderlyColors({
-    required this.tableFreeBg,
-    required this.tableFreeBorder,
-    required this.tableOccupiedBg,
-    required this.tableOccupiedBorder,
-    required this.tableTextPrimary,
-    required this.tableTextSecondary,
-    required this.success,
-    required this.danger,
-    required this.warning,
-    required this.info,
-    required this.cardBg,
-  });
-
-  @override
-  OrderlyColors copyWith({
-    Color? tableFreeBg,
-    Color? tableFreeBorder,
-    Color? tableOccupiedBg,
-    Color? tableOccupiedBorder,
-    Color? tableTextPrimary,
-    Color? tableTextSecondary,
-    Color? success,
-    Color? danger,
-    Color? warning,
-    Color? info,
-    Color? cardBg,
-  }) {
-    return OrderlyColors(
-      tableFreeBg: tableFreeBg ?? this.tableFreeBg,
-      tableFreeBorder: tableFreeBorder ?? this.tableFreeBorder,
-      tableOccupiedBg: tableOccupiedBg ?? this.tableOccupiedBg,
-      tableOccupiedBorder: tableOccupiedBorder ?? this.tableOccupiedBorder,
-      tableTextPrimary: tableTextPrimary ?? this.tableTextPrimary,
-      tableTextSecondary: tableTextSecondary ?? this.tableTextSecondary,
-      success: success ?? this.success,
-      danger: danger ?? this.danger,
-      warning: warning ?? this.warning,
-      info: info ?? this.info,
-      cardBg: cardBg ?? this.cardBg,
-    );
-  }
-
-  @override
-  OrderlyColors lerp(ThemeExtension<OrderlyColors>? other, double t) {
-    if (other is! OrderlyColors) return this;
-    return OrderlyColors(
-      tableFreeBg: Color.lerp(tableFreeBg, other.tableFreeBg, t)!,
-      tableFreeBorder: Color.lerp(tableFreeBorder, other.tableFreeBorder, t)!,
-      tableOccupiedBg: Color.lerp(tableOccupiedBg, other.tableOccupiedBg, t)!,
-      tableOccupiedBorder: Color.lerp(tableOccupiedBorder, other.tableOccupiedBorder, t)!,
-      tableTextPrimary: Color.lerp(tableTextPrimary, other.tableTextPrimary, t)!,
-      tableTextSecondary: Color.lerp(tableTextSecondary, other.tableTextSecondary, t)!,
-      success: Color.lerp(success, other.success, t)!,
-      danger: Color.lerp(danger, other.danger, t)!,
-      warning: Color.lerp(warning, other.warning, t)!,
-      info: Color.lerp(info, other.info, t)!,
-      cardBg: Color.lerp(cardBg, other.cardBg, t)!,
-    );
-  }
+  static const Color cAmber500 = Color(0xFFF59E0B);
 }
 
 // 3. DEFINIZIONE DEI TEMI
 class AppTheme {
-  // LIGHT THEME
+  // --- LIGHT THEME ---
   static final light = ThemeData(
     fontFamily: 'Roboto',
     scaffoldBackgroundColor: AppColors.cSlate50,
     primaryColor: AppColors.cIndigo600,
     useMaterial3: true,
+    brightness: Brightness.light,
+
+    extensions: [
+      OrderlyColors.light,
+    ],
 
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.cIndigo600,
+      brightness: Brightness.light,
       surface: AppColors.cWhite,
       primary: AppColors.cIndigo600,
       secondary: AppColors.cSlate800,
       error: AppColors.cRose500,
+      onSurface: AppColors.cSlate900,
     ),
 
     appBarTheme: const AppBarTheme(
@@ -162,57 +101,63 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
 
-    extensions: const [
-      OrderlyColors(
-        tableFreeBg: AppColors.cEmerald100, // O cWhite nel tuo design
-        tableFreeBorder: AppColors.cEmerald500,
-        tableOccupiedBg: AppColors.cOrange50,
-        tableOccupiedBorder: AppColors.cOrange200,
-        tableTextPrimary: AppColors.cSlate800,
-        tableTextSecondary: AppColors.cSlate500,
-        success: AppColors.cEmerald500,
-        danger: AppColors.cRose500,
-        warning: AppColors.cAmber700,
-        info: AppColors.cIndigo600,
-        cardBg: AppColors.cWhite,
-      ),
-    ],
-
   );
 
-  // DARK THEME
+  // --- DARK THEME ---
   static final dark = ThemeData(
+    fontFamily: 'Roboto',
+    scaffoldBackgroundColor: AppColors.cSlate900, // Sfondo scuro
+    primaryColor: AppColors.cIndigo400, // Colore primario più chiaro per contrasto
     useMaterial3: true,
     brightness: Brightness.dark,
-    fontFamily: 'Roboto',
-    scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
+
+    extensions: [
+      OrderlyColors.dark,
+    ],
+
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.cIndigo600,
       brightness: Brightness.dark,
-      surface: const Color(0xFF1E293B), // Slate 800
-      onSurface: AppColors.cSlate100,
-      primary: AppColors.cIndigo400, // Più luminoso per dark mode
+      surface: AppColors.cSlate800, // Card scure
+      primary: AppColors.cIndigo400,
       secondary: AppColors.cSlate200,
+      error: AppColors.cRose400, // Rosso pastello
+      onSurface: AppColors.cSlate100, // Testo chiaro
     ),
-    extensions: const [
-      OrderlyColors(
-        tableFreeBg: Color(0xFF064E3B), // Emerald 900
-        tableFreeBorder: Color(0xFF34D399), // Emerald 400
-        tableOccupiedBg: Color(0xFF431407), // Orange 950
-        tableOccupiedBorder: Color(0xFFFB923C), // Orange 400
-        tableTextPrimary: AppColors.cSlate100,
-        tableTextSecondary: AppColors.cSlate400,
-        success: Color(0xFF34D399), // Emerald 400
-        danger: Color(0xFFFB7185), // Rose 400
-        warning: Color(0xFFFBBF24), // Amber 400
-        info: Color(0xFF818CF8), // Indigo 400
-        cardBg: Color(0xFF1E293B), // Slate 800
-      ),
-    ],
+
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF1E293B),
-      foregroundColor: AppColors.cWhite,
+      backgroundColor: AppColors.cSlate800,
       elevation: 0,
+      iconTheme: IconThemeData(color: AppColors.cSlate100),
+      titleTextStyle: TextStyle(
+        color: AppColors.cSlate100,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
     ),
+
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.cIndigo400,
+        foregroundColor: AppColors.cSlate900, // Testo scuro su bottone chiaro
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      ),
+    ),
+
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: AppColors.cSlate800,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      hintStyle: const TextStyle(color: AppColors.cSlate400),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+
   );
 }
