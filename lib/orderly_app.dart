@@ -44,7 +44,7 @@ class OrderlyApp extends ConsumerWidget {
               decoration: BoxDecoration(
                   color: AppColors.cSlate50, // Sfondo dell'app vera e propria
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20)
+                    BoxShadow(color: AppColors.cBlack.withValues(alpha: 0.3), blurRadius: 20)
                   ]
               ),
               // 'child' qui è il Navigator gestito da GoRouter
