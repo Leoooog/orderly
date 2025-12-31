@@ -11,7 +11,7 @@ import '../../../shared/widgets/payment_method_button.dart';
 import '../providers/tables_provider.dart';
 import '../providers/auth_provider.dart';
 import 'bill_screen.dart';
-import 'table_card.dart';
+import 'widgets/table_card.dart';
 
 class TablesView extends ConsumerStatefulWidget {
   const TablesView({super.key});

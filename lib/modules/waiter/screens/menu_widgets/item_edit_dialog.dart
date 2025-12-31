@@ -161,13 +161,14 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
 
             // --- NOTE ---
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.fieldNotesPlaceholder, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.labelNotesTitle, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(
               controller: _noteController,
               maxLines: 2,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                   filled: true,
+                  hint: Text(AppLocalizations.of(context)!.fieldNotesPlaceholder),
                   fillColor: AppColors.cSlate50
               ),
             )

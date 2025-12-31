@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 
-import '../../../config/themes.dart';
-import '../../../data/models/table_item.dart';
+import '../../../../config/themes.dart';
+import '../../../../data/models/table_item.dart';
 
 class TableCard extends StatefulWidget {
   final TableItem table;
