@@ -13,7 +13,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    // Leggi la lingua corrente per mostrarla nel sottotitolo
     final currentLocale = ref.watch(localeProvider);
     final String languageName = currentLocale.languageCode == 'it' ? 'Italiano' : 'English';
 
@@ -25,57 +24,68 @@ class SettingsScreen extends ConsumerWidget {
         foregroundColor: colors.textPrimary,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildSectionHeader(context, "Dispositivo"),
-          _buildTile(
-            context,
-            icon: Icons.smartphone,
-            title: "ID Terminale",
-            subtitle: "W-01 (Autorizzato)",
-            onTap: () {},
-            iconColor: colors.primary,
-          ),
-
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, "Preferenze"),
-
-          // TILE LINGUA ATTIVO
-          _buildTile(
-            context,
-            icon: Icons.language,
-            title: "Lingua",
-            subtitle: languageName, // Mostra la lingua attuale
-            onTap: () => _showLanguageDialog(context, ref),
-          ),
-
-          _buildTile(
-            context,
-            icon: Icons.dark_mode_outlined,
-            title: "Tema",
-            subtitle: "Chiaro (Default)",
-            onTap: () => _showThemeDialog(context, ref),
-          ),
-
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, "Manutenzione Dati"),
-          _buildTile(
-            context,
-            icon: Icons.delete_forever,
-            title: "Reset Database Locale",
-            subtitle: "Cancella cache tavoli e ordini (Solo questo dispositivo)",
-            iconColor: colors.danger,
-            textColor: colors.danger,
-            onTap: () => _showResetDialog(context, ref),
-          ),
-
-          const SizedBox(height: 24),
-          Center(
-            child: Text(
-              "Orderly Pocket v1.0.0\nBuild 2024.10.25",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colors.textTertiary, fontSize: 12),
+      // REPLACED: LayoutBuilder + SingleChildScrollView
+      body: CustomScrollView(
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false, // Allows the child to define its own size
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader(context, "Dispositivo"),
+                  _buildTile(
+                    context,
+                    icon: Icons.smartphone,
+                    title: "ID Terminale",
+                    subtitle: "W-01 (Autorizzato)",
+                    onTap: () {},
+                    iconColor: colors.primary,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(context, "Preferenze"),
+                  _buildTile(
+                    context,
+                    icon: Icons.language,
+                    title: "Lingua",
+                    subtitle: languageName,
+                    onTap: () => _showLanguageDialog(context, ref),
+                  ),
+                  _buildTile(
+                    context,
+                    icon: Icons.dark_mode_outlined,
+                    title: "Tema",
+                    subtitle: "Chiaro (Default)",
+                    onTap: () => _showThemeDialog(context, ref),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(context, "Manutenzione Dati"),
+                  _buildTile(
+                    context,
+                    icon: Icons.delete_forever,
+                    title: "Reset Database Locale",
+                    subtitle:
+                    "Cancella cache tavoli e ordini (Solo questo dispositivo)",
+                    iconColor: colors.danger,
+                    textColor: colors.danger,
+                    onTap: () => _showResetDialog(context, ref),
+                  ),
+                  // Spacer now works because SliverFillRemaining provides a finite constraint
+                  // when content is short, but allows scrolling when content is long.
+                  const Spacer(),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 24.0),
+                      child: Text(
+                        "Orderly Pocket v1.0.0\nBuild 2024.10.25",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

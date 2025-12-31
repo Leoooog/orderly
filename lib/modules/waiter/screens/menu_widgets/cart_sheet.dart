@@ -65,6 +65,13 @@ class _CartSheetState extends ConsumerState<CartSheet> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final cart = ref.watch(cartProvider);
+
+    // --- LOGICA RESPONSIVE ---
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = size.shortestSide > 600;
+    // Limitiamo a 600px su tablet, altrimenti infinito (tutto lo schermo) su telefono
+    final double maxContentWidth = isTablet ? 600.0 : double.infinity;
+
     Map<Course, List<CartItem>> groupedCart = {};
     for (var c in Course.values) {
       groupedCart[c] = cart.where((item) => item.course == c).toList();
@@ -75,12 +82,20 @@ class _CartSheetState extends ConsumerState<CartSheet> {
       builder: (context, child) {
         double offset = widget.maxHeight - widget.minHeight;
         double translateY = offset * (1 - widget.controller.value);
+
+        // Il Positioned deve occupare tutta la larghezza per gestire l'animazione correttamente
         return Positioned(
           height: widget.maxHeight,
           left: 0,
           right: 0,
           bottom: -translateY,
-          child: child!,
+          // Qui usiamo Center + ConstrainedBox per limitare la larghezza del contenuto effettivo
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxContentWidth),
+              child: child!,
+            ),
+          ),
         );
       },
       child: GestureDetector(
@@ -98,16 +113,17 @@ class _CartSheetState extends ConsumerState<CartSheet> {
         child: Container(
           decoration: BoxDecoration(
               color: colors.surface,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               boxShadow: [BoxShadow(color: colors.shadow, blurRadius: 20)]),
           child: Column(
             children: [
+              // --- HEADER DEL CARRELLO ---
               Container(
                 height: widget.minHeight,
                 color: Colors.transparent,
                 child: Column(children: [
                   const SizedBox(height: 12),
+                  // Maniglia
                   Container(
                       width: 48,
                       height: 6,
@@ -132,7 +148,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14)),
                                   Text(
-                                    AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
+                                      AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
                                       style: TextStyle(
                                           color: colors.textSecondary,
                                           fontSize: 12)),
@@ -146,6 +162,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                                       fontFamily: 'RobotoMono',
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18)),
+                              // Mostra il pulsante invia rapido solo se non è espanso
                               if (!widget.isExpanded) ... [
                                 const SizedBox(width: 16),
                                 CircleAvatar(
@@ -156,13 +173,15 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                                           color: colors.textInverse, size: 18),
                                       onPressed: () => widget.onSendOrder()),
                                 ),
-        ]
+                              ]
                             ],
                           ),
                         ]),
                   ),
                 ]),
               ),
+
+              // --- LISTA PRODOTTI ---
               Expanded(
                 child: Container(
                   color: colors.background,
@@ -183,7 +202,8 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                               .map((item) => _buildCartItemRow(context, item)),
                           const SizedBox(height: 8),
                         ],
-                      const SizedBox(height: 80),
+                      // Spazio extra in fondo per evitare che l'ultimo elemento sia coperto dal pulsante floating (se presente)
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -203,8 +223,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color:
-              (hasNotes || hasExtras) ? colors.warningContainer : colors.surface,
+          color: (hasNotes || hasExtras) ? colors.warningContainer : colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: (hasNotes || hasExtras)
@@ -212,7 +231,12 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                   : colors.divider)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Expanded( // Aggiunto Expanded per evitare overflow del testo lungo
+            child: Text(item.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
+            ),
+          ),
+          const SizedBox(width: 8),
           Text("€ ${(item.unitPrice * item.qty).toStringAsFixed(2)}",
               style: TextStyle(fontSize: 12, color: colors.textSecondary)),
         ]),
@@ -223,10 +247,10 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                   spacing: 4,
                   children: item.selectedExtras
                       .map((e) => Text("+${e.name}",
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: colors.warning,
-                              fontWeight: FontWeight.bold)))
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: colors.warning,
+                          fontWeight: FontWeight.bold)))
                       .toList())),
         if (hasNotes)
           Padding(
@@ -235,9 +259,11 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                 Icon(Icons.error_outline,
                     size: 12, color: colors.warning),
                 const SizedBox(width: 4),
-                Text(item.notes,
-                    style: TextStyle(
-                        fontSize: 12, color: colors.warning))
+                Expanded(
+                  child: Text(item.notes,
+                      style: TextStyle(
+                          fontSize: 12, color: colors.warning)),
+                )
               ])),
         const SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -249,8 +275,11 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                 QuantityButton(
                     icon: Icons.remove,
                     onTap: () => _updateQty(item.internalId, -1)),
-                Text("${item.qty}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text("${item.qty}",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
                 QuantityButton(
                     icon: Icons.add,
                     onTap: () => _updateQty(item.internalId, 1)),
@@ -260,7 +289,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                 onTap: () => _openEditDialog(item),
                 child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                         color: colors.background,
                         borderRadius: BorderRadius.circular(6)),

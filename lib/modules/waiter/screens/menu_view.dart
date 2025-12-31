@@ -9,7 +9,7 @@ import '../../../data/models/table_item.dart';
 // Import Providers
 import '../../../l10n/app_localizations.dart';
 import '../providers/cart_provider.dart';
-import '../providers/tables_provider.dart'; // NECESSARIO per ascoltare gli aggiornamenti del tavolo
+import '../providers/tables_provider.dart';
 
 // Import Widgets Segmentati
 import 'menu_widgets/menu_tab.dart';
@@ -20,10 +20,7 @@ class MenuView extends ConsumerStatefulWidget {
   final TableItem table;
   final Function(List<CartItem>) onSuccess;
 
-  const MenuView(
-      {super.key,
-      required this.table,
-      required this.onSuccess});
+  const MenuView({super.key, required this.table, required this.onSuccess});
 
   @override
   ConsumerState<MenuView> createState() => _MenuViewState();
@@ -32,6 +29,8 @@ class MenuView extends ConsumerStatefulWidget {
 class _MenuViewState extends ConsumerState<MenuView>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+
+  // Altezza minima della barra del carrello (collapsed)
   final double _minHeight = 85.0;
   double _maxHeight = 0.0;
   bool _isExpanded = false;
@@ -88,13 +87,21 @@ class _MenuViewState extends ConsumerState<MenuView>
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final size = MediaQuery.of(context).size;
-    _maxHeight = size.height * 0.75;
+    final size = MediaQuery.sizeOf(context);
+
+    // Responsive Logic
+    final isTablet = size.shortestSide > 600;
+    final isLandscape = size.width > size.height;
+    // Larghezza massima per il contenuto centrale (Header, Tab, etc.)
+    final double maxContentWidth = isTablet || isLandscape ? 600.0 : double.infinity;
 
     final cart = ref.watch(cartProvider);
     final allTables = ref.watch(tablesProvider);
-    final currentTable = allTables.firstWhere((t) => t.id == widget.table.id,
-        orElse: () => widget.table);
+
+    final currentTable = allTables.firstWhere(
+            (t) => t.id == widget.table.id,
+        orElse: () => widget.table
+    );
 
     ref.listen<List<CartItem>>(cartProvider, (previous, next) {
       if (next.isEmpty && _isExpanded) {
@@ -103,96 +110,122 @@ class _MenuViewState extends ConsumerState<MenuView>
       }
     });
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: colors.background,
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                // HEADER
-                SafeArea(
-                  bottom: false,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    decoration: BoxDecoration(
-                        border: Border(
-                            bottom: BorderSide(color: colors.divider))),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                            icon: Icon(Icons.chevron_left,
-                                color: colors.textSecondary),
-                            onPressed: _handleBack),
-                        Expanded(
-                          child: Column(
+    return LayoutBuilder(builder: (context, constraints) {
+      final double heightFactor = (isLandscape && !isTablet) ? 0.85 : 0.75;
+      _maxHeight = constraints.maxHeight * heightFactor;
+
+      return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          backgroundColor: colors.background,
+          body: Stack(
+            children: [
+              // --- MAIN CONTENT (Limitato in larghezza e centrato) ---
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: Column(
+                    children: [
+                      // HEADER
+                      SafeArea(
+                        bottom: false,
+                        child: Container(
+                          height: 60,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                              border: Border(bottom: BorderSide(color: colors.divider))),
+                          child: Stack(
                             children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                    AppLocalizations.of(context)!
-                                        .tableName(currentTable.name),
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: colors.textPrimary)),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: IconButton(
+                                  icon: Icon(Icons.chevron_left, color: colors.textSecondary),
+                                  onPressed: _handleBack,
+                                ),
                               ),
-                              Text(
-                                  AppLocalizations.of(context)!
-                                      .labelGuests(currentTable.guests),
-                                  style: TextStyle(
-                                      fontSize: 12, color: colors.textSecondary)),
+                              Align(
+                                alignment: Alignment.center,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 48.0),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          AppLocalizations.of(context)!.tableName(currentTable.name),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary),
+                                        ),
+                                      ),
+                                      Text(AppLocalizations.of(context)!.labelGuests(currentTable.guests),
+                                          style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 48), // Balance the back button
-                      ],
-                    ),
-                  ),
-                ),
-
-                // TAB BAR
-                TabBar(
-                  labelColor: colors.primary,
-                  unselectedLabelColor: colors.textSecondary,
-                  indicatorColor: colors.primary,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  tabs: [
-                    Tab(text: AppLocalizations.of(context)!.navMenu),
-                    Tab(
-                        text:
-                            "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.orders.length})"),
-                  ],
-                ),
-
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      const MenuTab(),
-                      HistoryTab(table: currentTable),
+                      ),
+                      // TAB BAR
+                      TabBar(
+                        labelColor: colors.primary,
+                        unselectedLabelColor: colors.textSecondary,
+                        indicatorColor: colors.primary,
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        tabs: [
+                          Tab(text: AppLocalizations.of(context)!.navMenu),
+                          Tab(text: "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.orders.length})"),
+                        ],
+                      ),
+                      // TAB CONTENT
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            const MenuTab(),
+                            HistoryTab(table: currentTable),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            if (cart.isNotEmpty) _buildBackdrop(),
-            if (cart.isNotEmpty)
-              CartSheet(
-                controller: _controller,
-                minHeight: _minHeight,
-                maxHeight: _maxHeight,
-                isExpanded: _isExpanded,
-                onExpandChange: (val) => setState(() => _isExpanded = val),
-                onSendOrder: _handleSendOrder,
               ),
-            if (cart.isNotEmpty) _buildSendButton(),
-          ],
+
+              // --- BACKDROP ---
+              if (cart.isNotEmpty) _buildBackdrop(),
+
+              // --- CART SHEET ---
+              // CORREZIONE: Qui abbiamo rimosso ConstrainedBox/Align.
+              // CartSheet è tornato ad essere figlio diretto dello Stack.
+              // La responsività deve essere gestita DENTRO CartSheet.dart (vedi punto 2).
+              if (cart.isNotEmpty)
+                CartSheet(
+                  controller: _controller,
+                  minHeight: _minHeight,
+                  maxHeight: _maxHeight,
+                  isExpanded: _isExpanded,
+                  onExpandChange: (val) => setState(() => _isExpanded = val),
+                  onSendOrder: _handleSendOrder,
+                ),
+
+              // --- SEND BUTTON ---
+              // Il bottone fluttuante lo limitiamo in larghezza qui perché usa Transform, non Positioned.
+              if (cart.isNotEmpty)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxContentWidth),
+                    child: _buildSendButton(),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildBackdrop() {
@@ -216,34 +249,31 @@ class _MenuViewState extends ConsumerState<MenuView>
   }
 
   Widget _buildSendButton() {
+    // Nota: Il posizionamento verticale (bottom: 0) è gestito dallo Stack/Align padre
+    // Qui gestiamo solo l'animazione di entrata/uscita verticale
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Transform.translate(
-            offset: Offset(0, 100 * (1 - _controller.value)),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              color: context.colors.surface,
-              child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: context.colors.success,
-                        foregroundColor: context.colors.textInverse,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16))),
-                    onPressed: _handleSendOrder,
-                    icon: const Icon(Icons.send),
-                    label: Text(AppLocalizations.of(context)!.btnSendKitchen,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                  )),
-            ),
+        return Transform.translate(
+          offset: Offset(0, 100 * (1 - _controller.value)),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            color: context.colors.surface,
+            child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: context.colors.success,
+                      foregroundColor: context.colors.textInverse,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16))),
+                  onPressed: _handleSendOrder,
+                  icon: const Icon(Icons.send),
+                  label: Text(AppLocalizations.of(context)!.btnSendKitchen,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                )),
           ),
         );
       },
@@ -251,11 +281,10 @@ class _MenuViewState extends ConsumerState<MenuView>
   }
 
   void back() {
-    if(context.canPop()) {
-      context.pop(context);
+    if (context.canPop()) {
+      context.pop();
     }
     context.go('/tables');
-
     ref.read(cartProvider.notifier).clear();
   }
 }

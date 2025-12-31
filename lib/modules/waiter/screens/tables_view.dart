@@ -45,7 +45,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       backgroundColor: context.colors.danger,
       content: Text(AppLocalizations.of(context)!.tableReset),
-      duration: Duration(seconds: 2),
+      duration: const Duration(seconds: 2),
     ));
   }
 
@@ -55,7 +55,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       backgroundColor: context.colors.success,
       content: Text(AppLocalizations.of(context)!.msgPaymentSuccess),
-      duration: Duration(seconds: 2),
+      duration: const Duration(seconds: 2),
     ));
   }
 
@@ -82,78 +82,91 @@ class _TablesViewState extends ConsumerState<TablesView> {
   void _handleTableLongPress(TableItem table) {
     if (table.status == TableStatus.free) return;
 
+    // Responsive Bottom Sheet logic
+    final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
+    final double maxWidth = isTablet ? 500 : double.infinity;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: context.colors.surface,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(AppLocalizations.of(context)!.tableActions(table.name),
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: context.colors.textPrimary)),
-            ),
-            ListView(
-              scrollDirection: Axis.vertical,
-              shrinkWrap: true,
+      backgroundColor: Colors.transparent, // TRUCCO RESPONSIVE
+      builder: (ctx) => Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: Icon(Icons.compare_arrows,
-                      color: context.colors.primary),
-                  title: Text(AppLocalizations.of(context)!.actionMove),
-                  subtitle:  Text(AppLocalizations.of(context)!.actionTransfer),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showTableSelectionDialog(table, isMerge: false);
-                  },
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(AppLocalizations.of(context)!.tableActions(table.name),
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: context.colors.textPrimary)),
                 ),
-                ListTile(
-                  leading:
-                  Icon(Icons.merge_type, color: context.colors.warning),
-                  title: Text(AppLocalizations.of(context)!.actionMerge),
-                  subtitle: Text(AppLocalizations.of(context)!.actionMergeDesc),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showTableSelectionDialog(table, isMerge: true);
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: Icon(Icons.check_circle_outline,
-                      color: context.colors.primary),
-                  title: Text(AppLocalizations.of(context)!.actionQuickPay),
-                  subtitle: Text(AppLocalizations.of(context)!.actionPayTotalDesc),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showPaymentDialog(table);
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.attach_money,
-                      color: context.colors.success),
-                  title: Text(AppLocalizations.of(context)!.actionSplitPay),
-                  subtitle: Text(AppLocalizations.of(context)!.actionSplitDesc),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _openSplitBillScreen(table);
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: Icon(Icons.close, color: context.colors.danger),
-                  title: Text(AppLocalizations.of(context)!.actionCancelTable),
-                  subtitle: Text(AppLocalizations.of(context)!.actionResetDesc),
-                  onTap: () => _showConfirmCancelDialog(table),
+                ListView(
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(), // Evita bounce inutile
+                  children: [
+                    ListTile(
+                      leading: Icon(Icons.compare_arrows,
+                          color: context.colors.primary),
+                      title: Text(AppLocalizations.of(context)!.actionMove),
+                      subtitle:  Text(AppLocalizations.of(context)!.actionTransfer),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showTableSelectionDialog(table, isMerge: false);
+                      },
+                    ),
+                    ListTile(
+                      leading:
+                      Icon(Icons.merge_type, color: context.colors.warning),
+                      title: Text(AppLocalizations.of(context)!.actionMerge),
+                      subtitle: Text(AppLocalizations.of(context)!.actionMergeDesc),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showTableSelectionDialog(table, isMerge: true);
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: Icon(Icons.check_circle_outline,
+                          color: context.colors.primary),
+                      title: Text(AppLocalizations.of(context)!.actionQuickPay),
+                      subtitle: Text(AppLocalizations.of(context)!.actionPayTotalDesc),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showPaymentDialog(table);
+                      },
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.attach_money,
+                          color: context.colors.success),
+                      title: Text(AppLocalizations.of(context)!.actionSplitPay),
+                      subtitle: Text(AppLocalizations.of(context)!.actionSplitDesc),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _openSplitBillScreen(table);
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: Icon(Icons.close, color: context.colors.danger),
+                      title: Text(AppLocalizations.of(context)!.actionCancelTable),
+                      subtitle: Text(AppLocalizations.of(context)!.actionResetDesc),
+                      onTap: () => _showConfirmCancelDialog(table),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 )
               ],
-            )
-          ],
+            ),
+          ),
         ),
       ),
     );
@@ -162,24 +175,44 @@ class _TablesViewState extends ConsumerState<TablesView> {
   // --- DIALOGHI ---
 
   void _openSplitBillScreen(TableItem table) {
+    // Responsive Logic per BillScreen (che è un full screen modal solitamente)
+    // Se BillScreen supporta constraints, bene, altrimenti qui lo limitiamo
+    final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
+    final double maxWidth = isTablet ? 700 : double.infinity;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.colors.background,
+      backgroundColor: Colors.transparent, // TRUCCO
       useRootNavigator: true,
-      builder: (ctx) => BillScreen(
-          table: table,
-          onConfirmPayment: (paidItems) {
-            _performPayment(table, paidItems);
+      builder: (ctx) => Align(
+        alignment: Alignment.center, // Su tablet potrebbe essere un dialog centrato
+        child: Container(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          decoration: BoxDecoration(
+              color: context.colors.background,
+              borderRadius: isTablet ? const BorderRadius.vertical(top: Radius.circular(20)) : null
+          ),
+          // Dobbiamo passare constraints altezza per emulare full screen su mobile
+          height: MediaQuery.sizeOf(context).height * (isTablet ? 0.85 : 1.0),
+          child: ClipRRect(
+            borderRadius: isTablet ? const BorderRadius.vertical(top: Radius.circular(20)) : BorderRadius.zero,
+            child: BillScreen(
+                table: table,
+                onConfirmPayment: (paidItems) {
+                  _performPayment(table, paidItems);
 
-            final updatedTable = ref
-                .read(tablesProvider)
-                .firstWhere((t) => t.id == table.id, orElse: () => table);
+                  final updatedTable = ref
+                      .read(tablesProvider)
+                      .firstWhere((t) => t.id == table.id, orElse: () => table);
 
-            if (updatedTable.status == TableStatus.free) {
-              Navigator.pop(ctx);
-            }
-          }),
+                  if (updatedTable.status == TableStatus.free) {
+                    Navigator.pop(ctx);
+                  }
+                }),
+          ),
+        ),
+      ),
     );
   }
 
@@ -191,36 +224,41 @@ class _TablesViewState extends ConsumerState<TablesView> {
         return AlertDialog(
           backgroundColor: context.colors.surface,
           surfaceTintColor: context.colors.surface,
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: context.colors.danger),
-              SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.msgAttention, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                AppLocalizations.of(context)!.msgConfirmCancelTable(table.name),
-                style: TextStyle(color: context.colors.textSecondary, fontSize: 14),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: pinController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                maxLength: 4,
-                decoration: InputDecoration(
-                    hintText: "PIN (1234)",
-                    counterText: "",
-                    filled: true,
-                    fillColor: context.colors.background),
-                onChanged: (v) => setStateDialog(() {}),
-              ),
-            ],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          // RESPONSIVE: Limita larghezza
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start, // Allinea a sx per leggibilità
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: context.colors.danger),
+                    const SizedBox(width: 8),
+                    Text(AppLocalizations.of(context)!.msgAttention, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  AppLocalizations.of(context)!.msgConfirmCancelTable(table.name),
+                  style: TextStyle(color: context.colors.textSecondary, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: pinController,
+                  keyboardType: TextInputType.number,
+                  obscureText: true,
+                  maxLength: 4,
+                  decoration: InputDecoration(
+                      hintText: "PIN (1234)",
+                      counterText: "",
+                      filled: true,
+                      fillColor: context.colors.background),
+                  onChanged: (v) => setStateDialog(() {}),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -241,11 +279,11 @@ class _TablesViewState extends ConsumerState<TablesView> {
                       .showSnackBar(SnackBar(
                     backgroundColor: context.colors.danger,
                     content: Text(AppLocalizations.of(context)!.loginPinError),
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                   ))
               }
                   : null,
-              child: Text(AppLocalizations.of(context)!.dialogConfirm, style: TextStyle(fontSize: 14),),
+              child: Text(AppLocalizations.of(context)!.dialogConfirm, style: const TextStyle(fontSize: 14),),
             ),
           ],
         );
@@ -260,53 +298,52 @@ class _TablesViewState extends ConsumerState<TablesView> {
         backgroundColor: context.colors.surface,
         surfaceTintColor: context.colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Column(
-          children: [
-            Text(AppLocalizations.of(context)!.dialogPaymentTable(table.name),
-                style:
-                TextStyle(fontSize: 16, color: context.colors.textSecondary)),
-            SizedBox(height: 8),
-            Text(AppLocalizations.of(context)!.labelPaymentTotal,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: context.colors.textPrimary)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("€ ${table.totalAmount.toStringAsFixed(2)}",
-                style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w900,
-                    color: context.colors.primary)),
-            SizedBox(height: 24),
-            Text(AppLocalizations.of(context)!.dialogSelectPaymentMethod,
-                style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                PaymentMethodButton(
-                    icon: Icons.credit_card,
-                    label: AppLocalizations.of(context)!.cardPayment,
-                    color: context.colors.primary,
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _performPayment(table, table.orders);
-                    }),
-                PaymentMethodButton(
-                    icon: Icons.money,
-                    label: AppLocalizations.of(context)!.cashPayment,
-                    color: context.colors.success,
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _performPayment(table, table.orders);
-                    }),
-              ],
-            )
-          ],
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(AppLocalizations.of(context)!.dialogPaymentTable(table.name),
+                  style: TextStyle(fontSize: 16, color: context.colors.textSecondary)),
+              const SizedBox(height: 8),
+              Text(AppLocalizations.of(context)!.labelPaymentTotal,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: context.colors.textPrimary)),
+              const SizedBox(height: 8),
+              Text("€ ${table.totalAmount.toStringAsFixed(2)}",
+                  style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                      color: context.colors.primary)),
+              const SizedBox(height: 24),
+              Text(AppLocalizations.of(context)!.dialogSelectPaymentMethod,
+                  style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  PaymentMethodButton(
+                      icon: Icons.credit_card,
+                      label: AppLocalizations.of(context)!.cardPayment,
+                      color: context.colors.primary,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _performPayment(table, table.orders);
+                      }),
+                  PaymentMethodButton(
+                      icon: Icons.money,
+                      label: AppLocalizations.of(context)!.cashPayment,
+                      color: context.colors.success,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _performPayment(table, table.orders);
+                      }),
+                ],
+              )
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -333,50 +370,55 @@ class _TablesViewState extends ConsumerState<TablesView> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.colors.surface,
-        title: Text(isMerge ? AppLocalizations.of(context)!.dialogMergeTable : AppLocalizations.of(context)!.dialogMoveTable, style: TextStyle(fontSize: 16)),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: candidates.isEmpty
-              ? Center(child: Text(AppLocalizations.of(context)!.msgNoTablesAvailable, style: TextStyle(fontSize: 14)))
-              : GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 1.0
-            ),
-            itemCount: candidates.length,
-            itemBuilder: (context, index) {
-              final t = candidates[index];
-              return InkWell(
-                hoverColor: context.colors.hover,
-                onTap: () {
-                  if (isMerge) {
-                    _performMerge(source, t);
-                  } else {
-                    _performMove(source, t);
-                  }
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: context.colors.divider, // Slate100
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.colors.divider), // Slate300 -> divider
+        title: Text(isMerge ? AppLocalizations.of(context)!.dialogMergeTable : AppLocalizations.of(context)!.dialogMoveTable, style: const TextStyle(fontSize: 16)),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: candidates.isEmpty
+                ? Center(child: Text(AppLocalizations.of(context)!.msgNoTablesAvailable, style: const TextStyle(fontSize: 14)))
+            // RESPONSIVE GRID all'interno del dialog
+                : GridView.builder(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 100, // Dimensione ideale cella
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1.0
+              ),
+              itemCount: candidates.length,
+              itemBuilder: (context, index) {
+                final t = candidates[index];
+                return InkWell(
+                  hoverColor: context.colors.hover,
+                  onTap: () {
+                    if (isMerge) {
+                      _performMerge(source, t);
+                    } else {
+                      _performMove(source, t);
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: context.colors.divider,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: context.colors.divider),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(t.name,
+                        textAlign: TextAlign.center,
+                        style:
+                        const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(t.name,
-                      style:
-                      TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(AppLocalizations.of(context)!.dialogCancel, style: TextStyle(fontSize: 14))),
+              child: Text(AppLocalizations.of(context)!.dialogCancel, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -393,53 +435,50 @@ class _TablesViewState extends ConsumerState<TablesView> {
           return AlertDialog(
             backgroundColor: context.colors.surface,
             surfaceTintColor: context.colors.surface,
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: Center(
-                child: Column(
-                  children: [
-                    Text(AppLocalizations.of(context)!.dialogOpenTable(table.name),
-                        style: TextStyle(
-                            fontSize: 16, color: context.colors.textSecondary)),
-                    SizedBox(height: 4),
-                    Text(AppLocalizations.of(context)!.dialogGuests,
-                        style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                  ],
-                )),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  alignment: Alignment.center,
-                  child: Text("$guests",
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(AppLocalizations.of(context)!.dialogOpenTable(table.name),
                       style: TextStyle(
-                          fontSize: 64,
-                          fontWeight: FontWeight.bold,
-                          color: context.colors.primary)),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        if (guests > 1) setStateDialog(() => guests--);
-                      },
-                      icon: Icon(Icons.remove_circle_outline,
-                          size: 32, color: context.colors.textSecondary),
-                    ),
-                    SizedBox(width: 32),
-                    IconButton(
-                      onPressed: () {
-                        if (guests < 20) setStateDialog(() => guests++);
-                      },
-                      icon: Icon(Icons.add_circle_outline,
-                          size: 32, color: context.colors.primary),
-                    ),
-                  ],
-                ),
-              ],
+                          fontSize: 16, color: context.colors.textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(AppLocalizations.of(context)!.dialogGuests,
+                      style:
+                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    alignment: Alignment.center,
+                    child: Text("$guests",
+                        style: TextStyle(
+                            fontSize: 64,
+                            fontWeight: FontWeight.bold,
+                            color: context.colors.primary)),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          if (guests > 1) setStateDialog(() => guests--);
+                        },
+                        icon: Icon(Icons.remove_circle_outline,
+                            size: 32, color: context.colors.textSecondary),
+                      ),
+                      const SizedBox(width: 32),
+                      IconButton(
+                        onPressed: () {
+                          if (guests < 20) setStateDialog(() => guests++);
+                        },
+                        icon: Icon(Icons.add_circle_outline,
+                            size: 32, color: context.colors.primary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -452,14 +491,14 @@ class _TablesViewState extends ConsumerState<TablesView> {
                   backgroundColor: context.colors.primary,
                   foregroundColor: context.colors.onPrimary,
                   padding:
-                      EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => _performOccupy(table, guests),
                 child: Text(AppLocalizations.of(context)!.btnOpen,
                     style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               )
             ],
           );
@@ -473,16 +512,15 @@ class _TablesViewState extends ConsumerState<TablesView> {
     final tables = ref.watch(tablesProvider);
     ref.listen<List<TableItem>>(tablesProvider, (previous, next) async {
       final prevReadyIds = previous
-              ?.where((t) => t.status == TableStatus.ready)
-              .map((t) => t.id)
-              .toSet() ??
+          ?.where((t) => t.status == TableStatus.ready)
+          .map((t) => t.id)
+          .toSet() ??
           {};
       final nextReadyIds = next
           .where((t) => t.status == TableStatus.ready)
           .map((t) => t.id)
           .toSet();
 
-      // Se ci sono nuovi ID nel set 'next' che non c'erano in 'prev', qualcuno è diventato pronto
       if (nextReadyIds.difference(prevReadyIds).isNotEmpty) {
         if (await Vibration.hasVibrator()) {
           Vibration.vibrate(duration: 500);
@@ -519,29 +557,38 @@ class _TablesViewState extends ConsumerState<TablesView> {
             icon: Icon(Icons.logout, color: context.colors.danger, size: 20),
             onPressed: _performLogout,
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
         ],
         bottom: PreferredSize(
-            preferredSize: Size.fromHeight(1),
+            preferredSize: const Size.fromHeight(1),
             child: Container(color: context.colors.divider, height: 1)),
       ),
-      body: GridView.builder(
-        padding: EdgeInsets.all(16),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.9,
+      // LAYOUT RESPONSIVE: Usa Align TopCenter + ConstrainedBox se sei su schermo molto largo
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200), // Max larghezza per desktop
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            // RESPONSIVE GRID LOGIC
+            // SliverGridDelegateWithMaxCrossAxisExtent è magico:
+            // Decide lui quante colonne mettere in base alla larghezza max desiderata per card (es. 160)
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 160, // Larghezza ideale di una card tavolo
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.9, // Rapporto altezza/larghezza
+            ),
+            itemCount: tables.length,
+            itemBuilder: (context, index) {
+              final table = tables[index];
+              return TableCard(
+                table: table,
+                onTap: () => _handleTableTap(table),
+                onLongPress: () => _handleTableLongPress(table),
+              );
+            },
+          ),
         ),
-        itemCount: tables.length,
-        itemBuilder: (context, index) {
-          final table = tables[index];
-          return TableCard(
-            table: table,
-            onTap: () => _handleTableTap(table),
-            onLongPress: () => _handleTableLongPress(table),
-          );
-        },
       ),
     );
   }

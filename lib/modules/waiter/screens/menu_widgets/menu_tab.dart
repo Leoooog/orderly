@@ -56,7 +56,6 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
     });
   }
 
-  // MODIFICA 1: Gestione della categoria 'ALL'
   List<MenuItem> getFilteredItems(List<MenuItem> allItems, String category) {
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
@@ -65,7 +64,6 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
             i.ingredients.any((ing) => ing.toLowerCase().contains(query));
       }).toList();
     }
-    // Se la categoria è 'ALL', restituisci tutto, altrimenti filtra
     if (category == 'ALL') {
       return allItems;
     }
@@ -81,7 +79,6 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
     final categoriesList = ref.watch(categoriesProvider);
     final cart = ref.watch(cartProvider);
 
-    // MODIFICA 2: Default su 'ALL' se vuoto
     String currentCategory = activeCategory;
     if (currentCategory.isEmpty) {
       currentCategory = 'ALL';
@@ -89,120 +86,129 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
 
     final filteredItems = getFilteredItems(menuItemsList, currentCategory);
 
-    return Column(
-      children: [
-        // BARRA DI RICERCA
-        Padding(
-          padding: EdgeInsets.all(12),
-          child: TextField(
-            controller: searchController,
-            decoration: InputDecoration(
-              hintText: AppLocalizations.of(context)!.labelSearch,
-              prefixIcon: Icon(Icons.search, color: colors.textTertiary, size: 20),
-              suffixIcon: searchQuery.isNotEmpty
-                  ? IconButton(icon: Icon(Icons.close, size: 18), onPressed: () => searchController.clear())
-                  : null,
-              filled: true,
-              fillColor: colors.background,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    // RESPONSIVE: Limita la larghezza massima del contenuto centrale
+    // (comodo per tablet in landscape)
+    final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
+    final double maxWidth = isTablet ? 800 : double.infinity;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Column(
+          children: [
+            // BARRA DI RICERCA
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context)!.labelSearch,
+                  prefixIcon: Icon(Icons.search, color: colors.textTertiary, size: 20),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => searchController.clear())
+                      : null,
+                  filled: true,
+                  fillColor: colors.background,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                ),
+              ),
             ),
-          ),
-        ),
 
-        // BARRA USCITE
-        Container(
-          height: 50,
-          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colors.divider))),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            itemCount: Course.values.length,
-            itemBuilder: (ctx, idx) {
-              final course = Course.values[idx];
-              final isActive = activeCourse == course;
-              return Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: ActionChip(
-                  label: Text(course.label, style: TextStyle(fontSize: 12)),
-                  backgroundColor: isActive ? colors.primary : colors.background,
-                  labelStyle: TextStyle(color: isActive ? colors.onPrimary : colors.textSecondary, fontWeight: FontWeight.bold, fontSize: 12),
-                  side: BorderSide.none,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onPressed: () => setState(() => activeCourse = course),
-                ),
-              );
-            },
-          ),
-        ),
-
-        // CATEGORIE
-        if (searchQuery.isEmpty)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                // MODIFICA 3: Aggiunta manuale del pulsante "Tutti"
-                _buildCategoryPill(
-                  id: 'ALL',
-                  name: AppLocalizations.of(context)!.labelAll,
-                  isActive: currentCategory == 'ALL',
-                ),
-
-                // Lista categorie reali
-                ...categoriesList.map((cat) {
-                  return _buildCategoryPill(
-                    id: cat.id,
-                    name: cat.name,
-                    isActive: currentCategory == cat.id,
+            // BARRA USCITE (Courses)
+            Container(
+              height: 50,
+              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colors.divider))),
+              // Center the list if items are few, scroll if many (using ListView + Center feels weird, so using this trick)
+              alignment: Alignment.center,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                //shrinkWrap: true, // Allow centering if possible, but beware on small screens
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                itemCount: Course.values.length,
+                itemBuilder: (ctx, idx) {
+                  final course = Course.values[idx];
+                  final isActive = activeCourse == course;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    child: ActionChip(
+                      label: Text(course.label, style: const TextStyle(fontSize: 12)),
+                      backgroundColor: isActive ? colors.primary : colors.background,
+                      labelStyle: TextStyle(color: isActive ? colors.onPrimary : colors.textSecondary, fontWeight: FontWeight.bold, fontSize: 12),
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      onPressed: () => setState(() => activeCourse = course),
+                    ),
                   );
-                }),
-              ],
+                },
+              ),
             ),
-          ),
 
-        // LISTA PRODOTTI
-        Expanded(
-          child: Container(
-            color: colors.background,
-            child: filteredItems.isEmpty
-                ? Center(child: Text(AppLocalizations.of(context)!.labelNoProducts, style: TextStyle(color: colors.textTertiary, fontSize: 14)))
-                : ListView.separated(
-              padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
-              itemCount: filteredItems.length,
-              separatorBuilder: (_, __) => SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = filteredItems[index];
-                final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
-                final isExpanded = _expandedItems.contains(item.id);
+            // CATEGORIE
+            if (searchQuery.isEmpty)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    _buildCategoryPill(
+                      id: 'ALL',
+                      name: AppLocalizations.of(context)!.labelAll,
+                      isActive: currentCategory == 'ALL',
+                    ),
+                    ...categoriesList.map((cat) {
+                      return _buildCategoryPill(
+                        id: cat.id,
+                        name: cat.name,
+                        isActive: currentCategory == cat.id,
+                      );
+                    }),
+                  ],
+                ),
+              ),
 
-                return _ProductCard(
-                  key: ValueKey(item.id),
-                  item: item,
-                  totalQty: totalQty,
-                  isExpanded: isExpanded,
-                  onAdd: () => _addToCart(item),
-                  onExpand: () => _toggleProductExpansion(item.id),
-                );
-              },
+            // LISTA PRODOTTI
+            Expanded(
+              child: Container(
+                color: colors.background,
+                child: filteredItems.isEmpty
+                    ? Center(child: Text(AppLocalizations.of(context)!.labelNoProducts, style: TextStyle(color: colors.textTertiary, fontSize: 14)))
+                    : ListView.separated(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
+                  itemCount: filteredItems.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = filteredItems[index];
+                    final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
+                    final isExpanded = _expandedItems.contains(item.id);
+
+                    return _ProductCard(
+                      key: ValueKey(item.id),
+                      item: item,
+                      totalQty: totalQty,
+                      isExpanded: isExpanded,
+                      onAdd: () => _addToCart(item),
+                      onExpand: () => _toggleProductExpansion(item.id),
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  // Helper per evitare duplicazione codice UI tra "Tutti" e le altre categorie
   Widget _buildCategoryPill({required String id, required String name, required bool isActive}) {
     final colors = context.colors;
     return Padding(
-      padding: EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
         onTap: () => setState(() => activeCategory = id),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: isActive ? colors.secondary : colors.surface,
             borderRadius: BorderRadius.circular(24),
@@ -222,7 +228,6 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
   }
 }
 
-// 4. Estratto in un widget Stateless per ridurre il lavoro del motore di rendering
 class _ProductCard extends StatelessWidget {
   final MenuItem item;
   final int totalQty;
@@ -256,7 +261,7 @@ class _ProductCard extends StatelessWidget {
               GestureDetector(
                 onTap: onAdd,
                 child: Padding(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
@@ -264,8 +269,7 @@ class _ProductCard extends StatelessWidget {
                         child: Image.network(
                             item.imageUrl,
                             fit: BoxFit.cover,
-                            // CachedNetworkImage sarebbe meglio in un'app reale
-                            errorBuilder: (_,__,___)=> Icon(Icons.broken_image, color: colors.textTertiary, size: 20)
+                            errorBuilder: (_,__,___)=> Icon(Icons.restaurant, color: colors.textTertiary, size: 24)
                         )
                     ),
                   ),
@@ -280,15 +284,22 @@ class _ProductCard extends StatelessWidget {
                       onTap: onExpand,
                       child: Row(
                         children: [
-                          Expanded(child: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: colors.textPrimary))),
+                          Expanded(
+                              child: Text(
+                                  item.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis, // RESPONSIVE TEXT
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: colors.textPrimary)
+                              )
+                          ),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 20, color: colors.textTertiary),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     GestureDetector(
                       onTap: onAdd,
                       child: Text(item.price.toCurrency(), style: TextStyle(fontWeight: FontWeight.w600, color: colors.primary, fontSize: 14)),
@@ -299,8 +310,8 @@ class _ProductCard extends StatelessWidget {
               GestureDetector(
                 onTap: onAdd,
                 child: Container(
-                  margin: EdgeInsets.only(right: 12),
-                  padding: EdgeInsets.all(8),
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(8),
                   child: totalQty > 0
                       ? Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle), alignment: Alignment.center, child: Text("$totalQty", style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.bold, fontSize: 14)))
                       : Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.background, shape: BoxShape.circle), child: Icon(Icons.add, size: 18, color: colors.textTertiary)),
@@ -309,20 +320,20 @@ class _ProductCard extends StatelessWidget {
             ],
           ),
           AnimatedCrossFade(
-            firstChild: SizedBox(height: 0, width: double.infinity),
+            firstChild: const SizedBox(height: 0, width: double.infinity),
             secondChild: Container(
               width: double.infinity,
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               decoration: BoxDecoration(border: Border(top: BorderSide(color: colors.divider))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Text(AppLocalizations.of(context)!.labelIngredients, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colors.textTertiary, letterSpacing: 1)),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Wrap(spacing: 6, runSpacing: 6, children: item.ingredients.map((ing) => _buildTag(context, ing, colors.background, colors.textSecondary)).toList()),
                 if (item.allergens.isNotEmpty) ...[
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(AppLocalizations.of(context)!.labelAllergens, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colors.danger, letterSpacing: 1)),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Wrap(spacing: 6, runSpacing: 6, children: item.allergens.map((alg) => _buildTag(context, alg, colors.dangerContainer, colors.danger, isWarning: true)).toList()),
                 ],
               ]),
@@ -338,11 +349,11 @@ class _ProductCard extends StatelessWidget {
   Widget _buildTag(BuildContext context, String text, Color bg, Color textCol, {bool isWarning = false}) {
     final colors = context.colors;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: isWarning ? textCol.withValues(alpha: 0.2) : colors.divider)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if(isWarning) ...[Icon(Icons.warning_amber, size: 12, color: colors.danger), SizedBox(width: 4)],
-        Text(text, style: TextStyle(fontSize: 11, color: textCol, fontWeight: isWarning ? FontWeight.bold : FontWeight.normal))
+        if(isWarning) ...[Icon(Icons.warning_amber, size: 12, color: colors.danger), const SizedBox(width: 4)],
+        Flexible(child: Text(text, style: TextStyle(fontSize: 11, color: textCol, fontWeight: isWarning ? FontWeight.bold : FontWeight.normal)))
       ]),
     );
   }
