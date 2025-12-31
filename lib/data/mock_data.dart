@@ -7,7 +7,6 @@ import 'models/table_item.dart';
 
 
 final List<Category> categories = [
-  Category('fav', 'Preferiti', Icons.star_outline),
   Category('drinks', 'Bevande', Icons.wine_bar),
   Category('food', 'Primi', Icons.restaurant),
   Category('main', 'Secondi', Icons.restaurant_menu),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/config/restaurant_settings.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 
 import '../../../../config/themes.dart';
 import '../../../../data/models/menu_item.dart';
@@ -14,9 +16,8 @@ class MenuTab extends ConsumerStatefulWidget {
   ConsumerState<MenuTab> createState() => _MenuTabState();
 }
 
-// 1. Aggiunto AutomaticKeepAliveClientMixin per mantenere lo stato in memoria
 class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClientMixin {
-  String activeCategory = 'fav';
+  String activeCategory = '';
   Course activeCourse = Course.entree;
 
   final TextEditingController searchController = TextEditingController();
@@ -25,7 +26,7 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
   final Set<int> _expandedItems = {};
 
   @override
-  bool get wantKeepAlive => true; // 2. Indica a Flutter di non distruggere questo Tab
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -55,7 +56,8 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
     });
   }
 
-  List<MenuItem> getFilteredItems(List<MenuItem> allItems) {
+  // MODIFICA 1: Gestione della categoria 'ALL'
+  List<MenuItem> getFilteredItems(List<MenuItem> allItems, String category) {
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
       return allItems.where((i) {
@@ -63,19 +65,28 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
             i.ingredients.any((ing) => ing.toLowerCase().contains(query));
       }).toList();
     }
-    if (activeCategory == 'fav') return allItems.where((i) => i.popular).toList();
-    return allItems.where((i) => i.category == activeCategory).toList();
+    // Se la categoria è 'ALL', restituisci tutto, altrimenti filtra
+    if (category == 'ALL') {
+      return allItems;
+    }
+    return allItems.where((i) => i.category == category).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 3. Necessario per far funzionare AutomaticKeepAliveClientMixin
     super.build(context);
 
     final menuItemsList = ref.watch(menuProvider);
     final categoriesList = ref.watch(categoriesProvider);
     final cart = ref.watch(cartProvider);
-    final filteredItems = getFilteredItems(menuItemsList);
+
+    // MODIFICA 2: Default su 'ALL' se vuoto
+    String currentCategory = activeCategory;
+    if (currentCategory.isEmpty) {
+      currentCategory = 'ALL';
+    }
+
+    final filteredItems = getFilteredItems(menuItemsList, currentCategory);
 
     return Column(
       children: [
@@ -85,7 +96,7 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
           child: TextField(
             controller: searchController,
             decoration: InputDecoration(
-              hintText: "Cerca prodotto...",
+              hintText: AppLocalizations.of(context)!.labelSearch,
               prefixIcon: const Icon(Icons.search, color: AppColors.cSlate400),
               suffixIcon: searchQuery.isNotEmpty
                   ? IconButton(icon: const Icon(Icons.close), onPressed: () => searchController.clear())
@@ -130,25 +141,23 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
-              children: categoriesList.map((cat) {
-                final isActive = activeCategory == cat.id;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: GestureDetector(
-                    onTap: () => setState(() => activeCategory = cat.id),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isActive ? AppColors.cSlate800 : AppColors.cWhite,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: isActive ? AppColors.cSlate800 : AppColors.cSlate200),
-                      ),
-                      child: Text(cat.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isActive ? AppColors.cWhite : AppColors.cSlate600)),
-                    ),
-                  ),
-                );
-              }).toList(),
+              children: [
+                // MODIFICA 3: Aggiunta manuale del pulsante "Tutti"
+                _buildCategoryPill(
+                  id: 'ALL',
+                  name: AppLocalizations.of(context)!.labelAll,
+                  isActive: currentCategory == 'ALL',
+                ),
+
+                // Lista categorie reali
+                ...categoriesList.map((cat) {
+                  return _buildCategoryPill(
+                    id: cat.id,
+                    name: cat.name,
+                    isActive: currentCategory == cat.id,
+                  );
+                }),
+              ],
             ),
           ),
 
@@ -157,15 +166,13 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
           child: Container(
             color: AppColors.cSlate50,
             child: filteredItems.isEmpty
-                ? const Center(child: Text("Nessun prodotto trovato", style: TextStyle(color: AppColors.cSlate400)))
+                ? Center(child: Text(AppLocalizations.of(context)!.labelNoProducts, style: TextStyle(color: AppColors.cSlate400)))
                 : ListView.separated(
-              // Ottimizzazione: rimosso l'eccesso di calcoli nel builder
               padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
               itemCount: filteredItems.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = filteredItems[index];
-                // Calcoliamo la quantità fuori dal build del singolo item se possibile
                 final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
                 final isExpanded = _expandedItems.contains(item.id);
 
@@ -182,6 +189,33 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
           ),
         ),
       ],
+    );
+  }
+
+  // Helper per evitare duplicazione codice UI tra "Tutti" e le altre categorie
+  Widget _buildCategoryPill({required String id, required String name, required bool isActive}) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: GestureDetector(
+        onTap: () => setState(() => activeCategory = id),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.cSlate800 : AppColors.cWhite,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isActive ? AppColors.cSlate800 : AppColors.cSlate200),
+          ),
+          child: Text(
+            name,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: isActive ? AppColors.cWhite : AppColors.cSlate600,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -254,7 +288,7 @@ class _ProductCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     GestureDetector(
                       onTap: onAdd,
-                      child: Text("€ ${item.price.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.cIndigo600)),
+                      child: Text(item.price.toCurrency(), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.cIndigo600)),
                     ),
                   ],
                 ),
@@ -279,12 +313,12 @@ class _ProductCard extends StatelessWidget {
               decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.cSlate100))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const SizedBox(height: 12),
-                const Text("INGREDIENTI", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.cSlate400, letterSpacing: 1)),
+                Text(AppLocalizations.of(context)!.labelIngredients, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.cSlate400, letterSpacing: 1)),
                 const SizedBox(height: 6),
                 Wrap(spacing: 6, runSpacing: 6, children: item.ingredients.map((ing) => _buildTag(ing, AppColors.cSlate50, AppColors.cSlate600)).toList()),
                 if (item.allergens.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const Text("ALLERGENI", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.cRose500, letterSpacing: 1)),
+                  Text(AppLocalizations.of(context)!.labelAllergens, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.cRose500, letterSpacing: 1)),
                   const SizedBox(height: 6),
                   Wrap(spacing: 6, runSpacing: 6, children: item.allergens.map((alg) => _buildTag(alg, AppColors.cRose50, AppColors.cRose500, isWarning: true)).toList()),
                 ],

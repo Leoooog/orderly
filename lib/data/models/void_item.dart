@@ -1,3 +1,5 @@
+import 'package:orderly/data/models/cart_item.dart';
+
 class VoidItem {
   final String id;           // ID univoco dello storno
   final int tableId;         // Da che tavolo arriva
@@ -5,6 +7,7 @@ class VoidItem {
   final String itemName;     // Nome del piatto
   final double unitPrice;    // Prezzo al momento dello storno
   final int quantity;        // Quanti ne sono stati tolti
+  final ItemStatus statusWhenVoided; // Stato dell'item quando è stato stornato
   final String reason;       // "Errore", "Cliente andato via", ecc.
   final bool isRefunded; // Se è stato rimborsato o no
   final DateTime timestamp;  // Quando è successo
@@ -16,6 +19,7 @@ class VoidItem {
     required this.itemName,
     required this.unitPrice,
     required this.quantity,
+    required this.statusWhenVoided,
     required this.reason,
     required this.isRefunded,
     required this.timestamp,
@@ -33,7 +37,9 @@ class VoidItem {
     'itemName': itemName,
     'unitPrice': unitPrice,
     'quantity': quantity,
+    'statusWhenVoided': statusWhenVoided.index,
     'reason': reason,
+    'isRefunded': isRefunded,
     'timestamp': timestamp.toIso8601String(),
   };
 
@@ -45,8 +51,9 @@ class VoidItem {
       itemName: json['itemName'],
       unitPrice: (json['unitPrice'] as num).toDouble(),
       quantity: json['quantity'],
+      statusWhenVoided: ItemStatus.values[json['statusWhenVoided']],
       reason: json['reason'],
-      isRefunded: json['isRefunded'] ?? false,
+      isRefunded: json['isRefunded'],
       timestamp: DateTime.parse(json['timestamp']),
     );
   }

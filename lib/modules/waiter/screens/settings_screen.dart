@@ -99,8 +99,10 @@ class SettingsScreen extends ConsumerWidget {
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.cRose500, foregroundColor: Colors.white),
             onPressed: () async {
               // 1. Cancella il contenuto del box Hive
-              final box = Hive.box(kTablesBox);
-              await box.clear();
+              final tablesBox = Hive.box(kTablesBox);
+              await tablesBox.clear();
+              final voidsBox = Hive.box(kVoidsBox);
+              await voidsBox.clear();
 
               // 2. Invalida il provider per forzare la ricarica (che rileggerà i mock data visto che il box è vuoto)
               ref.invalidate(tablesProvider);

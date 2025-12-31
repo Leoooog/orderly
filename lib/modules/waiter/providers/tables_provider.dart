@@ -320,6 +320,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
       itemName: item.name,
       unitPrice: item.unitPrice,
       quantity: qtyToVoid,
+      statusWhenVoided: item.status,
       reason: reason,
       isRefunded: isRefunded,
       timestamp: DateTime.now(),

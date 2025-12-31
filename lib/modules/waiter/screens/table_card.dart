@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 
 import '../../../config/themes.dart';
 import '../../../data/models/table_item.dart';
@@ -84,7 +85,7 @@ class _TableCardState extends State<TableCard>
         accentColor = AppColors.cRose500;
         statusIcon = const Icon(Icons.hourglass_empty,
             size: 10, color: AppColors.cRose500);
-        statusLabel = "ATTESA";
+        statusLabel = AppLocalizations.of(context)!.tableStatusSeated;
         break;
       case TableStatus.ordered:
         cardBgColor = AppColors.cAmber50;
@@ -93,7 +94,7 @@ class _TableCardState extends State<TableCard>
         accentColor = AppColors.cAmber500;
         statusIcon = const Icon(Icons.sticky_note_2,
             size: 10, color: AppColors.cAmber500);
-        statusLabel = "ORDINATO";
+        statusLabel = AppLocalizations.of(context)!.tableStatusOrdered;
         break;
       case TableStatus.ready:
         cardBgColor = AppColors.cWhite;
@@ -102,7 +103,7 @@ class _TableCardState extends State<TableCard>
         accentColor = AppColors.cEmerald500;
         statusIcon = const Icon(Icons.notifications_active,
             size: 10, color: AppColors.cEmerald500);
-        statusLabel = "PRONTO";
+        statusLabel = AppLocalizations.of(context)!.tableStatusReady;
         break;
       case TableStatus.eating:
         cardBgColor = AppColors.cWhite;
@@ -111,7 +112,7 @@ class _TableCardState extends State<TableCard>
         accentColor = AppColors.cIndigo600;
         statusIcon =
             const Icon(Icons.restaurant, size: 10, color: AppColors.cIndigo600);
-        statusLabel = "SERVITO";
+        statusLabel = AppLocalizations.of(context)!.tableStatusEating;
         break;
       case TableStatus.free:
         cardBgColor = AppColors.cWhite;
@@ -251,7 +252,7 @@ class _TableCardState extends State<TableCard>
                       decoration: BoxDecoration(
                           color: AppColors.cEmerald100,
                           borderRadius: BorderRadius.circular(8)),
-                      child: const Text("LIBERO",
+                      child: Text(AppLocalizations.of(context)!.tableStatusFree,
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,

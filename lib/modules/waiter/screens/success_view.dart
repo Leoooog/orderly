@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 
 import '../../../config/themes.dart';
 
@@ -21,13 +22,13 @@ class SuccessView extends StatelessWidget {
               child: const Icon(Icons.check_circle,
                   size: 48, color: AppColors.cEmerald500)),
           const SizedBox(height: 24),
-          const Text("Comanda Inviata!",
+          Text(AppLocalizations.of(context)!.msgOrderSent,
               style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: AppColors.cWhite)),
           const SizedBox(height: 8),
-          Text("Tavolo $tableName",
+          Text(AppLocalizations.of(context)!.tableName(tableName),
               style:
                   const TextStyle(fontSize: 20, color: AppColors.cEmerald100))
         ])));

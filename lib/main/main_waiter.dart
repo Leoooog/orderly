@@ -37,7 +37,7 @@ class WaiterAppEntry extends ConsumerWidget {
 
     return OrderlyApp(
       router: router,
-      title: AppLocalizations.of(context)?.waiterAppName ?? 'Orderly - Sala',
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.waiterAppName,
     );
   }
 }

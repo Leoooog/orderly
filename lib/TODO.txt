@@ -8,3 +8,6 @@
 - responsive sized box
 - Gestione errori per connessione assente
 - Azioni tavoli scrollabili
+- Configurazione Localizzazione da backend
+- Motivazioni storno da backend
+- Pagamento alla romana

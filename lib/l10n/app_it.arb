@@ -1,33 +1,48 @@
 {
+  "@@locale": "it",
+
+  "headerAppMetadata": "--- Titoli e Info Generali ---",
+  "appName": "Orderly Pocket",
   "waiterAppName": "Orderly - Sala",
   "kitchenAppName": "Orderly - Cucina",
-  "adminAppName": "Orderly - Admin",
   "posAppName": "Orderly - Cassa",
-  "appName": "Orderly Pocket",
+  "adminAppName": "Orderly - Admin",
+
+  "headerAuth": "--- Autenticazione ---",
   "loginInsertPin": "Inserisci PIN Cameriere",
   "loginPinError": "PIN Errato",
 
+  "headerNavigation": "--- Navigazione ---",
   "navTables": "Sala",
   "navMenu": "MENU",
-  "navHistory": "AL TAVOLO",
+  "navTableHistory": "AL TAVOLO",
+  "msgBack": "Indietro",
+  "exit": "Esci",
 
+  "headerTableStatus": "--- Stati del Tavolo (Logica) ---",
   "tableStatusFree": "LIBERO",
   "tableStatusSeated": "ATTESA",
-  "tableStatusOrdered": "CUCINA",
+  "tableStatusOrdered": "ORDINATO",
   "tableStatusReady": "PRONTO",
-  "tableStatusServed": "SERVITO",
+  "tableStatusEating": "SERVITO",
 
-  "actionMove": "Sposta Tavolo",
-  "actionMerge": "Unisci Tavolo",
-  "actionQuickPay": "Incasso Rapido",
-  "actionSplitPay": "Cassa / Divisione",
-  "actionCancelTable": "Annulla Tavolo",
-  "actionTransfer": "Trasferisci su un tavolo libero",
-  "actionMergeDesc": "Unisci a un tavolo occupato",
-  "actionPayTotalDesc": "Paga tutto senza dividere",
-  "actionSplitDesc": "Gestisci pagamenti parziali",
-  "actionResetDesc": "Reset senza incasso",
-
+  "headerTableActions": "--- Gestione Tavoli (Sala) ---",
+  "tableActions": "Azioni Tavolo {tableName}",
+  "@tableActions": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "tableName": "Tavolo {tableName}",
+  "@tableName": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
   "dialogOpenTable": "Apertura {tableName}",
   "@dialogOpenTable": {
     "placeholders": {
@@ -36,29 +51,218 @@
       }
     }
   },
-  "dialogCovers": "Quanti Coperti?",
+  "btnOpen": "Apri Tavolo",
+  "dialogGuests": "Quanti Coperti?",
+  "labelGuests": "Coperti: {guests}",
+  "@labelGuests": {
+    "placeholders": {
+      "guests": {
+        "type": "int"
+      }
+    }
+  },
+  "actionMove": "Sposta Tavolo",
+  "actionTransfer": "Trasferisci su un tavolo libero",
+  "dialogMoveTable": "Sposta su...",
+  "actionMerge": "Unisci Tavolo",
+  "actionMergeDesc": "Unisci a un tavolo occupato",
+  "dialogMergeTable": "Unisci a...",
+  "actionCancelTable": "Annulla Tavolo",
+  "actionResetDesc": "Chiudi tavolo senza incasso",
+  "msgConfirmCancelTable": "Stai per annullare il tavolo {tableName}.\n\nTutti gli ordini correnti verranno persi e il tavolo tornerà libero senza registrare incasso.\n\nSei sicuro?",
+  "@msgConfirmCancelTable": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "msgTableOpened": "Tavolo {tableName} aperto",
+  "@msgTableOpened": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "tableMoved": "Tavolo spostato con successo",
+  "tableMerged": "Tavoli uniti con successo",
+  "tableReset": "Tavolo annullato e resettato",
+  "msgNoTablesAvailable": "Nessun tavolo disponibile",
+
+  "headerMenuCart": "--- Menu e Carrello ---",
+  "labelSearch": "Cerca prodotto...",
+  "labelNoProducts": "Nessun prodotto trovato",
+  "labelIngredients": "INGREDIENTI",
+  "labelAllergens": "ALLERGENI",
+  "cartSheetTitle": "Comanda",
+  "cartSheetItemsCountLabel": "{count, plural, =0{Nessun articolo} =1{1 articolo} other{{count} articoli}}",
+  "@cartSheetItemsCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartEditingItem": "Stai modificando: {itemName}",
+  "@cartEditingItem": {
+    "placeholders": {
+      "itemName": {
+        "type": "String"
+      }
+    }
+  },
+  "cartEditingQuantity": "Quanti piatti vuoi modificare?",
+  "dialogMoveToCourse": "Sposta in:",
+  "labelExtras": "Aggiunte (Extra):",
+  "labelNotesTitle": "Note Cucina",
+  "fieldNotesPlaceholder": "Es. No cipolla...",
+  "btnEdit": "MODIFICA",
+  "labelEdit": "Modifica",
+  "subtitleEditItemAction": "Cambia note o varianti",
+  "btnSendKitchen": "INVIA COMANDA",
+  "msgOrderSent": "Comanda inviata!",
+  "msgChangesSaved": "Modifiche salvate",
+  "msgChangesNotSaved": "Modifiche non salvate",
+  "msgExitWithoutSaving": "Vuoi uscire senza inviare la comanda?",
+
+
+  "headerKitchenFlow": "--- Flusso Cucina e Portate ---",
+  "btnFireCourse": "DAI IL VIA",
+  "msgCourseFired": "Richiesto 'Via' per {course}",
+  "@msgCourseFired": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      }
+    }
+  },
+  "itemStatusPending": "In Attesa",
+  "itemStatusFired": "Inviato in cucina",
+  "itemStatusCooking": "In Cottura",
+  "itemStatusReady": "Pronto",
+  "itemStatusServed": "Servito",
+  "badgeStatusInQueue": "IN CODA",
+  "badgeStatusCooking": "IN PREPARAZIONE",
+  "badgeStatusReady": "PRONTO DA SERVIRE",
+  "badgeStatusCompleted": "COMPLETATO",
+  "btnMarkServed": "SERVI",
+  "labelNoOrders": "Nessun ordine effettuato",
+
+
+  "headerBillPayment": "--- Conto e Pagamenti ---",
+  "actionQuickPay": "Incasso Rapido",
+  "actionPayTotalDesc": "Paga tutto senza dividere",
+  "actionSplitPay": "Cassa / Divisione",
+  "actionSplitDesc": "Gestisci pagamenti parziali",
+  "dialogPaymentTable": "Incasso {tableName}",
+  "@dialogPaymentTable": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "labelPaymentTotal": "Totale da incassare",
+  "dialogSelectPaymentMethod": "Seleziona metodo (Paga Tutto):",
+  "cardPayment": "Carta",
+  "cashPayment": "Contanti",
+  "billSplitEach": "Per Piatto",
+  "billSplitEvenly": "Alla Romana",
+  "selectToPay": "Seleziona cosa pagare",
+  "selectAll": "Seleziona tutto",
+  "unselectAll": "Deseleziona tutto",
+  "allSelected": "Tutto selezionato",
+  "labelSplitEvenlyDescription": "In quante parti dividere?",
+  "totalPeople": "Persone totali",
+  "labelPartsToPay": "Quote da pagare ora:",
+  "infoPartsPaying": "{payingParts} quote su {splitParts}",
+  "@infoPartsPaying": {
+    "placeholders": {
+      "payingParts": {
+        "type": "int"
+      },
+      "splitParts": {
+        "type": "int"
+      }
+    }
+  },
+  "labelSinglePart": "Quota singola:",
+  "labelTotal": "Totale",
+  "infoTotalAmount": "Totale: {total}",
+  "@infoTotalAmount": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "labelToPay": "DA PAGARE",
+  "labelRemaining": "RIMANENTE",
+  "infoPriceEach": "{price} cad.",
+  "@infoPriceEach": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "btnPay": "PAGA",
+  "msgPaymentSuccess": "Pagamento registrato",
+
+  "headerVoids": "--- Storni e Cancellazioni ---",
+  "titleVoidItem": "Storno Piatto",
+  "titleVoidItemAction": "Storna / Elimina",
+  "subtitleVoidItemAction": "Rimuovi piatto dall'ordine",
+  "titleVoidItemDialog": "Elimina: {itemName}",
+  "@titleVoidItemDialog": {
+    "placeholders": {
+      "itemName": {
+        "type": "String"
+      }
+    }
+  },
+  "labelVoidQuantity": "Quantità da stornare:",
+  "labelVoidReasonPlaceholder": "Motivazione:",
+  "dialogConfirmVoid": "CONFERMA STORNO",
+  "labelRefundOption": "Rimborsare l'importo?",
+  "labelViewVoided": "Vedi storni",
+  "labelNoVoidedItems": "Nessuno storno registrato",
+  "labelVoidedList": "Storico Storni {tableName}",
+  "@labelVoidedList": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "labelVoidReason": "Motivo: {reason}\n{hour}:{minutes}\n{isRefunded, select, false{Non Rimborsato, } true{Rimborsato, } other{}} {statusWhenVoided, select, pending{In Attesa} served{Servito} cooking{In Cottura} fired{Inviato in cucina} ready{Pronto} other{}}",
+  "@labelVoidReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      },
+      "hour": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      },
+      "isRefunded": {
+        "type": "String"
+      },
+      "statusWhenVoided": {
+        "type": "String"
+      }
+    }
+  },
+  "msgVoidItem": "Piatto stornato correttamente",
+
+  "headerGeneral": "--- Etichette Generiche ---",
+  "labelAll": "Tutti",
   "dialogConfirm": "CONFERMA",
   "dialogCancel": "Annulla",
   "dialogSave": "Salva",
   "dialogEdit": "Modifica",
-  "dialogConfirmVoid": "CONFERMA STORNO",
-
-  "btnOpen": "Apri Tavolo",
-  "btnSendKitchen": "INVIA COMANDA",
-  "btnFireCourse": "DAI IL VIA",
-  "btnPay": "PAGA",
-
-  "labelIngredients": "INGREDIENTI",
-  "labelAllergens": "ALLERGENI",
-  "labelNotes": "Note Cucina",
-  "labelSearch": "Cerca prodotto...",
-  "labelTotal": "Totale",
-  "labelToPay": "DA PAGARE",
-  "labelRemaining": "RIMANENTE",
-  "labelSelectAll": "Seleziona Tutto",
-  "labelDeselectAll": "Deseleziona Tutto",
-
-  "msgPaymentSuccess": "Pagamento registrato",
-  "msgOrderSent": "Comanda inviata",
-  "msgChangesSaved": "Modifiche salvate"
+  "msgAttention": "Attenzione"
 }

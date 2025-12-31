@@ -113,8 +113,11 @@ class CartNotifier extends Notifier<List<CartItem>> {
     if (mergeTargetIndex != -1) {
       items[mergeTargetIndex] = items[mergeTargetIndex].copyWith(qty: items[mergeTargetIndex].qty + newItem.qty);
     } else {
-      if (insertAt != null && insertAt <= items.length) items.insert(insertAt, newItem);
-      else items.add(newItem);
+      if (insertAt != null && insertAt <= items.length) {
+        items.insert(insertAt, newItem);
+      } else {
+        items.add(newItem);
+      }
     }
   }
 

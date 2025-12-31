@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/config/restaurant_settings.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 
 import '../../../../config/themes.dart';
 import '../../../../data/models/table_item.dart';
@@ -22,7 +24,8 @@ class HistoryTab extends ConsumerWidget {
   void _fireCourse(BuildContext context, WidgetRef ref, Course course) {
     ref.read(tablesProvider.notifier).fireCourse(table.id, course);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Richiesto 'Via' per ${course.label}"),
+        content:
+            Text(AppLocalizations.of(context)!.msgCourseFired(course.label)),
         backgroundColor: AppColors.cIndigo600,
         duration: const Duration(seconds: 1)));
   }
@@ -37,8 +40,8 @@ class HistoryTab extends ConsumerWidget {
         .read(tablesProvider.notifier)
         .voidItem(table.id, item.internalId, qty, reason, isRefunded);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text("Piatto stornato correttamente"),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AppLocalizations.of(context)!.msgVoidItem),
       backgroundColor: AppColors.cOrange700,
     ));
   }
@@ -48,8 +51,8 @@ class HistoryTab extends ConsumerWidget {
     ref.read(tablesProvider.notifier).updateOrderedItem(
         table.id, item.internalId, qty, note, course, extras);
     Navigator.pop(context); // Chiudi dialog
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("Modifica salvata")));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.msgChangesSaved)));
   }
 
   // --- DIALOGHI ---
@@ -66,7 +69,8 @@ class HistoryTab extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text("Storico Storni (${table.name})",
+              child: Text(
+                  AppLocalizations.of(context)!.labelVoidedList(table.name),
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -74,9 +78,10 @@ class HistoryTab extends ConsumerWidget {
             ),
             const Divider(height: 1),
             if (voids.isEmpty)
-              const Expanded(
+              Expanded(
                   child: Center(
-                      child: Text("Nessuno storno registrato",
+                      child: Text(
+                          AppLocalizations.of(context)!.labelNoVoidedItems,
                           style: TextStyle(color: AppColors.cSlate400))))
             else
               Expanded(
@@ -89,11 +94,22 @@ class HistoryTab extends ConsumerWidget {
                       title: Text("${v.quantity}x ${v.itemName}",
                           style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(
-                          "Motivo: ${v.reason}\n${v.timestamp.hour}:${v.timestamp.minute.toString().padLeft(2, '0')}"),
+                        AppLocalizations.of(context)!.labelVoidReason(
+                            v.reason,
+                            v.timestamp.hour.toString(),
+                            v.timestamp.minute.toString().padLeft(2, '0'),
+                            v.isRefunded.toString(),
+                            v.statusWhenVoided.toString()),
+                      ),
                       trailing: Text(
-                          "-€ ${v.totalVoidAmount.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                              color: AppColors.cRose500,
+                          v.isRefunded
+                              ? "-${v.totalVoidAmount.toCurrency()}"
+                              : "",
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: v.isRefunded
+                                  ? AppColors.cRose500
+                                  : AppColors.cSlate400,
                               fontWeight: FontWeight.bold)),
                       isThreeLine: true,
                     );
@@ -143,7 +159,7 @@ class HistoryTab extends ConsumerWidget {
         return StatefulBuilder(builder: (context, setStateDialog) {
           return AlertDialog(
             backgroundColor: AppColors.cWhite,
-            title: const Text("Storno Piatto",
+            title: Text(AppLocalizations.of(context)!.titleVoidItem,
                 style: TextStyle(
                     fontWeight: FontWeight.bold, color: AppColors.cRose500)),
             content: SingleChildScrollView(
@@ -151,14 +167,16 @@ class HistoryTab extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Elimina: ${item.name}",
+                  Text(
+                      AppLocalizations.of(context)!
+                          .titleVoidItemDialog(item.name),
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   if (item.qty > 1) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Quantità da stornare:",
+                        Text(AppLocalizations.of(context)!.labelVoidQuantity,
                             style: TextStyle(
                                 fontSize: 12, color: AppColors.cSlate500)),
                         Row(
@@ -200,7 +218,7 @@ class HistoryTab extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Rimborsare l'importo?",
+                      Text(AppLocalizations.of(context)!.labelRefundOption,
                           style: TextStyle(
                               fontSize: 12, color: AppColors.cSlate500)),
                       Transform.scale(
@@ -214,7 +232,7 @@ class HistoryTab extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text("Motivazione:",
+                  Text(AppLocalizations.of(context)!.labelVoidReasonPlaceholder,
                       style:
                           TextStyle(fontSize: 12, color: AppColors.cSlate500)),
                   Wrap(
@@ -256,7 +274,7 @@ class HistoryTab extends ConsumerWidget {
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text("Annulla")),
+                  child: Text(AppLocalizations.of(context)!.dialogCancel)),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.cRose500,
@@ -266,7 +284,7 @@ class HistoryTab extends ConsumerWidget {
                         ? () => _performVoid(context, ref, item, qtyToVoid,
                             selectedReason, isRefunded)
                         : null,
-                child: const Text("CONFERMA"),
+                child: Text(AppLocalizations.of(context)!.dialogConfirmVoid),
               )
             ],
           );
@@ -295,8 +313,9 @@ class HistoryTab extends ConsumerWidget {
             if (canEdit)
               ListTile(
                 leading: const Icon(Icons.edit, color: AppColors.cIndigo600),
-                title: const Text("Modifica"),
-                subtitle: const Text("Cambia note o varianti"),
+                title: Text(AppLocalizations.of(context)!.labelEdit),
+                subtitle:
+                    Text(AppLocalizations.of(context)!.subtitleEditItemAction),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showEditDialog(context, ref, item);
@@ -305,8 +324,9 @@ class HistoryTab extends ConsumerWidget {
             ListTile(
               leading:
                   const Icon(Icons.delete_forever, color: AppColors.cRose500),
-              title: const Text("Storno / Elimina"),
-              subtitle: const Text("Rimuovi piatto dall'ordine"),
+              title: Text(AppLocalizations.of(context)!.titleVoidItemAction),
+              subtitle:
+                  Text(AppLocalizations.of(context)!.subtitleVoidItemAction),
               onTap: () {
                 Navigator.pop(ctx);
                 _showVoidDialog(context, ref, item);
@@ -328,7 +348,7 @@ class HistoryTab extends ConsumerWidget {
             const Icon(Icons.receipt_long,
                 size: 64, color: AppColors.cSlate200),
             const SizedBox(height: 16),
-            const Text("Nessun ordine inviato",
+            Text(AppLocalizations.of(context)!.labelNoOrders,
                 style: TextStyle(
                     color: AppColors.cSlate400, fontWeight: FontWeight.bold)),
             if (ref
@@ -337,7 +357,7 @@ class HistoryTab extends ConsumerWidget {
                 .isNotEmpty)
               TextButton(
                   onPressed: () => _showVoidsHistory(context, ref),
-                  child: const Text("Vedi Storni"))
+                  child: Text(AppLocalizations.of(context)!.labelViewVoided)),
           ],
         ),
       );
@@ -359,7 +379,7 @@ class HistoryTab extends ConsumerWidget {
               onPressed: () => _showVoidsHistory(context, ref),
               icon: const Icon(Icons.history,
                   size: 16, color: AppColors.cRose500),
-              label: const Text("Log Storni",
+              label: Text(AppLocalizations.of(context)!.labelViewVoided,
                   style: TextStyle(
                       color: AppColors.cRose500, fontWeight: FontWeight.bold)),
             ),
@@ -406,7 +426,7 @@ class HistoryTab extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () => _fireCourse(context, ref, course),
                 icon: const Icon(Icons.notifications_active, size: 16),
-                label: const Text("DAI IL VIA"),
+                label: Text(AppLocalizations.of(context)!.btnFireCourse),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.cIndigo600,
                     foregroundColor: AppColors.cWhite,
@@ -416,18 +436,27 @@ class HistoryTab extends ConsumerWidget {
                         fontWeight: FontWeight.bold, fontSize: 12)),
               )
             else if (hasReady)
-              _buildSectionBadge(Icons.room_service, "PIATTI PRONTI",
-                  AppColors.cEmerald500, AppColors.cEmerald100)
+              _buildSectionBadge(
+                  Icons.room_service,
+                  AppLocalizations.of(context)!.badgeStatusReady,
+                  AppColors.cEmerald500,
+                  AppColors.cEmerald100)
             else if (hasCooking)
-              _buildSectionBadge(Icons.local_fire_department, "IN PREPARAZIONE",
-                  AppColors.cOrange700, AppColors.cOrange50)
+              _buildSectionBadge(
+                  Icons.local_fire_department,
+                  AppLocalizations.of(context)!.badgeStatusCooking,
+                  AppColors.cOrange700,
+                  AppColors.cOrange50)
             else if (isCompleted)
-              _buildSectionBadge(Icons.check_circle, "COMPLETATO",
-                  AppColors.cSlate400, AppColors.cSlate100)
+              _buildSectionBadge(
+                  Icons.check_circle,
+                  AppLocalizations.of(context)!.badgeStatusCompleted,
+                  AppColors.cSlate400,
+                  AppColors.cSlate100)
             else
               _buildSectionBadge(
                   Icons.hourglass_top,
-                  "IN CODA",
+                  AppLocalizations.of(context)!.badgeStatusInQueue,
                   AppColors.cIndigo600,
                   AppColors.cIndigo100.withValues(alpha: 0.5))
           ],
@@ -441,7 +470,8 @@ class HistoryTab extends ConsumerWidget {
           child: Column(
             children: items.asMap().entries.map((entry) {
               return _buildHistoryItemRow(context, ref, entry.value,
-                  isLast: entry.key == items.length - 1, isFirst: entry.key == 0);
+                  isLast: entry.key == items.length - 1,
+                  isFirst: entry.key == 0);
             }).toList(),
           ),
         ),
@@ -469,7 +499,8 @@ class HistoryTab extends ConsumerWidget {
   }
 
   Widget _buildHistoryItemRow(
-      BuildContext context, WidgetRef ref, CartItem item, {bool isLast = false, bool isFirst = false}) {
+      BuildContext context, WidgetRef ref, CartItem item,
+      {bool isLast = false, bool isFirst = false}) {
     Color bgColor = AppColors.cWhite;
     Color iconColor = AppColors.cSlate400;
     IconData icon = Icons.circle_outlined;
@@ -482,32 +513,32 @@ class HistoryTab extends ConsumerWidget {
         bgColor = AppColors.cOrange50;
         iconColor = AppColors.cOrange700;
         icon = Icons.schedule;
-        statusLabel = "In attesa";
+        statusLabel = AppLocalizations.of(context)!.itemStatusPending;
         break;
       case ItemStatus.fired:
         bgColor = AppColors.cIndigo100.withValues(alpha: 0.1);
         iconColor = AppColors.cIndigo600;
         icon = Icons.hourglass_top;
-        statusLabel = "Inviato";
+        statusLabel = AppLocalizations.of(context)!.itemStatusFired;
         break;
       case ItemStatus.cooking:
         bgColor = AppColors.cIndigo100.withValues(alpha: 0.25);
         iconColor = AppColors.cIndigo600;
         icon = Icons.local_fire_department;
-        statusLabel = "In preparazione";
+        statusLabel = AppLocalizations.of(context)!.itemStatusCooking;
         break;
       case ItemStatus.ready:
         bgColor = AppColors.cEmerald100;
         iconColor = AppColors.cEmerald500;
         icon = Icons.room_service;
-        statusLabel = "Pronto";
+        statusLabel = AppLocalizations.of(context)!.itemStatusReady;
         isInteractive = true;
         break;
       case ItemStatus.served:
         bgColor = AppColors.cWhite;
         iconColor = AppColors.cSlate400;
         icon = Icons.check;
-        statusLabel = "Servito";
+        statusLabel = AppLocalizations.of(context)!.itemStatusServed;
         opacity = 0.5;
         break;
     }
@@ -524,7 +555,9 @@ class HistoryTab extends ConsumerWidget {
               bottom: isLast ? const Radius.circular(12) : Radius.zero,
             ),
             border: Border(
-              bottom: (item.status == ItemStatus.fired || item.status == ItemStatus.served) && !isLast
+              bottom: (item.status == ItemStatus.fired ||
+                          item.status == ItemStatus.served) &&
+                      !isLast
                   ? BorderSide(color: AppColors.cSlate200)
                   : BorderSide.none,
             ),
@@ -577,7 +610,7 @@ class HistoryTab extends ConsumerWidget {
                     decoration: BoxDecoration(
                         color: AppColors.cEmerald500,
                         borderRadius: BorderRadius.circular(8)),
-                    child: const Text("SERVI",
+                    child: Text(AppLocalizations.of(context)!.btnMarkServed,
                         style: TextStyle(
                             color: AppColors.cWhite,
                             fontWeight: FontWeight.bold,

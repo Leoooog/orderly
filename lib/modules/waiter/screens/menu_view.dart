@@ -6,6 +6,7 @@ import '../../../data/models/cart_item.dart';
 import '../../../data/models/table_item.dart';
 
 // Import Providers
+import '../../../l10n/app_localizations.dart';
 import '../providers/cart_provider.dart';
 import '../providers/tables_provider.dart'; // NECESSARIO per ascoltare gli aggiornamenti del tavolo
 
@@ -19,13 +20,18 @@ class MenuView extends ConsumerStatefulWidget {
   final VoidCallback onBack;
   final Function(List<CartItem>) onSuccess;
 
-  const MenuView({super.key, required this.table, required this.onBack, required this.onSuccess});
+  const MenuView(
+      {super.key,
+      required this.table,
+      required this.onBack,
+      required this.onSuccess});
 
   @override
   ConsumerState<MenuView> createState() => _MenuViewState();
 }
 
-class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderStateMixin {
+class _MenuViewState extends ConsumerState<MenuView>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final double _minHeight = 85.0;
   double _maxHeight = 0.0;
@@ -34,7 +40,8 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 500));
   }
 
   @override
@@ -50,14 +57,20 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.cWhite,
-          title: const Text("Modifiche non salvate"),
-          content: const Text("Vuoi uscire senza inviare la comanda?"),
+          title: Text(AppLocalizations.of(context)!.msgChangesNotSaved),
+          content: Text(AppLocalizations.of(context)!.msgExitWithoutSaving),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Annulla")),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(AppLocalizations.of(context)!.dialogCancel)),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.cRose500, foregroundColor: AppColors.cWhite),
-              onPressed: () { widget.onBack(); },
-              child: const Text("Esci"),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.cRose500,
+                  foregroundColor: AppColors.cWhite),
+              onPressed: () {
+                widget.onBack();
+              },
+              child: Text(AppLocalizations.of(context)!.exit),
             )
           ],
         ),
@@ -85,10 +98,9 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
     final allTables = ref.watch(tablesProvider);
 
     // Troviamo la versione più aggiornata del tavolo corrente
-    final currentTable = allTables.firstWhere(
-            (t) => t.id == widget.table.id,
+    final currentTable = allTables.firstWhere((t) => t.id == widget.table.id,
         orElse: () => widget.table // Fallback nel caso remoto non si trovi
-    );
+        );
 
     // Sync automatico chiusura carrello
     ref.listen<List<CartItem>>(cartProvider, (previous, next) {
@@ -110,16 +122,32 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
                 SafeArea(
                   bottom: false,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.cSlate100))),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    decoration: const BoxDecoration(
+                        border: Border(
+                            bottom: BorderSide(color: AppColors.cSlate100))),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(icon: const Icon(Icons.chevron_left, color: AppColors.cSlate500), onPressed: _handleBack),
+                        IconButton(
+                            icon: const Icon(Icons.chevron_left,
+                                color: AppColors.cSlate500),
+                            onPressed: _handleBack),
                         Column(
                           children: [
-                            Text("Tavolo ${currentTable.name}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.cSlate800)),
-                            Text("${currentTable.guests} Coperti", style: const TextStyle(fontSize: 12, color: AppColors.cSlate500)),
+                            Text(
+                                AppLocalizations.of(context)!
+                                    .tableName(currentTable.name),
+                                style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.cSlate800)),
+                            Text(
+                                AppLocalizations.of(context)!
+                                    .labelGuests(currentTable.guests),
+                                style: const TextStyle(
+                                    fontSize: 12, color: AppColors.cSlate500)),
                           ],
                         ),
                         const SizedBox(width: 48),
@@ -135,9 +163,11 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
                   indicatorColor: AppColors.cIndigo600,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                   tabs: [
-                    const Tab(text: "MENU"),
+                    Tab(text: AppLocalizations.of(context)!.navMenu),
                     // Usiamo currentTable per avere il numero aggiornato
-                    Tab(text: "ORDINE (${currentTable.orders.length})"),
+                    Tab(
+                        text:
+                            "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.orders.length})"),
                   ],
                 ),
 
@@ -153,9 +183,7 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
                 ),
               ],
             ),
-
             if (cart.isNotEmpty) _buildBackdrop(),
-
             if (cart.isNotEmpty)
               CartSheet(
                 controller: _controller,
@@ -165,7 +193,6 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
                 onExpandChange: (val) => setState(() => _isExpanded = val),
                 onSendOrder: _handleSendOrder,
               ),
-
             if (cart.isNotEmpty) _buildSendButton(),
           ],
         ),
@@ -180,8 +207,13 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
         return IgnorePointer(
           ignoring: _controller.value == 0,
           child: GestureDetector(
-            onTap: () { _controller.animateTo(0, curve: Curves.easeOutQuint); setState(() => _isExpanded = false); },
-            child: Container(color: AppColors.cBlack.withValues(alpha: 0.4 * _controller.value)),
+            onTap: () {
+              _controller.animateTo(0, curve: Curves.easeOutQuint);
+              setState(() => _isExpanded = false);
+            },
+            child: Container(
+                color: AppColors.cBlack
+                    .withValues(alpha: 0.4 * _controller.value)),
           ),
         );
       },
@@ -193,15 +225,29 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
       animation: _controller,
       builder: (context, child) {
         return Positioned(
-          bottom: 0, left: 0, right: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
           child: Transform.translate(
             offset: Offset(0, 100 * (1 - _controller.value)),
             child: Container(
-              padding: const EdgeInsets.all(16), color: AppColors.cWhite,
-              child: SizedBox(width: double.infinity, child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.cEmerald500, foregroundColor: AppColors.cWhite, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                onPressed: _handleSendOrder, icon: const Icon(Icons.send), label: const Text("INVIA COMANDA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              )),
+              padding: const EdgeInsets.all(16),
+              color: AppColors.cWhite,
+              child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cEmerald500,
+                        foregroundColor: AppColors.cWhite,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16))),
+                    onPressed: _handleSendOrder,
+                    icon: const Icon(Icons.send),
+                    label: Text(AppLocalizations.of(context)!.btnSendKitchen,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                  )),
             ),
           ),
         );

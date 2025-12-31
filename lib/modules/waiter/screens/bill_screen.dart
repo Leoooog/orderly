@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:orderly/config/restaurant_settings.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/shared/widgets/circle_button.dart';
 import 'package:orderly/shared/widgets/quantity_control_button.dart';
 import 'package:orderly/shared/widgets/payment_method_button.dart'; // Assicurati che questo file esista in shared/widgets
@@ -11,13 +13,15 @@ class BillScreen extends StatefulWidget {
   final TableItem table;
   final Function(List<CartItem>) onConfirmPayment;
 
-  const BillScreen({super.key, required this.table, required this.onConfirmPayment});
+  const BillScreen(
+      {super.key, required this.table, required this.onConfirmPayment});
 
   @override
   State<BillScreen> createState() => _BillScreenState();
 }
 
-class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateMixin {
+class _BillScreenState extends State<BillScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   // STATO PER "PER PIATTO"
@@ -123,8 +127,9 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                 margin: const EdgeInsets.only(top: 12, bottom: 4),
                 width: 48,
                 height: 6,
-                decoration: BoxDecoration(color: AppColors.cSlate200, borderRadius: BorderRadius.circular(3))
-            ),
+                decoration: BoxDecoration(
+                    color: AppColors.cSlate200,
+                    borderRadius: BorderRadius.circular(3))),
           ),
 
           // HEADER COMUNE
@@ -136,18 +141,34 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Cassa ${widget.table.name}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.cSlate900)),
-                    Text("Totale: € ${totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                    Text(
+                        AppLocalizations.of(context)!
+                            .tableName(widget.table.name),
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.cSlate900)),
+                    Text(
+                        AppLocalizations.of(context)!
+                            .infoTotalAmount(widget.table.totalAmount.toCurrency()),
+                        style: const TextStyle(
+                            fontSize: 16, color: AppColors.cSlate500)),
                   ],
                 ),
                 // Tab Selector Compatto
                 Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: AppColors.cSlate200, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                      color: AppColors.cSlate200,
+                      borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      _buildTabBtn("Per Piatto", 0),
-                      _buildTabBtn("Alla Romana", 1),
+                      _buildTabBtn(
+                          AppLocalizations.of(context)!.billSplitEach, 0),
+                      // Per piatto
+                      _buildTabBtn(
+                          AppLocalizations.of(context)!.billSplitEvenly, 1),
+                      // Alla romana
                     ],
                   ),
                 )
@@ -161,7 +182,8 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(), // Disabilita swipe per evitare conflitti
+              physics: const NeverScrollableScrollPhysics(),
+              // Disabilita swipe per evitare conflitti
               children: [
                 _buildByItemView(totalAmount),
                 _buildSplitEvenlyView(totalAmount),
@@ -185,20 +207,22 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.cWhite : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: isSelected ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
+                boxShadow: isSelected
+                    ? [const BoxShadow(color: Colors.black12, blurRadius: 4)]
+                    : [],
               ),
               child: Text(
                 label,
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: isSelected ? AppColors.cIndigo600 : AppColors.cSlate500
-                ),
+                    color: isSelected
+                        ? AppColors.cIndigo600
+                        : AppColors.cSlate500),
               ),
             ),
           );
-        }
-    );
+        });
   }
 
   // --- VISTA 1: PER PIATTO ---
@@ -215,12 +239,16 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                  _isAllSelected ? "Tutto Selezionato" : "Seleziona cosa pagare",
-                  style: const TextStyle(color: AppColors.cSlate500, fontWeight: FontWeight.bold)
-              ),
+                  _isAllSelected
+                      ? AppLocalizations.of(context)!.allSelected
+                      : AppLocalizations.of(context)!.selectToPay,
+                  style: const TextStyle(
+                      color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: _toggleSelectAll,
-                child: Text(_isAllSelected ? "Deseleziona Tutto" : "Seleziona Tutto"),
+                child: Text(_isAllSelected
+                    ? AppLocalizations.of(context)!.unselectAll
+                    : AppLocalizations.of(context)!.selectAll),
               )
             ],
           ),
@@ -239,17 +267,24 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
               final done = item.qty == 0;
 
               return GestureDetector(
-                onTap: () => !done ? _toggleItemFull(item.internalId, item.qty) : {},
+                onTap: () =>
+                    !done ? _toggleItemFull(item.internalId, item.qty) : {},
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: done ? AppColors.cSlate200 : isSelected ? AppColors.cIndigo100.withValues(alpha: 0.3) : AppColors.cWhite,
+                    color: done
+                        ? AppColors.cSlate200
+                        : isSelected
+                            ? AppColors.cIndigo100.withValues(alpha: 0.3)
+                            : AppColors.cWhite,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: isSelected ? AppColors.cIndigo600 : AppColors.cSlate200,
-                        width: isSelected ? 2 : 1
-                    ),
+                        color: isSelected
+                            ? AppColors.cIndigo600
+                            : AppColors.cSlate200,
+                        width: isSelected ? 2 : 1),
                   ),
                   child: Row(
                     children: [
@@ -258,10 +293,24 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isSelected ? AppColors.cIndigo600 : AppColors.cSlate800)),
+                            Text(item.name,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: isSelected
+                                        ? AppColors.cIndigo600
+                                        : AppColors.cSlate800)),
                             if (item.selectedExtras.isNotEmpty)
-                              Text("+ ${item.selectedExtras.map((e)=>e.name).join(', ')}", style: const TextStyle(fontSize: 12, color: AppColors.cSlate500)),
-                            Text("€ ${item.unitPrice.toStringAsFixed(2)} cad.", style: const TextStyle(fontSize: 12, color: AppColors.cSlate400)),
+                              Text(
+                                  "+ ${item.selectedExtras.map((e) => e.name).join(', ')}",
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.cSlate500)),
+                            Text(
+                                AppLocalizations.of(context)!
+                                    .infoPriceEach(item.unitPrice.toCurrency()),
+                                style: const TextStyle(
+                                    fontSize: 12, color: AppColors.cSlate400)),
                           ],
                         ),
                       ),
@@ -276,35 +325,40 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                           decoration: BoxDecoration(
                               color: AppColors.cWhite,
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: isSelected ? AppColors.cIndigo600 : AppColors.cSlate300)
-                          ),
+                              border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.cIndigo600
+                                      : AppColors.cSlate300)),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               QuantityControlButton(
                                   icon: Icons.remove,
-                                  isActive: selectedQty > 0, // Disabilitato se 0
-                                  onTap: () => _updateQty(item.internalId, -1, item.qty)
-                              ),
+                                  isActive: selectedQty > 0,
+                                  // Disabilitato se 0
+                                  onTap: () => _updateQty(
+                                      item.internalId, -1, item.qty)),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 constraints: const BoxConstraints(minWidth: 40),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  // Mostra "3" se paghi 3, "1 / 3" se paghi parziale
+                                    // Mostra "3" se paghi 3, "1 / 3" se paghi parziale
                                     "$selectedQty / ${item.qty}",
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
-                                        color: isSelected ? AppColors.cIndigo600 : AppColors.cSlate400
-                                    )
-                                ),
+                                        color: isSelected
+                                            ? AppColors.cIndigo600
+                                            : AppColors.cSlate400)),
                               ),
                               QuantityControlButton(
                                   icon: Icons.add,
-                                  isActive: selectedQty < item.qty, // Disabilitato se max
-                                  onTap: () => _updateQty(item.internalId, 1, item.qty)
-                              ),
+                                  isActive: selectedQty < item.qty,
+                                  // Disabilitato se max
+                                  onTap: () =>
+                                      _updateQty(item.internalId, 1, item.qty)),
                             ],
                           ),
                         ),
@@ -343,62 +397,105 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 16),
-                  const Text("In quante parti dividere?", style: TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                  Text(
+                      AppLocalizations.of(context)!.labelSplitEvenlyDescription,
+                      style:
+                          TextStyle(fontSize: 16, color: AppColors.cSlate500)),
                   const SizedBox(height: 16),
 
                   // Slider Persone
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularIconButton(icon: Icons.remove, onTap: () => setState(() {
-                        if (_splitParts > 1) {
-                          _splitParts--;
-                          if (_payingParts > _splitParts) _payingParts = _splitParts;
-                        }
-                      })),
+                      CircularIconButton(
+                          icon: Icons.remove,
+                          onTap: () => setState(() {
+                                if (_splitParts > 1) {
+                                  _splitParts--;
+                                  if (_payingParts > _splitParts) {
+                                    _payingParts = _splitParts;
+                                  }
+                                }
+                              })),
                       Container(
                         width: 100, // Larghezza ridotta
                         alignment: Alignment.center,
-                        child: Text("$_splitParts", style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold, color: AppColors.cSlate900)),
+                        child: Text("$_splitParts",
+                            style: const TextStyle(
+                                fontSize: 56,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.cSlate900)),
                       ),
-                      CircularIconButton(icon: Icons.add, onTap: () => setState(() => _splitParts++)),
+                      CircularIconButton(
+                          icon: Icons.add,
+                          onTap: () => setState(() => _splitParts++)),
                     ],
                   ),
-                  const Text("Persone totali", style: TextStyle(color: AppColors.cSlate400)),
+                  Text(AppLocalizations.of(context)!.totalPeople,
+                      style: TextStyle(color: AppColors.cSlate400)),
 
                   const SizedBox(height: 32),
-                  Container(width: double.infinity, height: 1, color: AppColors.cSlate200),
+                  Container(
+                      width: double.infinity,
+                      height: 1,
+                      color: AppColors.cSlate200),
                   const SizedBox(height: 32),
 
-                  const Text("Quote da pagare ora:", style: TextStyle(fontSize: 16, color: AppColors.cSlate500)),
+                  Text(AppLocalizations.of(context)!.labelPartsToPay,
+                      style:
+                          TextStyle(fontSize: 16, color: AppColors.cSlate500)),
                   const SizedBox(height: 16),
 
                   // Slider Quote
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularIconButton(icon: Icons.remove, small: true, onTap: () => setState(() { if(_payingParts > 1) _payingParts--; })),
+                      CircularIconButton(
+                          icon: Icons.remove,
+                          small: true,
+                          onTap: () => setState(() {
+                                if (_payingParts > 1) _payingParts--;
+                              })),
                       Container(
                         width: 80,
                         alignment: Alignment.center,
-                        child: Text("$_payingParts", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.cIndigo600)),
+                        child: Text("$_payingParts",
+                            style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.cIndigo600)),
                       ),
-                      CircularIconButton(icon: Icons.add, small: true, onTap: () => setState(() { if(_payingParts < _splitParts) _payingParts++; })),
+                      CircularIconButton(
+                          icon: Icons.add,
+                          small: true,
+                          onTap: () => setState(() {
+                                if (_payingParts < _splitParts) _payingParts++;
+                              })),
                     ],
                   ),
-                  Text("$_payingParts su $_splitParts quote", style: const TextStyle(color: AppColors.cIndigo600, fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context)!.infoPartsPaying(_payingParts, _splitParts),
+                      style: const TextStyle(
+                          color: AppColors.cIndigo600,
+                          fontWeight: FontWeight.bold)),
 
                   const SizedBox(height: 32), // Spazio fisso invece di Spacer()
 
                   // Info Box
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: AppColors.cIndigo100.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(
+                        color: AppColors.cIndigo100.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16)),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Quota singola:", style: TextStyle(color: AppColors.cIndigo600)),
-                        Text("€ ${amountPerPerson.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.cIndigo600)),
+                        Text(AppLocalizations.of(context)!.labelSinglePart,
+                            style: TextStyle(color: AppColors.cIndigo600)),
+                        Text(amountPerPerson.toCurrency(),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: AppColors.cIndigo600)),
                       ],
                     ),
                   ),
@@ -411,14 +508,16 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
 
         _buildPaymentFooter(payingNow, remaining, () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pagamento alla romana registrato (Simulazione)")));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Pagamento alla romana registrato (Simulazione)")));
         }),
       ],
     );
   }
 
   // --- FOOTER PAGAMENTO (Carta/Contanti) ---
-  Widget _buildPaymentFooter(double toPay, double remaining, VoidCallback onPay) {
+  Widget _buildPaymentFooter(
+      double toPay, double remaining, VoidCallback onPay) {
     final bool canPay = toPay > 0.01;
 
     return Container(
@@ -436,15 +535,31 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("RIMANENTE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.cSlate400)),
-                    Text("€ ${remaining.toStringAsFixed(2)}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.cSlate500)),
+                    Text(AppLocalizations.of(context)!.labelRemaining,
+                        style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.cSlate400)),
+                    Text(remaining.toCurrency(),
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.cSlate500)),
                   ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text("DA PAGARE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.cIndigo600)),
-                    Text("€ ${toPay.toStringAsFixed(2)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.cIndigo600)),
+                    Text(AppLocalizations.of(context)!.labelToPay,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.cIndigo600)),
+                    Text("€ ${toPay.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.cIndigo600)),
                   ],
                 ),
               ],
@@ -459,10 +574,9 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                     opacity: canPay ? 1.0 : 0.5,
                     child: PaymentMethodButton(
                         icon: Icons.credit_card,
-                        label: "Carta",
+                        label: AppLocalizations.of(context)!.cardPayment,
                         color: AppColors.cIndigo600,
-                        onTap: canPay ? onPay : () {}
-                    ),
+                        onTap: canPay ? onPay : () {}),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -471,10 +585,9 @@ class _BillScreenState extends State<BillScreen> with SingleTickerProviderStateM
                     opacity: canPay ? 1.0 : 0.5,
                     child: PaymentMethodButton(
                         icon: Icons.money,
-                        label: "Contanti",
+                        label: AppLocalizations.of(context)!.cashPayment,
                         color: AppColors.cEmerald500,
-                        onTap: canPay ? onPay : () {}
-                    ),
+                        onTap: canPay ? onPay : () {}),
                   ),
                 ),
               ],

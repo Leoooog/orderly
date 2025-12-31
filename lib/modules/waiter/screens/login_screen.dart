@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../config/themes.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -27,8 +28,8 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       } else if (_pin.length == 4) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("PIN Errato"),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.loginPinError),
               backgroundColor: AppColors.cRose500,
               duration: Duration(milliseconds: 500),
             )
@@ -58,8 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             const Icon(Icons.restaurant_menu, size: 64, color: AppColors.cIndigo600),
             const SizedBox(height: 24),
-            const Text(
-              "Orderly Pocket",
+            Text(
+              AppLocalizations.of(context)!.waiterAppName,
               style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -68,8 +69,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Inserisci PIN Cameriere",
+            Text(
+              AppLocalizations.of(context)!.loginInsertPin,
               style: TextStyle(color: AppColors.cSlate500),
             ),
             const SizedBox(height: 48),

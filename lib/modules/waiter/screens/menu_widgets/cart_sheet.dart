@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 
 import '../../../../config/themes.dart';
 import '../../../../data/models/cart_item.dart';
@@ -127,11 +128,11 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text("Comanda",
+                                  Text(AppLocalizations.of(context)!.cartSheetTitle,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold)),
                                   Text(
-                                      "${cart.fold(0, (s, i) => s + i.qty)} Articoli",
+                                    AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
                                       style: const TextStyle(
                                           color: AppColors.cSlate500,
                                           fontSize: 12)),
@@ -262,10 +263,10 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                     decoration: BoxDecoration(
                         color: AppColors.cSlate100,
                         borderRadius: BorderRadius.circular(6)),
-                    child: Row(children: const [
-                      Icon(Icons.edit, size: 14, color: AppColors.cSlate600),
-                      SizedBox(width: 4),
-                      Text("MODIFICA",
+                    child: Row(children: [
+                      const Icon(Icons.edit, size: 14, color: AppColors.cSlate600),
+                      const SizedBox(width: 4),
+                      Text(AppLocalizations.of(context)!.btnEdit,
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,

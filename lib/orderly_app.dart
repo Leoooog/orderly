@@ -9,12 +9,12 @@ import 'l10n/app_localizations.dart';
 class OrderlyApp extends ConsumerWidget {
   // Non serve più passare "home", passiamo il routerConfig
   final GoRouter router;
-  final String title;
+  final String Function(BuildContext) onGenerateTitle;
 
   const OrderlyApp({
     super.key,
     required this.router, // Obbligatorio
-    required this.title,
+    required this.onGenerateTitle,
   });
 
   @override
@@ -27,7 +27,7 @@ class OrderlyApp extends ConsumerWidget {
     ));
 
     return MaterialApp.router( // .router invece di costruttore normale
-      title: title,
+      onGenerateTitle: onGenerateTitle,
       debugShowCheckedModeBanner: false,
 
       // Colleghiamo il router passato

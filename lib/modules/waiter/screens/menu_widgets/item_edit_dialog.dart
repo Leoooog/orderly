@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 import '../../../../config/themes.dart';
 import '../../../../data/models/cart_item.dart';
 import '../../../../data/models/course.dart';
@@ -58,7 +59,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text("Modifica", style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.labelEdit, style: TextStyle(fontWeight: FontWeight.bold)),
           IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => Navigator.pop(context),
@@ -71,7 +72,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
           shrinkWrap: true,
           children: [
             Text(
-                "Stai modificando: ${widget.cartItem.name}",
+                AppLocalizations.of(context)!.cartEditingItem(widget.menuItem.name),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.cIndigo600)
             ),
             const SizedBox(height: 16),
@@ -81,7 +82,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Quanti piatti vuoi modificare?", style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context)!.cartEditingQuantity, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
                   Row(
                     children: [
                       IconButton(
@@ -105,7 +106,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
             ],
 
             // --- SCELTA PORTATA ---
-            const Text("Sposta in:", style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.dialogMoveToCourse, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -125,7 +126,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
             // --- SCELTA EXTRA ---
             if (widget.menuItem.availableExtras.isNotEmpty) ...[
               const SizedBox(height: 16),
-              const Text("Aggiunte:", style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context)!.labelExtras, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -160,13 +161,12 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
 
             // --- NOTE ---
             const SizedBox(height: 16),
-            const Text("Note Cucina:", style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.fieldNotesPlaceholder, style: TextStyle(fontSize: 12, color: AppColors.cSlate500, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(
               controller: _noteController,
               maxLines: 2,
               decoration: const InputDecoration(
-                  hintText: "Es. No cipolla...",
                   filled: true,
                   fillColor: AppColors.cSlate50
               ),
@@ -189,7 +189,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
               _currentExtras,
             );
           },
-          child: const Text("Salva Modifiche"),
+          child: Text(AppLocalizations.of(context)!.dialogSave),
         )
       ],
     );

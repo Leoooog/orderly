@@ -1,0 +1,266 @@
+{
+  "@@locale": "en",
+
+  "headerAppMetadata": "--- Titles and General Info ---",
+  "appName": "Orderly Pocket",
+  "waiterAppName": "Orderly - Waiter",
+  "kitchenAppName": "Orderly - Kitchen",
+  "posAppName": "Orderly - POS",
+  "adminAppName": "Orderly - Admin",
+
+  "headerAuth": "--- Authentication ---",
+  "loginInsertPin": "Enter Waiter PIN",
+  "loginPinError": "Wrong PIN",
+
+  "headerNavigation": "--- Navigation ---",
+  "navTables": "Hall",
+  "navMenu": "MENU",
+  "navTableHistory": "AT TABLE",
+  "msgBack": "Back",
+  "exit": "Exit",
+
+  "headerTableStatus": "--- Table Status (Logic) ---",
+  "tableStatusFree": "FREE",
+  "tableStatusSeated": "WAITING",
+  "tableStatusOrdered": "ORDERED",
+  "tableStatusReady": "READY",
+  "tableStatusEating": "SERVED",
+
+  "headerTableActions": "--- Table Management (Hall) ---",
+  "tableActions": "Actions for Table {tableName}",
+  "@tableActions": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "tableName": "Table {tableName}",
+  "@tableName": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "dialogOpenTable": "Opening {tableName}",
+  "@dialogOpenTable": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "btnOpen": "Open Table",
+  "dialogGuests": "How many guests?",
+  "labelGuests": "Guests: {guests}",
+  "@labelGuests": {
+    "placeholders": {
+      "guests": {
+        "type": "int"
+      }
+    }
+  },
+  "actionMove": "Move Table",
+  "actionTransfer": "Transfer to a free table",
+  "dialogMoveTable": "Move to...",
+  "actionMerge": "Merge Table",
+  "actionMergeDesc": "Merge with an occupied table",
+  "dialogMergeTable": "Merge with...",
+  "actionCancelTable": "Void Table",
+  "actionResetDesc": "Close table without payment",
+  "msgConfirmCancelTable": "You are about to void table {tableName}.\n\nAll current orders will be lost and the table will become free without recording revenue.\n\nAre you sure?",
+  "@msgConfirmCancelTable": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "msgTableOpened": "Table {tableName} opened",
+  "@msgTableOpened": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "tableMoved": "Table moved successfully",
+  "tableMerged": "Tables merged successfully",
+  "tableReset": "Table voided and reset",
+  "msgNoTablesAvailable": "No tables available",
+
+  "headerMenuCart": "--- Menu and Cart ---",
+  "labelSearch": "Search product...",
+  "labelNoProducts": "No products found",
+  "labelIngredients": "INGREDIENTS",
+  "labelAllergens": "ALLERGENS",
+  "cartSheetTitle": "Order",
+  "cartSheetItemsCountLabel": "{count, plural, =0{No items} =1{1 item} other{{count} items}}",
+  "@cartSheetItemsCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartEditingItem": "Editing: {itemName}",
+  "@cartEditingItem": {
+    "placeholders": {
+      "itemName": {
+        "type": "String"
+      }
+    }
+  },
+  "cartEditingQuantity": "How many dishes do you want to edit?",
+  "dialogMoveToCourse": "Move to:",
+  "labelExtras": "Add-ons (Extras):",
+  "labelNotesTitle": "Kitchen Notes",
+  "fieldNotesPlaceholder": "Ex. No onion...",
+  "btnEdit": "EDIT",
+  "labelEdit": "Edit",
+  "subtitleEditItemAction": "Change notes or variants",
+  "btnSendKitchen": "SEND ORDER",
+  "msgOrderSent": "Order sent!",
+  "msgChangesSaved": "Changes saved",
+  "msgChangesNotSaved": "Changes not saved",
+  "msgExitWithoutSaving": "Do you want to exit without sending the order?",
+
+  "headerKitchenFlow": "--- Kitchen Flow and Courses ---",
+  "btnFireCourse": "FIRE COURSE",
+  "msgCourseFired": "'Fire' requested for {course}",
+  "@msgCourseFired": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      }
+    }
+  },
+  "itemStatusPending": "Pending",
+  "itemStatusFired": "Sent to kitchen",
+  "itemStatusCooking": "Cooking",
+  "itemStatusReady": "Ready",
+  "itemStatusServed": "Served",
+  "labelWaitingToStart": "QUEUED",
+  "labelInPreparation": "PREPARING",
+  "labelReadyToServe": "READY TO SERVE",
+  "labelCompleted": "COMPLETED",
+  "btnMarkServed": "SERVE",
+  "labelNoOrders": "No orders placed",
+
+  "headerBillPayment": "--- Bill and Payments ---",
+  "actionQuickPay": "Quick Pay",
+  "actionPayTotalDesc": "Pay full amount without splitting",
+  "actionSplitPay": "Cashier / Split",
+  "actionSplitDesc": "Manage partial payments",
+  "dialogPaymentTable": "Payment {tableName}",
+  "@dialogPaymentTable": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "labelPaymentTotal": "Total to pay",
+  "dialogSelectPaymentMethod": "Select method (Pay All):",
+  "cardPayment": "Card",
+  "cashPayment": "Cash",
+  "billSplitEach": "By Item",
+  "billSplitEvenly": "Even Split",
+  "selectToPay": "Select what to pay",
+  "selectAll": "Select All",
+  "unselectAll": "Deselect All",
+  "allSelected": "All selected",
+  "labelSplitEvenlyDescription": "In how many parts to split?",
+  "totalPeople": "Total people",
+  "labelPartsToPay": "Shares to pay now:",
+  "infoPartsPaying": "{payingParts} shares out of {splitParts}",
+  "@infoPartsPaying": {
+    "placeholders": {
+      "payingParts": {
+        "type": "int"
+      },
+      "splitParts": {
+        "type": "int"
+      }
+    }
+  },
+  "labelSinglePart": "Single share:",
+  "labelTotal": "Total",
+  "infoTotalAmount": "Total: {total}",
+  "@infoTotalAmount": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "labelToPay": "TO PAY",
+  "labelRemaining": "REMAINING",
+  "infoPriceEach": "{price} each",
+  "@infoPriceEach": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "btnPay": "PAY",
+  "msgPaymentSuccess": "Payment recorded",
+
+  "headerVoids": "--- Voids and Cancellations ---",
+  "titleVoidItem": "Void Item",
+  "titleVoidItemAction": "Void / Delete",
+  "subtitleVoidItemAction": "Remove dish from order",
+  "titleVoidItemDialog": "Delete: {itemName}",
+  "@titleVoidItemDialog": {
+    "placeholders": {
+      "itemName": {
+        "type": "String"
+      }
+    }
+  },
+  "labelVoidQuantity": "Quantity to void:",
+  "labelVoidReasonPlaceholder": "Reason:",
+  "dialogConfirmVoid": "CONFIRM VOID",
+  "labelRefundOption": "Refund the amount?",
+  "labelViewVoided": "View voids",
+  "labelNoVoidedItems": "No voids recorded",
+  "labelVoidedList": "Void History {tableName}",
+  "@labelVoidedList": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "labelVoidReason": "Reason: {reason}\n{hour}:{minutes}\n{isRefunded, select, false{Not Refunded, } true{Refunded, } other{}} {statusWhenVoided, select, pending{Pending} served{Served} cooking{Cooking} fired{Sent to kitchen} ready{Ready} other{}}",
+  "@labelVoidReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      },
+      "hour": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      },
+      "isRefunded": {
+        "type": "String"
+      },
+      "statusWhenVoided": {
+        "type": "String"
+      }
+    }
+  },
+  "msgVoidItem": "Item voided successfully",
+
+  "headerGeneral": "--- General Labels ---",
+  "labelAll": "All",
+  "dialogConfirm": "CONFIRM",
+  "dialogCancel": "Cancel",
+  "dialogSave": "Save",
+  "dialogEdit": "Edit",
+  "msgAttention": "Attention"
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
 
 import '../../../config/themes.dart';
@@ -26,14 +27,14 @@ class _TablesViewState extends ConsumerState<TablesView> {
     ref.read(tablesProvider.notifier).moveTable(source.id, target.id);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tavolo spostato con successo")));
+        SnackBar(content: Text(AppLocalizations.of(context)!.tableMoved)));
   }
 
   void _performMerge(TableItem source, TableItem target) {
     ref.read(tablesProvider.notifier).mergeTable(source.id, target.id);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tavoli uniti con successo")));
+        SnackBar(content: Text(AppLocalizations.of(context)!.tableMerged)));
   }
 
   void _performCancel(TableItem table) {
@@ -41,9 +42,9 @@ class _TablesViewState extends ConsumerState<TablesView> {
     Navigator.pop(context); // Chiude dialog
     Navigator.pop(context); // Chiude bottom sheet azioni
 
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       backgroundColor: AppColors.cRose500,
-      content: Text("Tavolo annullato e resettato"),
+      content: Text(AppLocalizations.of(context)!.tableReset),
       duration: Duration(seconds: 2),
     ));
   }
@@ -51,9 +52,9 @@ class _TablesViewState extends ConsumerState<TablesView> {
   void _performPayment(TableItem table, List<CartItem> paidItems) {
     ref.read(tablesProvider.notifier).processPayment(table.id, paidItems);
 
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       backgroundColor: AppColors.cEmerald500,
-      content: Text("Pagamento registrato"),
+      content: Text(AppLocalizations.of(context)!.msgPaymentSuccess),
       duration: Duration(seconds: 2),
     ));
   }
@@ -92,7 +93,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text("Azioni ${table.name}",
+              child: Text(AppLocalizations.of(context)!.tableActions(table.name),
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -103,19 +104,20 @@ class _TablesViewState extends ConsumerState<TablesView> {
               shrinkWrap: true,
               children: [
                 ListTile(
-                  leading:
-                  const Icon(Icons.compare_arrows, color: AppColors.cIndigo600),
-                  title: const Text("Sposta Tavolo"),
-                  subtitle: const Text("Trasferisci su un tavolo libero"),
+                  leading: const Icon(Icons.compare_arrows,
+                      color: AppColors.cIndigo600),
+                  title: Text(AppLocalizations.of(context)!.actionMove),
+                  subtitle:  Text(AppLocalizations.of(context)!.actionTransfer),
                   onTap: () {
                     Navigator.pop(ctx);
                     _showTableSelectionDialog(table, isMerge: false);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.merge_type, color: AppColors.cAmber700),
-                  title: const Text("Unisci Tavolo"),
-                  subtitle: const Text("Unisci a un tavolo occupato"),
+                  leading:
+                      const Icon(Icons.merge_type, color: AppColors.cAmber700),
+                  title: Text(AppLocalizations.of(context)!.actionMerge),
+                  subtitle: Text(AppLocalizations.of(context)!.actionMergeDesc),
                   onTap: () {
                     Navigator.pop(ctx);
                     _showTableSelectionDialog(table, isMerge: true);
@@ -125,18 +127,18 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 ListTile(
                   leading: const Icon(Icons.check_circle_outline,
                       color: AppColors.cIndigo600),
-                  title: const Text("Incasso Rapido (Totale)"),
-                  subtitle: const Text("Paga tutto senza dividere"),
+                  title: Text(AppLocalizations.of(context)!.actionQuickPay),
+                  subtitle: Text(AppLocalizations.of(context)!.actionPayTotalDesc),
                   onTap: () {
                     Navigator.pop(ctx);
                     _showPaymentDialog(table);
                   },
                 ),
                 ListTile(
-                  leading:
-                  const Icon(Icons.attach_money, color: AppColors.cEmerald500),
-                  title: const Text("Cassa / Divisione Conto"),
-                  subtitle: const Text("Gestisci pagamenti parziali"),
+                  leading: const Icon(Icons.attach_money,
+                      color: AppColors.cEmerald500),
+                  title: Text(AppLocalizations.of(context)!.actionSplitPay),
+                  subtitle: Text(AppLocalizations.of(context)!.actionSplitDesc),
                   onTap: () {
                     Navigator.pop(ctx);
                     _openSplitBillScreen(table);
@@ -145,8 +147,8 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.close, color: AppColors.cRose500),
-                  title: const Text("Annulla Tavolo"),
-                  subtitle: const Text("Chiudi il tavolo senza incasso"),
+                  title: Text(AppLocalizations.of(context)!.actionCancelTable),
+                  subtitle: Text(AppLocalizations.of(context)!.actionResetDesc),
                   onTap: () => _showConfirmCancelDialog(table),
                 )
               ],
@@ -192,17 +194,17 @@ class _TablesViewState extends ConsumerState<TablesView> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Row(
-            children: const [
-              Icon(Icons.warning_amber_rounded, color: AppColors.cRose500),
-              SizedBox(width: 8),
-              Text("Attenzione", style: TextStyle(fontWeight: FontWeight.bold)),
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: AppColors.cRose500),
+              const SizedBox(width: 8),
+              Text(AppLocalizations.of(context)!.msgAttention, style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "Stai per annullare il tavolo ${table.name}.\n\nTutti gli ordini correnti verranno persi e il tavolo tornerà libero senza registrare incasso.\n\nSei sicuro?",
+                AppLocalizations.of(context)!.msgConfirmCancelTable(table.name),
                 style: const TextStyle(color: AppColors.cSlate600),
               ),
               const SizedBox(height: 16),
@@ -223,7 +225,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text("Indietro",
+              child: Text(AppLocalizations.of(context)!.msgBack,
                   style: TextStyle(color: AppColors.cSlate500)),
             ),
             ElevatedButton(
@@ -235,14 +237,15 @@ class _TablesViewState extends ConsumerState<TablesView> {
                         if (pinController.text == '1234')
                           _performCancel(table)
                         else
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(SnackBar(
                             backgroundColor: AppColors.cRose500,
-                            content: Text("PIN errato. Riprova."),
+                            content: Text(AppLocalizations.of(context)!.loginPinError),
                             duration: Duration(seconds: 2),
                           ))
                       }
                   : null,
-              child: const Text("CONFERMA ANNULLAMENTO"),
+              child: Text(AppLocalizations.of(context)!.dialogConfirm,),
             ),
           ],
         );
@@ -259,11 +262,11 @@ class _TablesViewState extends ConsumerState<TablesView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Column(
           children: [
-            Text("Incasso ${table.name}",
+            Text(AppLocalizations.of(context)!.dialogPaymentTable(table.name),
                 style:
                     const TextStyle(fontSize: 16, color: AppColors.cSlate500)),
             const SizedBox(height: 8),
-            const Text("Totale da incassare",
+            Text(AppLocalizations.of(context)!.labelPaymentTotal,
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -279,7 +282,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                     fontWeight: FontWeight.w900,
                     color: AppColors.cIndigo600)),
             const SizedBox(height: 24),
-            const Text("Seleziona metodo (Paga Tutto):",
+            Text(AppLocalizations.of(context)!.dialogSelectPaymentMethod,
                 style: TextStyle(color: AppColors.cSlate500, fontSize: 12)),
             const SizedBox(height: 8),
             Row(
@@ -287,7 +290,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
               children: [
                 PaymentMethodButton(
                     icon: Icons.credit_card,
-                    label: "Carta",
+                    label: AppLocalizations.of(context)!.cardPayment,
                     color: AppColors.cIndigo600,
                     onTap: () {
                       Navigator.pop(ctx);
@@ -295,7 +298,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                     }),
                 PaymentMethodButton(
                     icon: Icons.money,
-                    label: "Contanti",
+                    label: AppLocalizations.of(context)!.cashPayment,
                     color: AppColors.cEmerald500,
                     onTap: () {
                       Navigator.pop(ctx);
@@ -308,7 +311,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Annulla",
+            child: Text(AppLocalizations.of(context)!.dialogCancel,
                 style: TextStyle(color: AppColors.cSlate500)),
           ),
         ],
@@ -330,12 +333,12 @@ class _TablesViewState extends ConsumerState<TablesView> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cWhite,
-        title: Text(isMerge ? "Unisci a..." : "Sposta su..."),
+        title: Text(isMerge ? AppLocalizations.of(context)!.dialogMergeTable : AppLocalizations.of(context)!.dialogMoveTable),
         content: SizedBox(
           width: double.maxFinite,
           height: 300,
           child: candidates.isEmpty
-              ? const Center(child: Text("Nessun tavolo disponibile"))
+              ? Center(child: Text(AppLocalizations.of(context)!.msgNoTablesAvailable))
               : GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
@@ -370,7 +373,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text("Annulla")),
+              child: Text(AppLocalizations.of(context)!.dialogCancel)),
         ],
       ),
     );
@@ -392,11 +395,11 @@ class _TablesViewState extends ConsumerState<TablesView> {
             title: Center(
                 child: Column(
               children: [
-                Text("Apertura ${table.name}",
+                Text(AppLocalizations.of(context)!.dialogOpenTable(table.name),
                     style: const TextStyle(
                         fontSize: 16, color: AppColors.cSlate500)),
                 const SizedBox(height: 4),
-                const Text("Quanti Coperti?",
+                Text(AppLocalizations.of(context)!.dialogGuests,
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
               ],
@@ -438,7 +441,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text("Annulla",
+                child: Text(AppLocalizations.of(context)!.dialogCancel,
                     style: TextStyle(color: AppColors.cSlate500)),
               ),
               ElevatedButton(
@@ -451,7 +454,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => _performOccupy(table, guests),
-                child: const Text("Apri Tavolo",
+                child: Text(AppLocalizations.of(context)!.btnOpen,
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               )
@@ -466,15 +469,20 @@ class _TablesViewState extends ConsumerState<TablesView> {
   Widget build(BuildContext context) {
     final tables = ref.watch(tablesProvider);
     ref.listen<List<TableItem>>(tablesProvider, (previous, next) async {
-      final prevReadyIds = previous?.where((t) => t.status == TableStatus.ready).map((t) => t.id).toSet() ?? {};
-      final nextReadyIds = next.where((t) => t.status == TableStatus.ready).map((t) => t.id).toSet();
+      final prevReadyIds = previous
+              ?.where((t) => t.status == TableStatus.ready)
+              .map((t) => t.id)
+              .toSet() ??
+          {};
+      final nextReadyIds = next
+          .where((t) => t.status == TableStatus.ready)
+          .map((t) => t.id)
+          .toSet();
 
       // Se ci sono nuovi ID nel set 'next' che non c'erano in 'prev', qualcuno è diventato pronto
       if (nextReadyIds.difference(prevReadyIds).isNotEmpty) {
-        print("New ready table detected");
-        if(await Vibration.hasVibrator()) {
+        if (await Vibration.hasVibrator()) {
           Vibration.vibrate(duration: 500);
-          print("Vibrating for new ready table");
         }
       }
     });
