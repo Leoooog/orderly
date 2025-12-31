@@ -91,6 +91,10 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     return allVoids.where((v) => v.tableId == tableId).toList();
   }
 
+  TableItem getTableById(int tableId) {
+    return state.firstWhere((t) => t.id == tableId);
+  }
+
   // --- AZIONI ---
 
   void occupyTable(int tableId, int guests) {

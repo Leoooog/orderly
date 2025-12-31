@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Screens (Import relativi interni al modulo)
 import '../screens/login_screen.dart';
-import '../screens/seettings_screen.dart';
+import '../screens/settings_screen.dart';
 import '../screens/tables_view.dart';
 import '../screens/menu_view.dart';
 import '../screens/success_view.dart';
@@ -62,19 +62,17 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
           final tableIdStr = state.pathParameters['id'];
           final tableId = int.tryParse(tableIdStr ?? '') ?? 0;
 
-          final tables = ref.read(tablesProvider);
-          final table = tables.firstWhere(
-                  (t) => t.id == tableId,
-              orElse: () => tables.first
-          );
-
+          final table = ref.read(tablesProvider.notifier).getTableById(tableId);
           return MenuView(
             table: table,
-            onBack: () => context.pop(),
+            onBack: () => {
+              if(context.canPop()) context.pop()
+              else context.go('/tables'),
+            },
             onSuccess: (newOrders) {
               ref.read(tablesProvider.notifier).addOrdersToTable(tableId, newOrders);
               // Passiamo il nome del tavolo come parametro query per la pagina di successo
-              context.go('/success?tableName=${Uri.encodeComponent(table.name)}');
+              context.go('/success?tableId=$tableId');
             },
           );
         },
@@ -84,11 +82,14 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/success',
         builder: (context, state) {
-          final tableName = state.uri.queryParameters['tableName'] ?? '';
+          final tableIdStr = state.uri.queryParameters['tableId'] ?? '';
+          final tableId = int.tryParse(tableIdStr) ?? 0;
+          final table = ref.read(tablesProvider.notifier).getTableById(tableId);
+          final tableName = table.name;
 
           // Auto-redirect dopo 2 secondi
           Future.delayed(const Duration(seconds: 2), () {
-            if (context.mounted) context.go('/tables');
+            if (context.mounted) context.go('/menu/$tableId');
           });
 
           return SuccessView(tableName: tableName);

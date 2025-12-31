@@ -56,7 +56,7 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Annulla")),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.cRose500, foregroundColor: AppColors.cWhite),
-              onPressed: () { Navigator.pop(ctx); widget.onBack(); },
+              onPressed: () { widget.onBack(); },
               child: const Text("Esci"),
             )
           ],
@@ -137,7 +137,7 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
                   tabs: [
                     const Tab(text: "MENU"),
                     // Usiamo currentTable per avere il numero aggiornato
-                    Tab(text: "AL TAVOLO (${currentTable.orders.length})"),
+                    Tab(text: "ORDINE (${currentTable.orders.length})"),
                   ],
                 ),
 
@@ -163,6 +163,7 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
                 maxHeight: _maxHeight,
                 isExpanded: _isExpanded,
                 onExpandChange: (val) => setState(() => _isExpanded = val),
+                onSendOrder: _handleSendOrder,
               ),
 
             if (cart.isNotEmpty) _buildSendButton(),
@@ -199,7 +200,7 @@ class _MenuViewState extends ConsumerState<MenuView> with SingleTickerProviderSt
               padding: const EdgeInsets.all(16), color: AppColors.cWhite,
               child: SizedBox(width: double.infinity, child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.cEmerald500, foregroundColor: AppColors.cWhite, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                onPressed: _handleSendOrder, icon: const Icon(Icons.send), label: const Text("INVIA CUCINA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                onPressed: _handleSendOrder, icon: const Icon(Icons.send), label: const Text("INVIA COMANDA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               )),
             ),
           ),

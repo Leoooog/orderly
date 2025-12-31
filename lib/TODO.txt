@@ -8,3 +8,4 @@
 - Storno piatti
 - Stili per dark mode
 - Modificare piatti pendenti
+- Routes sono rotte
