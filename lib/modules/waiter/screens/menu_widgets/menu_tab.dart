@@ -93,19 +93,19 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
       children: [
         // BARRA DI RICERCA
         Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: EdgeInsets.all(12),
           child: TextField(
             controller: searchController,
             decoration: InputDecoration(
               hintText: AppLocalizations.of(context)!.labelSearch,
-              prefixIcon: Icon(Icons.search, color: colors.textTertiary),
+              prefixIcon: Icon(Icons.search, color: colors.textTertiary, size: 20),
               suffixIcon: searchQuery.isNotEmpty
-                  ? IconButton(icon: const Icon(Icons.close), onPressed: () => searchController.clear())
+                  ? IconButton(icon: Icon(Icons.close, size: 18), onPressed: () => searchController.clear())
                   : null,
               filled: true,
               fillColor: colors.background,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             ),
           ),
         ),
@@ -116,15 +116,15 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colors.divider))),
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: EdgeInsets.symmetric(horizontal: 8),
             itemCount: Course.values.length,
             itemBuilder: (ctx, idx) {
               final course = Course.values[idx];
               final isActive = activeCourse == course;
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 child: ActionChip(
-                  label: Text(course.label),
+                  label: Text(course.label, style: TextStyle(fontSize: 12)),
                   backgroundColor: isActive ? colors.primary : colors.background,
                   labelStyle: TextStyle(color: isActive ? colors.onPrimary : colors.textSecondary, fontWeight: FontWeight.bold, fontSize: 12),
                   side: BorderSide.none,
@@ -140,7 +140,7 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
         if (searchQuery.isEmpty)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 // MODIFICA 3: Aggiunta manuale del pulsante "Tutti"
@@ -167,11 +167,11 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
           child: Container(
             color: colors.background,
             child: filteredItems.isEmpty
-                ? Center(child: Text(AppLocalizations.of(context)!.labelNoProducts, style: TextStyle(color: colors.textTertiary)))
+                ? Center(child: Text(AppLocalizations.of(context)!.labelNoProducts, style: TextStyle(color: colors.textTertiary, fontSize: 14)))
                 : ListView.separated(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
+              padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
               itemCount: filteredItems.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, __) => SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = filteredItems[index];
                 final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
@@ -197,12 +197,12 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
   Widget _buildCategoryPill({required String id, required String name, required bool isActive}) {
     final colors = context.colors;
     return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
+      padding: EdgeInsets.only(right: 8),
       child: GestureDetector(
         onTap: () => setState(() => activeCategory = id),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: isActive ? colors.secondary : colors.surface,
             borderRadius: BorderRadius.circular(24),
@@ -256,7 +256,7 @@ class _ProductCard extends StatelessWidget {
               GestureDetector(
                 onTap: onAdd,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
@@ -265,7 +265,7 @@ class _ProductCard extends StatelessWidget {
                             item.imageUrl,
                             fit: BoxFit.cover,
                             // CachedNetworkImage sarebbe meglio in un'app reale
-                            errorBuilder: (_,__,___)=> Icon(Icons.broken_image, color: colors.textTertiary)
+                            errorBuilder: (_,__,___)=> Icon(Icons.broken_image, color: colors.textTertiary, size: 20)
                         )
                     ),
                   ),
@@ -282,16 +282,16 @@ class _ProductCard extends StatelessWidget {
                         children: [
                           Expanded(child: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: colors.textPrimary))),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            padding: EdgeInsets.symmetric(horizontal: 8),
                             child: Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 20, color: colors.textTertiary),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     GestureDetector(
                       onTap: onAdd,
-                      child: Text(item.price.toCurrency(), style: TextStyle(fontWeight: FontWeight.w600, color: colors.primary)),
+                      child: Text(item.price.toCurrency(), style: TextStyle(fontWeight: FontWeight.w600, color: colors.primary, fontSize: 14)),
                     ),
                   ],
                 ),
@@ -299,30 +299,30 @@ class _ProductCard extends StatelessWidget {
               GestureDetector(
                 onTap: onAdd,
                 child: Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.all(8),
+                  margin: EdgeInsets.only(right: 12),
+                  padding: EdgeInsets.all(8),
                   child: totalQty > 0
-                      ? Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle), alignment: Alignment.center, child: Text("$totalQty", style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.bold)))
+                      ? Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle), alignment: Alignment.center, child: Text("$totalQty", style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.bold, fontSize: 14)))
                       : Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.background, shape: BoxShape.circle), child: Icon(Icons.add, size: 18, color: colors.textTertiary)),
                 ),
               )
             ],
           ),
           AnimatedCrossFade(
-            firstChild: const SizedBox(height: 0, width: double.infinity),
+            firstChild: SizedBox(height: 0, width: double.infinity),
             secondChild: Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
               decoration: BoxDecoration(border: Border(top: BorderSide(color: colors.divider))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(AppLocalizations.of(context)!.labelIngredients, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colors.textTertiary, letterSpacing: 1)),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Wrap(spacing: 6, runSpacing: 6, children: item.ingredients.map((ing) => _buildTag(context, ing, colors.background, colors.textSecondary)).toList()),
                 if (item.allergens.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(AppLocalizations.of(context)!.labelAllergens, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colors.danger, letterSpacing: 1)),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Wrap(spacing: 6, runSpacing: 6, children: item.allergens.map((alg) => _buildTag(context, alg, colors.dangerContainer, colors.danger, isWarning: true)).toList()),
                 ],
               ]),
@@ -338,10 +338,10 @@ class _ProductCard extends StatelessWidget {
   Widget _buildTag(BuildContext context, String text, Color bg, Color textCol, {bool isWarning = false}) {
     final colors = context.colors;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: isWarning ? textCol.withValues(alpha: 0.2) : colors.divider)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if(isWarning) ...[Icon(Icons.warning_amber, size: 12, color: colors.danger), const SizedBox(width: 4)],
+        if(isWarning) ...[Icon(Icons.warning_amber, size: 12, color: colors.danger), SizedBox(width: 4)],
         Text(text, style: TextStyle(fontSize: 11, color: textCol, fontWeight: isWarning ? FontWeight.bold : FontWeight.normal))
       ]),
     );

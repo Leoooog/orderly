@@ -8,7 +8,7 @@ import '../../../../data/models/course.dart';
 import '../../../../shared/widgets/quantity_button.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/menu_provider.dart';
-import 'item_edit_dialog.dart'; // Importa il widget
+import 'item_edit_dialog.dart';
 
 class CartSheet extends ConsumerStatefulWidget {
   final AnimationController controller;
@@ -52,7 +52,6 @@ class _CartSheetState extends ConsumerState<CartSheet> {
         cartItem: item,
         menuItem: menuItem,
         onSave: (qty, note, course, extras) {
-          // Passiamo anche la quantità al provider, che ora supporta la modifica/split
           ref
               .read(cartProvider.notifier)
               .updateItemConfig(item, qty, note, course, extras);
@@ -62,7 +61,6 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     );
   }
 
-  // ... (Resto del file build identico a prima, usando _openEditDialog aggiornato) ...
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -124,14 +122,15 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                         children: [
                           Row(children: [
                             Icon(Icons.shopping_bag,
-                                color: colors.primary),
+                                color: colors.primary, size: 20),
                             const SizedBox(width: 12),
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(AppLocalizations.of(context)!.cartSheetTitle,
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14)),
                                   Text(
                                     AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
                                       style: TextStyle(
@@ -148,13 +147,13 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18)),
                               if (!widget.isExpanded) ... [
-                                SizedBox(width: 16),
+                                const SizedBox(width: 16),
                                 CircleAvatar(
                                   radius: 20,
                                   backgroundColor: colors.success,
                                   child: IconButton(
                                       icon: Icon(Icons.send,
-                                          color: colors.textInverse),
+                                          color: colors.textInverse, size: 18),
                                       onPressed: () => widget.onSendOrder()),
                                 ),
         ]
@@ -213,7 +212,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                   : colors.divider)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           Text("€ ${(item.unitPrice * item.qty).toStringAsFixed(2)}",
               style: TextStyle(fontSize: 12, color: colors.textSecondary)),
         ]),
@@ -251,7 +250,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                     icon: Icons.remove,
                     onTap: () => _updateQty(item.internalId, -1)),
                 Text("${item.qty}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 QuantityButton(
                     icon: Icons.add,
                     onTap: () => _updateQty(item.internalId, 1)),

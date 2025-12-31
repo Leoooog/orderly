@@ -6,6 +6,7 @@ import 'package:orderly/shared/widgets/circle_button.dart';
 import 'package:orderly/shared/widgets/quantity_control_button.dart';
 import 'package:orderly/shared/widgets/payment_method_button.dart'; // Assicurati che questo file esista in shared/widgets
 
+
 import '../../../data/models/cart_item.dart';
 import '../../../data/models/table_item.dart';
 
@@ -125,7 +126,7 @@ class _BillScreenState extends State<BillScreen>
           // Drag Handle
           Center(
             child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                margin: EdgeInsets.only(top: 12, bottom: 4),
                 width: 48,
                 height: 6,
                 decoration: BoxDecoration(
@@ -135,7 +136,7 @@ class _BillScreenState extends State<BillScreen>
 
           // HEADER COMUNE
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -158,7 +159,7 @@ class _BillScreenState extends State<BillScreen>
                 ),
                 // Tab Selector Compatto
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.all(4),
                   decoration: BoxDecoration(
                       color: colors.divider,
                       borderRadius: BorderRadius.circular(12)),
@@ -205,7 +206,7 @@ class _BillScreenState extends State<BillScreen>
           return GestureDetector(
             onTap: () => _tabController.animateTo(index),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected ? colors.surface : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
@@ -237,7 +238,7 @@ class _BillScreenState extends State<BillScreen>
       children: [
         // Action Bar
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -260,9 +261,9 @@ class _BillScreenState extends State<BillScreen>
         // List
         Expanded(
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             itemCount: widget.table.orders.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => SizedBox(height: 12),
             itemBuilder: (context, index) {
               final item = widget.table.orders[index];
               final selectedQty = selection[item.internalId] ?? 0;
@@ -275,7 +276,7 @@ class _BillScreenState extends State<BillScreen>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: done
                         ? colors.divider
@@ -343,8 +344,8 @@ class _BillScreenState extends State<BillScreen>
                                       item.internalId, -1, item.qty)),
                               Container(
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
-                                constraints: const BoxConstraints(minWidth: 40),
+                                    EdgeInsets.symmetric(horizontal: 8),
+                                constraints: BoxConstraints(minWidth: 40),
                                 alignment: Alignment.center,
                                 child: Text(
                                     // Mostra "3" se paghi 3, "1 / 3" se paghi parziale
@@ -396,16 +397,17 @@ class _BillScreenState extends State<BillScreen>
         Expanded(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(24), // Padding ridotto per mobile
+              padding: EdgeInsets.all(24), // Padding ridotto per mobile
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+
                 children: [
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                       AppLocalizations.of(context)!.labelSplitEvenlyDescription,
                       style:
                           TextStyle(fontSize: 16, color: colors.textSecondary)),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Slider Persone
                   Row(
@@ -438,17 +440,17 @@ class _BillScreenState extends State<BillScreen>
                   Text(AppLocalizations.of(context)!.totalPeople,
                       style: TextStyle(color: colors.textTertiary)),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                   Container(
                       width: double.infinity,
                       height: 1,
                       color: colors.divider),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
 
                   Text(AppLocalizations.of(context)!.labelPartsToPay,
                       style:
                           TextStyle(fontSize: 16, color: colors.textSecondary)),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Slider Quote
                   Row(
@@ -482,11 +484,11 @@ class _BillScreenState extends State<BillScreen>
                           color: colors.primary,
                           fontWeight: FontWeight.bold)),
 
-                  const SizedBox(height: 32), // Spazio fisso invece di Spacer()
+                  SizedBox(height: 32), // Spazio fisso invece di Spacer()
 
                   // Info Box
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                         color: colors.infoSurfaceStrong,
                         borderRadius: BorderRadius.circular(16)),
@@ -503,7 +505,7 @@ class _BillScreenState extends State<BillScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                 ],
               ),
             ),
@@ -526,7 +528,7 @@ class _BillScreenState extends State<BillScreen>
     final bool canPay = toPay > 0.01;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(top: BorderSide(color: colors.divider)),
@@ -569,7 +571,7 @@ class _BillScreenState extends State<BillScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Pulsanti Metodo di Pagamento
             Row(
@@ -584,7 +586,7 @@ class _BillScreenState extends State<BillScreen>
                         onTap: canPay ? onPay : () {}),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: Opacity(
                     opacity: canPay ? 1.0 : 0.5,

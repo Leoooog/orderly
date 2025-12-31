@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
 import '../../../data/models/cart_item.dart';
@@ -17,13 +18,11 @@ import 'menu_widgets/cart_sheet.dart';
 
 class MenuView extends ConsumerStatefulWidget {
   final TableItem table;
-  final VoidCallback onBack;
   final Function(List<CartItem>) onSuccess;
 
   const MenuView(
       {super.key,
       required this.table,
-      required this.onBack,
       required this.onSuccess});
 
   @override
@@ -68,7 +67,7 @@ class _MenuViewState extends ConsumerState<MenuView>
                   backgroundColor: context.colors.danger,
                   foregroundColor: context.colors.textInverse),
               onPressed: () {
-                widget.onBack();
+                back();
               },
               child: Text(AppLocalizations.of(context)!.exit),
             )
@@ -76,7 +75,7 @@ class _MenuViewState extends ConsumerState<MenuView>
         ),
       );
     } else {
-      widget.onBack();
+      back();
     }
   }
 
@@ -93,17 +92,10 @@ class _MenuViewState extends ConsumerState<MenuView>
     _maxHeight = size.height * 0.75;
 
     final cart = ref.watch(cartProvider);
-
-    // FIX FONDAMENTALE: Ascoltiamo direttamente lo stato dei tavoli.
-    // Questo garantisce che se lo stato cambia (es. "In Corso"), la UI si aggiorni subito.
     final allTables = ref.watch(tablesProvider);
-
-    // Troviamo la versione più aggiornata del tavolo corrente
     final currentTable = allTables.firstWhere((t) => t.id == widget.table.id,
-        orElse: () => widget.table // Fallback nel caso remoto non si trovi
-        );
+        orElse: () => widget.table);
 
-    // Sync automatico chiusura carrello
     ref.listen<List<CartItem>>(cartProvider, (previous, next) {
       if (next.isEmpty && _isExpanded) {
         _controller.animateTo(0, curve: Curves.easeOutQuint);
@@ -135,23 +127,28 @@ class _MenuViewState extends ConsumerState<MenuView>
                             icon: Icon(Icons.chevron_left,
                                 color: colors.textSecondary),
                             onPressed: _handleBack),
-                        Column(
-                          children: [
-                            Text(
-                                AppLocalizations.of(context)!
-                                    .tableName(currentTable.name),
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: colors.textPrimary)),
-                            Text(
-                                AppLocalizations.of(context)!
-                                    .labelGuests(currentTable.guests),
-                                style: TextStyle(
-                                    fontSize: 12, color: colors.textSecondary)),
-                          ],
+                        Expanded(
+                          child: Column(
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                    AppLocalizations.of(context)!
+                                        .tableName(currentTable.name),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: colors.textPrimary)),
+                              ),
+                              Text(
+                                  AppLocalizations.of(context)!
+                                      .labelGuests(currentTable.guests),
+                                  style: TextStyle(
+                                      fontSize: 12, color: colors.textSecondary)),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 48),
+                        const SizedBox(width: 48), // Balance the back button
                       ],
                     ),
                   ),
@@ -165,7 +162,6 @@ class _MenuViewState extends ConsumerState<MenuView>
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                   tabs: [
                     Tab(text: AppLocalizations.of(context)!.navMenu),
-                    // Usiamo currentTable per avere il numero aggiornato
                     Tab(
                         text:
                             "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.orders.length})"),
@@ -175,9 +171,7 @@ class _MenuViewState extends ConsumerState<MenuView>
                 Expanded(
                   child: TabBarView(
                     children: [
-                      // TAB 1: Menu
                       const MenuTab(),
-                      // TAB 2: Storico (Passiamo il tavolo AGGIORNATO)
                       HistoryTab(table: currentTable),
                     ],
                   ),
@@ -246,7 +240,7 @@ class _MenuViewState extends ConsumerState<MenuView>
                     onPressed: _handleSendOrder,
                     icon: const Icon(Icons.send),
                     label: Text(AppLocalizations.of(context)!.btnSendKitchen,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 16)),
                   )),
             ),
@@ -254,5 +248,14 @@ class _MenuViewState extends ConsumerState<MenuView>
         );
       },
     );
+  }
+
+  void back() {
+    if(context.canPop()) {
+      context.pop(context);
+    }
+    context.go('/tables');
+
+    ref.read(cartProvider.notifier).clear();
   }
 }

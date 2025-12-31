@@ -67,7 +67,7 @@ class AppTheme {
       onSurface: AppColors.cSlate900,
     ),
 
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: AppColors.cWhite,
       elevation: 0,
       iconTheme: IconThemeData(color: AppColors.cSlate800),
@@ -125,7 +125,7 @@ class AppTheme {
       onSurface: AppColors.cSlate100, // Testo chiaro
     ),
 
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: AppColors.cSlate800,
       elevation: 0,
       iconTheme: IconThemeData(color: AppColors.cSlate100),

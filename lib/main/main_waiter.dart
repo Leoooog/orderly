@@ -9,7 +9,6 @@ import '../l10n/app_localizations.dart';
 import '../orderly_app.dart';
 
 void main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
   GoRouter.optionURLReflectsImperativeAPIs = true;
 
@@ -19,11 +18,9 @@ void main() async {
   await Hive.openBox(kVoidsBox);
   await Hive.openBox(kSettingsBox);
 
-  runApp(
-    const ProviderScope(
-      child: WaiterAppEntry(),
-    ),
-  );
+  runApp(const ProviderScope(
+    child: WaiterAppEntry(),
+  ));
 }
 
 // Piccolo widget wrapper per leggere il provider del router

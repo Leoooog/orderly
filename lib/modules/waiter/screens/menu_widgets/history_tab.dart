@@ -4,6 +4,7 @@ import 'package:orderly/config/restaurant_settings.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
+
 import '../../../../data/models/table_item.dart';
 import '../../../../data/models/cart_item.dart';
 import '../../../../data/models/course.dart';
@@ -69,7 +70,7 @@ class HistoryTab extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16),
               child: Text(
                   AppLocalizations.of(context)!.labelVoidedList(table.name),
                   style: TextStyle(
@@ -77,23 +78,23 @@ class HistoryTab extends ConsumerWidget {
                       fontSize: 18,
                       color: colors.danger)),
             ),
-            const Divider(height: 1),
+            Divider(height: 1),
             if (voids.isEmpty)
               Expanded(
                   child: Center(
                       child: Text(
                           AppLocalizations.of(context)!.labelNoVoidedItems,
-                          style: TextStyle(color: colors.textTertiary))))
+                          style: TextStyle(color: colors.textTertiary, fontSize: 14))))
             else
               Expanded(
                 child: ListView.separated(
                   itemCount: voids.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, __) => Divider(height: 1),
                   itemBuilder: (context, index) {
                     final v = voids[index];
                     return ListTile(
                       title: Text("${v.quantity}x ${v.itemName}",
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       subtitle: Text(
                         AppLocalizations.of(context)!.labelVoidReason(
                             v.reason,
@@ -172,8 +173,8 @@ class HistoryTab extends ConsumerWidget {
                   Text(
                       AppLocalizations.of(context)!
                           .titleVoidItemDialog(item.name),
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  SizedBox(height: 16),
                   if (item.qty > 1) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -192,7 +193,7 @@ class HistoryTab extends ConsumerWidget {
                                     ? () => setStateDialog(() => qtyToVoid--)
                                     : null),
                             Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
                                   color: colors.background,
@@ -215,7 +216,7 @@ class HistoryTab extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                   ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -233,7 +234,7 @@ class HistoryTab extends ConsumerWidget {
                           )),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(AppLocalizations.of(context)!.labelVoidReasonPlaceholder,
                       style:
                           TextStyle(fontSize: 12, color: colors.textSecondary)),
@@ -242,7 +243,7 @@ class HistoryTab extends ConsumerWidget {
                       children: reasons
                           .map((r) => ChoiceChip(
                                 checkmarkColor: colors.textInverse,
-                                label: Text(r),
+                                label: Text(r, style: TextStyle(fontSize: 12)),
                                 selected: selectedReason == r,
                                 onSelected: (v) => setStateDialog(
                                     () => selectedReason = v ? r : ""),
@@ -258,7 +259,7 @@ class HistoryTab extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(8)),
                               ))
                           .toList()),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   TextField(
                     controller: pinController,
                     keyboardType: TextInputType.number,
@@ -303,16 +304,16 @@ class HistoryTab extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: colors.surface,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Text(item.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 18))),
             if (canEdit)
               ListTile(
@@ -350,10 +351,10 @@ class HistoryTab extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.receipt_long, size: 64, color: colors.divider),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(AppLocalizations.of(context)!.labelNoOrders,
                 style: TextStyle(
-                    color: colors.textTertiary, fontWeight: FontWeight.bold)),
+                    color: colors.textTertiary, fontWeight: FontWeight.bold, fontSize: 14)),
             if (ref
                 .read(tablesProvider.notifier)
                 .getVoidsForTable(table.id)
@@ -377,26 +378,26 @@ class HistoryTab extends ConsumerWidget {
         Align(
           alignment: Alignment.centerRight,
           child: Padding(
-            padding: const EdgeInsets.only(right: 16, top: 8),
+            padding: EdgeInsets.only(right: 16, top: 8),
             child: TextButton.icon(
               onPressed: () => _showVoidsHistory(context, ref),
               icon: Icon(Icons.history, size: 16, color: colors.danger),
               label: Text(AppLocalizations.of(context)!.labelViewVoided,
                   style: TextStyle(
-                      color: colors.danger, fontWeight: FontWeight.bold)),
+                      color: colors.danger, fontWeight: FontWeight.bold, fontSize: 14)),
             ),
           ),
         ),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             children: [
               for (var course in groupedOrders.keys) ...[
                 _buildCourseSection(
                     context, ref, course, groupedOrders[course]!),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
               ],
-              const SizedBox(height: 80),
+              SizedBox(height: 80),
             ],
           ),
         ),
@@ -428,14 +429,14 @@ class HistoryTab extends ConsumerWidget {
             if (hasPendingItems)
               ElevatedButton.icon(
                 onPressed: () => _fireCourse(context, ref, course),
-                icon: const Icon(Icons.notifications_active, size: 16),
-                label: Text(AppLocalizations.of(context)!.btnFireCourse),
+                icon: Icon(Icons.notifications_active, size: 16),
+                label: Text(AppLocalizations.of(context)!.btnFireCourse, style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: colors.primary,
                     foregroundColor: colors.onPrimary,
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    textStyle: const TextStyle(
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    textStyle: TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 12)),
               )
             else if (hasReady)
@@ -464,7 +465,7 @@ class HistoryTab extends ConsumerWidget {
                   colors.infoSurfaceStrong)
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
               color: colors.surface,
@@ -485,14 +486,14 @@ class HistoryTab extends ConsumerWidget {
   Widget _buildSectionBadge(
       IconData icon, String label, Color textColor, Color bgColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration:
           BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Text(label,
               style: TextStyle(
                   fontSize: 10, fontWeight: FontWeight.bold, color: textColor)),
@@ -550,13 +551,14 @@ class HistoryTab extends ConsumerWidget {
     return InkWell(
       onTap: isInteractive ? () => _markServed(ref, item) : null,
       onLongPress: () => _showItemOptions(context, ref, item),
+      hoverColor: colors.hover,
       child: Opacity(
         opacity: opacity,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.vertical(
-              top: isFirst ? const Radius.circular(12) : Radius.zero,
-              bottom: isLast ? const Radius.circular(12) : Radius.zero,
+              top: isFirst ? Radius.circular(12) : Radius.zero,
+              bottom: isLast ? Radius.circular(12) : Radius.zero,
             ),
             border: Border(
               bottom: (item.status == ItemStatus.fired ||
@@ -567,7 +569,7 @@ class HistoryTab extends ConsumerWidget {
             ),
             color: bgColor,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Container(
@@ -581,9 +583,9 @@ class HistoryTab extends ConsumerWidget {
                         Border.all(color: iconColor.withValues(alpha: 0.3))),
                 child: Text("${item.qty}x",
                     style: TextStyle(
-                        fontWeight: FontWeight.bold, color: iconColor)),
+                        fontWeight: FontWeight.bold, color: iconColor, fontSize: 12)),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,7 +612,7 @@ class HistoryTab extends ConsumerWidget {
               if (item.status == ItemStatus.ready)
                 Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                         color: colors.success,
                         borderRadius: BorderRadius.circular(8)),
@@ -625,7 +627,7 @@ class HistoryTab extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Icon(icon, size: 18, color: iconColor),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(statusLabel,
                         style: TextStyle(
                             fontSize: 8,

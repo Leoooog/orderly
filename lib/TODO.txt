@@ -2,9 +2,7 @@
 - Inserire logo
 - Backend
 - vibrazione quando un tavolo è pronto
-- Localizzazione
 - Aggiungere check prima di fare il conto, il tavolo deve essere in stato "servito"
-- Stili per dark mode
 - responsive sized box
 - Gestione errori per connessione assente
 - Azioni tavoli scrollabili

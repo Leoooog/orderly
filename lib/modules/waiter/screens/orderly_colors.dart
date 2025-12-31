@@ -44,6 +44,8 @@ class OrderlyColors extends ThemeExtension<OrderlyColors> {
   final Color infoSurfaceStrong; // ~50%
   final Color borderExpanded; // ~30% Primary
 
+  final Color hover;
+
   const OrderlyColors({
     required this.primary,
     required this.onPrimary,
@@ -75,6 +77,7 @@ class OrderlyColors extends ThemeExtension<OrderlyColors> {
     required this.infoSurfaceMedium,
     required this.infoSurfaceStrong,
     required this.borderExpanded,
+    this.hover = Colors.transparent,
   });
 
   @override
@@ -109,6 +112,7 @@ class OrderlyColors extends ThemeExtension<OrderlyColors> {
     Color? infoSurfaceMedium,
     Color? infoSurfaceStrong,
     Color? borderExpanded,
+    Color? hover,
   }) {
     return OrderlyColors(
       primary: primary ?? this.primary,
@@ -141,6 +145,7 @@ class OrderlyColors extends ThemeExtension<OrderlyColors> {
       infoSurfaceMedium: infoSurfaceMedium ?? this.infoSurfaceMedium,
       infoSurfaceStrong: infoSurfaceStrong ?? this.infoSurfaceStrong,
       borderExpanded: borderExpanded ?? this.borderExpanded,
+      hover: hover ?? this.hover,
     );
   }
 
@@ -180,6 +185,7 @@ class OrderlyColors extends ThemeExtension<OrderlyColors> {
       infoSurfaceMedium: Color.lerp(infoSurfaceMedium, other.infoSurfaceMedium, t)!,
       infoSurfaceStrong: Color.lerp(infoSurfaceStrong, other.infoSurfaceStrong, t)!,
       borderExpanded: Color.lerp(borderExpanded, other.borderExpanded, t)!,
+      hover: Color.lerp(hover, other.hover, t)!,
     );
   }
 
@@ -214,6 +220,7 @@ class OrderlyColors extends ThemeExtension<OrderlyColors> {
     infoSurfaceMedium: Color(0x4DE0E7FF), // 30% Indigo100
     infoSurfaceStrong: Color(0x80E0E7FF), // 50% Indigo100
     borderExpanded: Color(0x4D4F46E5), // 30% Indigo600
+    hover: Colors.transparent,
   );
 
   static const dark = OrderlyColors(
@@ -247,6 +254,7 @@ class OrderlyColors extends ThemeExtension<OrderlyColors> {
     infoSurfaceMedium: Color(0x4D312E81), // 30% Dark Indigo
     infoSurfaceStrong: Color(0x80312E81), // 50% Dark Indigo
     borderExpanded: Color(0x4D818CF8), // 30% Indigo400
+    hover: Colors.transparent,
   );
 }
 

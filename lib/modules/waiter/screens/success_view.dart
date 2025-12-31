@@ -14,21 +14,24 @@ class SuccessView extends StatelessWidget {
         backgroundColor: colors.success,
         body: Center(
             child:
-                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Container(
-              padding: const EdgeInsets.all(24),
-              decoration:
+            Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration:
                   BoxDecoration(color: colors.surface, shape: BoxShape.circle),
-              child: Icon(Icons.check_circle, size: 48, color: colors.success)),
-          const SizedBox(height: 24),
-          Text(AppLocalizations.of(context)!.msgOrderSent,
-              style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: colors.textInverse)),
-          const SizedBox(height: 8),
-          Text(AppLocalizations.of(context)!.tableName(tableName),
-              style: TextStyle(fontSize: 20, color: colors.successContainer))
-        ])));
+                  child: Icon(Icons.check_circle, size: 48, color: colors.success)),
+              const SizedBox(height: 24),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(AppLocalizations.of(context)!.msgOrderSent,
+                    style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textInverse)),
+              ),
+              const SizedBox(height: 8),
+              Text(AppLocalizations.of(context)!.tableName(tableName),
+                  style: TextStyle(fontSize: 20, color: colors.successContainer))
+            ])));
   }
 }

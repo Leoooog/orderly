@@ -473,7 +473,7 @@ abstract class AppLocalizations {
   /// No description provided for @msgExitWithoutSaving.
   ///
   /// In it, this message translates to:
-  /// **'Vuoi uscire senza inviare la comanda?'**
+  /// **'Vuoi uscire senza inviare la comanda? \nLe modifiche andranno perse.'**
   String get msgExitWithoutSaving;
 
   /// No description provided for @headerKitchenFlow.

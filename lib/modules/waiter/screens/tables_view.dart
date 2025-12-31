@@ -85,14 +85,14 @@ class _TablesViewState extends ConsumerState<TablesView> {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.colors.surface,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0),
               child: Text(AppLocalizations.of(context)!.tableActions(table.name),
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -115,7 +115,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                 ),
                 ListTile(
                   leading:
-                      Icon(Icons.merge_type, color: context.colors.warning),
+                  Icon(Icons.merge_type, color: context.colors.warning),
                   title: Text(AppLocalizations.of(context)!.actionMerge),
                   subtitle: Text(AppLocalizations.of(context)!.actionMergeDesc),
                   onTap: () {
@@ -192,12 +192,12 @@ class _TablesViewState extends ConsumerState<TablesView> {
           backgroundColor: context.colors.surface,
           surfaceTintColor: context.colors.surface,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: context.colors.danger),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.msgAttention, style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(width: 8),
+              Text(AppLocalizations.of(context)!.msgAttention, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),
           content: Column(
@@ -205,9 +205,9 @@ class _TablesViewState extends ConsumerState<TablesView> {
             children: [
               Text(
                 AppLocalizations.of(context)!.msgConfirmCancelTable(table.name),
-                style: TextStyle(color: context.colors.textSecondary),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 14),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               TextField(
                 controller: pinController,
                 keyboardType: TextInputType.number,
@@ -226,7 +226,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(AppLocalizations.of(context)!.msgBack,
-                  style: TextStyle(color: context.colors.textSecondary)),
+                  style: TextStyle(color: context.colors.textSecondary, fontSize: 14)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -234,18 +234,18 @@ class _TablesViewState extends ConsumerState<TablesView> {
                   foregroundColor: Colors.white),
               onPressed: pinController.text.length == 4
                   ? () => {
-                        if (pinController.text == '1234')
-                          _performCancel(table)
-                        else
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(
-                            backgroundColor: context.colors.danger,
-                            content: Text(AppLocalizations.of(context)!.loginPinError),
-                            duration: Duration(seconds: 2),
-                          ))
-                      }
+                if (pinController.text == '1234')
+                  _performCancel(table)
+                else
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(
+                    backgroundColor: context.colors.danger,
+                    content: Text(AppLocalizations.of(context)!.loginPinError),
+                    duration: Duration(seconds: 2),
+                  ))
+              }
                   : null,
-              child: Text(AppLocalizations.of(context)!.dialogConfirm,),
+              child: Text(AppLocalizations.of(context)!.dialogConfirm, style: TextStyle(fontSize: 14),),
             ),
           ],
         );
@@ -264,8 +264,8 @@ class _TablesViewState extends ConsumerState<TablesView> {
           children: [
             Text(AppLocalizations.of(context)!.dialogPaymentTable(table.name),
                 style:
-                    TextStyle(fontSize: 16, color: context.colors.textSecondary)),
-            const SizedBox(height: 8),
+                TextStyle(fontSize: 16, color: context.colors.textSecondary)),
+            SizedBox(height: 8),
             Text(AppLocalizations.of(context)!.labelPaymentTotal,
                 style: TextStyle(
                     fontSize: 14,
@@ -281,10 +281,10 @@ class _TablesViewState extends ConsumerState<TablesView> {
                     fontSize: 40,
                     fontWeight: FontWeight.w900,
                     color: context.colors.primary)),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(AppLocalizations.of(context)!.dialogSelectPaymentMethod,
                 style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -312,7 +312,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(AppLocalizations.of(context)!.dialogCancel,
-                style: TextStyle(color: context.colors.textSecondary)),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 14)),
           ),
         ],
       ),
@@ -333,47 +333,50 @@ class _TablesViewState extends ConsumerState<TablesView> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.colors.surface,
-        title: Text(isMerge ? AppLocalizations.of(context)!.dialogMergeTable : AppLocalizations.of(context)!.dialogMoveTable),
+        title: Text(isMerge ? AppLocalizations.of(context)!.dialogMergeTable : AppLocalizations.of(context)!.dialogMoveTable, style: TextStyle(fontSize: 16)),
         content: SizedBox(
           width: double.maxFinite,
           height: 300,
           child: candidates.isEmpty
-              ? Center(child: Text(AppLocalizations.of(context)!.msgNoTablesAvailable))
+              ? Center(child: Text(AppLocalizations.of(context)!.msgNoTablesAvailable, style: TextStyle(fontSize: 14)))
               : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8),
-                  itemCount: candidates.length,
-                  itemBuilder: (context, index) {
-                    final t = candidates[index];
-                    return InkWell(
-                      onTap: () {
-                        if (isMerge) {
-                          _performMerge(source, t);
-                        } else {
-                          _performMove(source, t);
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: context.colors.divider, // Slate100
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: context.colors.divider), // Slate300 -> divider
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(t.name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    );
-                  },
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 1.0
+            ),
+            itemCount: candidates.length,
+            itemBuilder: (context, index) {
+              final t = candidates[index];
+              return InkWell(
+                hoverColor: context.colors.hover,
+                onTap: () {
+                  if (isMerge) {
+                    _performMerge(source, t);
+                  } else {
+                    _performMove(source, t);
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: context.colors.divider, // Slate100
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: context.colors.divider), // Slate300 -> divider
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(t.name,
+                      style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
+              );
+            },
+          ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(AppLocalizations.of(context)!.dialogCancel)),
+              child: Text(AppLocalizations.of(context)!.dialogCancel, style: TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -391,24 +394,24 @@ class _TablesViewState extends ConsumerState<TablesView> {
             backgroundColor: context.colors.surface,
             surfaceTintColor: context.colors.surface,
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             title: Center(
                 child: Column(
-              children: [
-                Text(AppLocalizations.of(context)!.dialogOpenTable(table.name),
-                    style: TextStyle(
-                        fontSize: 16, color: context.colors.textSecondary)),
-                const SizedBox(height: 4),
-                Text(AppLocalizations.of(context)!.dialogGuests,
-                    style:
+                  children: [
+                    Text(AppLocalizations.of(context)!.dialogOpenTable(table.name),
+                        style: TextStyle(
+                            fontSize: 16, color: context.colors.textSecondary)),
+                    SizedBox(height: 4),
+                    Text(AppLocalizations.of(context)!.dialogGuests,
+                        style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-              ],
-            )),
+                  ],
+                )),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: EdgeInsets.symmetric(vertical: 24),
                   alignment: Alignment.center,
                   child: Text("$guests",
                       style: TextStyle(
@@ -426,7 +429,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                       icon: Icon(Icons.remove_circle_outline,
                           size: 32, color: context.colors.textSecondary),
                     ),
-                    const SizedBox(width: 32),
+                    SizedBox(width: 32),
                     IconButton(
                       onPressed: () {
                         if (guests < 20) setStateDialog(() => guests++);
@@ -442,14 +445,14 @@ class _TablesViewState extends ConsumerState<TablesView> {
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text(AppLocalizations.of(context)!.dialogCancel,
-                    style: TextStyle(color: context.colors.textSecondary)),
+                    style: TextStyle(color: context.colors.textSecondary, fontSize: 14)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.primary,
                   foregroundColor: context.colors.onPrimary,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
@@ -508,23 +511,23 @@ class _TablesViewState extends ConsumerState<TablesView> {
         ),
         actions: [
           IconButton(
-              icon: Icon(Icons.settings, color: context.colors.textTertiary),
+              icon: Icon(Icons.settings, color: context.colors.textTertiary, size: 20),
               onPressed: () {
                 context.push('/settings');
               }),
           IconButton(
-            icon: Icon(Icons.logout, color: context.colors.danger),
+            icon: Icon(Icons.logout, color: context.colors.danger, size: 20),
             onPressed: _performLogout,
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
         ],
         bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
+            preferredSize: Size.fromHeight(1),
             child: Container(color: context.colors.divider, height: 1)),
       ),
       body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        padding: EdgeInsets.all(16),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,

@@ -47,3 +47,4 @@ app.*.map.json
 /linux/runner/
 /linux/.gitignore
 /linux/CMakeLists.txt
+/lib/l10n/untranslated_messages.txt

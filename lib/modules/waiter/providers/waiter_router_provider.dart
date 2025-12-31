@@ -65,10 +65,6 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
           final table = ref.read(tablesProvider.notifier).getTableById(tableId);
           return MenuView(
             table: table,
-            onBack: () => {
-              if(context.canPop()) context.pop()
-              else context.go('/tables'),
-            },
             onSuccess: (newOrders) {
               ref.read(tablesProvider.notifier).addOrdersToTable(tableId, newOrders);
               // Passiamo il nome del tavolo come parametro query per la pagina di successo

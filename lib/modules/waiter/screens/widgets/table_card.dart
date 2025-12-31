@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
+
 import '../../../../data/models/table_item.dart';
 
 class TableCard extends StatefulWidget {
@@ -154,7 +155,7 @@ class _TableCardState extends State<TableCard>
                     BoxShadow(
                         color: colors.shadow,
                         blurRadius: 4,
-                        offset: const Offset(0, 2))
+                        offset: Offset(0, 2))
                   ],
                 ),
               )),
@@ -168,7 +169,7 @@ class _TableCardState extends State<TableCard>
                   child: ScaleTransition(
                     scale: _bellScaleAnimation,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
+                      padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
                           color: colors.success, shape: BoxShape.circle),
                       child: Icon(Icons.notifications_active,
@@ -201,13 +202,13 @@ class _TableCardState extends State<TableCard>
                         fontWeight: FontWeight.bold,
                         color: isOccupied ? contentColor : colors.textPrimary),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   if (isOccupied) ...[
                     Column(
                       children: [
                         // BADGE STATO DINAMICO
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: accentColor.withValues(alpha: 0.1),
@@ -217,7 +218,7 @@ class _TableCardState extends State<TableCard>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (statusIcon != null) statusIcon,
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 statusLabel,
                                 style: TextStyle(
@@ -228,7 +229,7 @@ class _TableCardState extends State<TableCard>
                             ],
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         // COPERTI E TOTALE
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -236,7 +237,7 @@ class _TableCardState extends State<TableCard>
                             Icon(Icons.people,
                                 size: 12,
                                 color: contentColor.withValues(alpha: 0.7)),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text("${widget.table.guests}",
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -248,7 +249,7 @@ class _TableCardState extends State<TableCard>
                     ),
                   ] else
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                           color: colors.successContainer,

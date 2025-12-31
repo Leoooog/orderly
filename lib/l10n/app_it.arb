@@ -1,31 +1,26 @@
 {
   "@@locale": "it",
-
   "headerAppMetadata": "--- Titoli e Info Generali ---",
   "appName": "Orderly Pocket",
   "waiterAppName": "Orderly - Sala",
   "kitchenAppName": "Orderly - Cucina",
   "posAppName": "Orderly - Cassa",
   "adminAppName": "Orderly - Admin",
-
   "headerAuth": "--- Autenticazione ---",
   "loginInsertPin": "Inserisci PIN Cameriere",
   "loginPinError": "PIN Errato",
-
   "headerNavigation": "--- Navigazione ---",
   "navTables": "Sala",
   "navMenu": "MENU",
   "navTableHistory": "AL TAVOLO",
   "msgBack": "Indietro",
   "exit": "Esci",
-
   "headerTableStatus": "--- Stati del Tavolo (Logica) ---",
   "tableStatusFree": "LIBERO",
   "tableStatusSeated": "ATTESA",
   "tableStatusOrdered": "ORDINATO",
   "tableStatusReady": "PRONTO",
   "tableStatusEating": "SERVITO",
-
   "headerTableActions": "--- Gestione Tavoli (Sala) ---",
   "tableActions": "Azioni Tavolo {tableName}",
   "@tableActions": {
@@ -89,7 +84,6 @@
   "tableMerged": "Tavoli uniti con successo",
   "tableReset": "Tavolo annullato e resettato",
   "msgNoTablesAvailable": "Nessun tavolo disponibile",
-
   "headerMenuCart": "--- Menu e Carrello ---",
   "labelSearch": "Cerca prodotto...",
   "labelNoProducts": "Nessun prodotto trovato",
@@ -124,9 +118,7 @@
   "msgOrderSent": "Comanda inviata!",
   "msgChangesSaved": "Modifiche salvate",
   "msgChangesNotSaved": "Modifiche non salvate",
-  "msgExitWithoutSaving": "Vuoi uscire senza inviare la comanda?",
-
-
+  "msgExitWithoutSaving": "Vuoi uscire senza inviare la comanda? \nLe modifiche andranno perse.",
   "headerKitchenFlow": "--- Flusso Cucina e Portate ---",
   "btnFireCourse": "DAI IL VIA",
   "msgCourseFired": "Richiesto 'Via' per {course}",
@@ -148,8 +140,6 @@
   "badgeStatusCompleted": "COMPLETATO",
   "btnMarkServed": "SERVI",
   "labelNoOrders": "Nessun ordine effettuato",
-
-
   "headerBillPayment": "--- Conto e Pagamenti ---",
   "actionQuickPay": "Incasso Rapido",
   "actionPayTotalDesc": "Paga tutto senza dividere",
@@ -209,7 +199,6 @@
   },
   "btnPay": "PAGA",
   "msgPaymentSuccess": "Pagamento registrato",
-
   "headerVoids": "--- Storni e Cancellazioni ---",
   "titleVoidItem": "Storno Piatto",
   "titleVoidItemAction": "Storna / Elimina",
@@ -257,7 +246,6 @@
     }
   },
   "msgVoidItem": "Piatto stornato correttamente",
-
   "headerGeneral": "--- Etichette Generiche ---",
   "labelAll": "Tutti",
   "dialogConfirm": "CONFERMA",

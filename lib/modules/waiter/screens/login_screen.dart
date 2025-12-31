@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
             SnackBar(
               content: Text(AppLocalizations.of(context)!.loginPinError),
               backgroundColor: context.colors.danger,
-              duration: Duration(milliseconds: 500),
+              duration: const Duration(milliseconds: 500),
             )
         );
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.restaurant_menu, size: 64, color: colors.primary),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               AppLocalizations.of(context)!.waiterAppName,
               style: TextStyle(
@@ -69,19 +69,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   letterSpacing: 1.5
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.loginInsertPin,
-              style: TextStyle(color: colors.textSecondary),
+              style: TextStyle(color: colors.textSecondary, fontSize: 16),
             ),
-            const SizedBox(height: 48),
+            SizedBox(height: 48),
 
             // PIN Dots
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(4, (index) {
                 return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  margin: EdgeInsets.symmetric(horizontal: 8),
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
               }),
             ),
 
-            const SizedBox(height: 64),
+            SizedBox(height: 64),
 
             // Keypad
             SizedBox(

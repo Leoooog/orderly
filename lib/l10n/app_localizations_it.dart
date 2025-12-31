@@ -218,7 +218,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get msgChangesNotSaved => 'Modifiche non salvate';
 
   @override
-  String get msgExitWithoutSaving => 'Vuoi uscire senza inviare la comanda?';
+  String get msgExitWithoutSaving =>
+      'Vuoi uscire senza inviare la comanda? \nLe modifiche andranno perse.';
 
   @override
   String get headerKitchenFlow => '--- Flusso Cucina e Portate ---';

@@ -219,7 +219,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get msgExitWithoutSaving =>
-      'Do you want to exit without sending the order?';
+      'Do you want to exit without sending the order? \nAll changes will be lost.';
 
   @override
   String get headerKitchenFlow => '--- Kitchen Flow and Courses ---';
@@ -248,16 +248,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemStatusServed => 'Served';
 
   @override
-  String get badgeStatusInQueue => 'IN CODA';
+  String get badgeStatusInQueue => 'IN QUEUE';
 
   @override
-  String get badgeStatusCooking => 'IN PREPARAZIONE';
+  String get badgeStatusCooking => 'PREPARING';
 
   @override
-  String get badgeStatusReady => 'PRONTO DA SERVIRE';
+  String get badgeStatusReady => 'READY TO SERVE';
 
   @override
-  String get badgeStatusCompleted => 'COMPLETATO';
+  String get badgeStatusCompleted => 'COMPLETED';
 
   @override
   String get btnMarkServed => 'SERVE';
