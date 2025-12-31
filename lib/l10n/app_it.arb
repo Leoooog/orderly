@@ -1,0 +1,64 @@
+{
+  "waiterAppName": "Orderly - Sala",
+  "kitchenAppName": "Orderly - Cucina",
+  "adminAppName": "Orderly - Admin",
+  "posAppName": "Orderly - Cassa",
+  "appName": "Orderly Pocket",
+  "loginInsertPin": "Inserisci PIN Cameriere",
+  "loginPinError": "PIN Errato",
+
+  "navTables": "Sala",
+  "navMenu": "MENU",
+  "navHistory": "AL TAVOLO",
+
+  "tableStatusFree": "LIBERO",
+  "tableStatusSeated": "ATTESA",
+  "tableStatusOrdered": "CUCINA",
+  "tableStatusReady": "PRONTO",
+  "tableStatusServed": "SERVITO",
+
+  "actionMove": "Sposta Tavolo",
+  "actionMerge": "Unisci Tavolo",
+  "actionQuickPay": "Incasso Rapido",
+  "actionSplitPay": "Cassa / Divisione",
+  "actionCancelTable": "Annulla Tavolo",
+  "actionTransfer": "Trasferisci su un tavolo libero",
+  "actionMergeDesc": "Unisci a un tavolo occupato",
+  "actionPayTotalDesc": "Paga tutto senza dividere",
+  "actionSplitDesc": "Gestisci pagamenti parziali",
+  "actionResetDesc": "Reset senza incasso",
+
+  "dialogOpenTable": "Apertura {tableName}",
+  "@dialogOpenTable": {
+    "placeholders": {
+      "tableName": {
+        "type": "String"
+      }
+    }
+  },
+  "dialogCovers": "Quanti Coperti?",
+  "dialogConfirm": "CONFERMA",
+  "dialogCancel": "Annulla",
+  "dialogSave": "Salva",
+  "dialogEdit": "Modifica",
+  "dialogConfirmVoid": "CONFERMA STORNO",
+
+  "btnOpen": "Apri Tavolo",
+  "btnSendKitchen": "INVIA COMANDA",
+  "btnFireCourse": "DAI IL VIA",
+  "btnPay": "PAGA",
+
+  "labelIngredients": "INGREDIENTI",
+  "labelAllergens": "ALLERGENI",
+  "labelNotes": "Note Cucina",
+  "labelSearch": "Cerca prodotto...",
+  "labelTotal": "Totale",
+  "labelToPay": "DA PAGARE",
+  "labelRemaining": "RIMANENTE",
+  "labelSelectAll": "Seleziona Tutto",
+  "labelDeselectAll": "Deseleziona Tutto",
+
+  "msgPaymentSuccess": "Pagamento registrato",
+  "msgOrderSent": "Comanda inviata",
+  "msgChangesSaved": "Modifiche salvate"
+}

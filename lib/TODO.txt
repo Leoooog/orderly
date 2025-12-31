@@ -4,8 +4,7 @@
 - vibrazione quando un tavolo è pronto
 - Localizzazione
 - Aggiungere check prima di fare il conto, il tavolo deve essere in stato "servito"
-- Eliminazione tavolo con conferma tramite pin
-- Storno piatti
 - Stili per dark mode
-- Modificare piatti pendenti
-- Routes sono rotte
+- responsive sized box
+- Gestione errori per connessione assente
+- Azioni tavoli scrollabili

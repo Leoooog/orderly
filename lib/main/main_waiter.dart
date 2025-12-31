@@ -5,6 +5,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:orderly/modules/waiter/providers/waiter_router_provider.dart';
 
 import '../data/hive_keys.dart';
+import '../l10n/app_localizations.dart';
 import '../orderly_app.dart';
 
 void main() async {
@@ -36,7 +37,7 @@ class WaiterAppEntry extends ConsumerWidget {
 
     return OrderlyApp(
       router: router,
-      title: 'Orderly - Sala',
+      title: AppLocalizations.of(context)?.waiterAppName ?? 'Orderly - Sala',
     );
   }
 }

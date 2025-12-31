@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vibration/vibration.dart';
 
 import '../../../config/themes.dart';
 import '../../../data/models/cart_item.dart';
@@ -97,52 +98,58 @@ class _TablesViewState extends ConsumerState<TablesView> {
                       fontSize: 18,
                       color: AppColors.cSlate800)),
             ),
-            ListTile(
-              leading:
+            ListView(
+              scrollDirection: Axis.vertical,
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  leading:
                   const Icon(Icons.compare_arrows, color: AppColors.cIndigo600),
-              title: const Text("Sposta Tavolo"),
-              subtitle: const Text("Trasferisci su un tavolo libero"),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showTableSelectionDialog(table, isMerge: false);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.merge_type, color: AppColors.cAmber700),
-              title: const Text("Unisci Tavolo"),
-              subtitle: const Text("Unisci a un tavolo occupato"),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showTableSelectionDialog(table, isMerge: true);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.check_circle_outline,
-                  color: AppColors.cIndigo600),
-              title: const Text("Incasso Rapido (Totale)"),
-              subtitle: const Text("Paga tutto senza dividere"),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showPaymentDialog(table);
-              },
-            ),
-            ListTile(
-              leading:
+                  title: const Text("Sposta Tavolo"),
+                  subtitle: const Text("Trasferisci su un tavolo libero"),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showTableSelectionDialog(table, isMerge: false);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.merge_type, color: AppColors.cAmber700),
+                  title: const Text("Unisci Tavolo"),
+                  subtitle: const Text("Unisci a un tavolo occupato"),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showTableSelectionDialog(table, isMerge: true);
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.check_circle_outline,
+                      color: AppColors.cIndigo600),
+                  title: const Text("Incasso Rapido (Totale)"),
+                  subtitle: const Text("Paga tutto senza dividere"),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showPaymentDialog(table);
+                  },
+                ),
+                ListTile(
+                  leading:
                   const Icon(Icons.attach_money, color: AppColors.cEmerald500),
-              title: const Text("Cassa / Divisione Conto"),
-              subtitle: const Text("Gestisci pagamenti parziali"),
-              onTap: () {
-                Navigator.pop(ctx);
-                _openSplitBillScreen(table);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.close, color: AppColors.cRose500),
-              title: const Text("Annulla Tavolo"),
-              subtitle: const Text("Chiudi il tavolo senza incasso"),
-              onTap: () => _showConfirmCancelDialog(table),
+                  title: const Text("Cassa / Divisione Conto"),
+                  subtitle: const Text("Gestisci pagamenti parziali"),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _openSplitBillScreen(table);
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.close, color: AppColors.cRose500),
+                  title: const Text("Annulla Tavolo"),
+                  subtitle: const Text("Chiudi il tavolo senza incasso"),
+                  onTap: () => _showConfirmCancelDialog(table),
+                )
+              ],
             )
           ],
         ),
@@ -458,6 +465,19 @@ class _TablesViewState extends ConsumerState<TablesView> {
   @override
   Widget build(BuildContext context) {
     final tables = ref.watch(tablesProvider);
+    ref.listen<List<TableItem>>(tablesProvider, (previous, next) async {
+      final prevReadyIds = previous?.where((t) => t.status == TableStatus.ready).map((t) => t.id).toSet() ?? {};
+      final nextReadyIds = next.where((t) => t.status == TableStatus.ready).map((t) => t.id).toSet();
+
+      // Se ci sono nuovi ID nel set 'next' che non c'erano in 'prev', qualcuno è diventato pronto
+      if (nextReadyIds.difference(prevReadyIds).isNotEmpty) {
+        print("New ready table detected");
+        if(await Vibration.hasVibrator()) {
+          Vibration.vibrate(duration: 500);
+          print("Vibrating for new ready table");
+        }
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.cSlate50,

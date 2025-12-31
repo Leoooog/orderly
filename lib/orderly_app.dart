@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart'; // Importa go_router
 import 'config/themes.dart';
+import 'l10n/app_localizations.dart';
 
 class OrderlyApp extends ConsumerWidget {
   // Non serve più passare "home", passiamo il routerConfig
@@ -51,6 +53,17 @@ class OrderlyApp extends ConsumerWidget {
           ),
         );
       },
+
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('it'), // Italiano (Default)
+        Locale('en'), // Inglese
+      ],
 
       theme: ThemeData(
         fontFamily: 'Roboto',
