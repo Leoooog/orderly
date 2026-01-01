@@ -5,7 +5,7 @@ import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
 
 import '../../../../data/models/table_item.dart';
-import '../../../../data/models/cart_item.dart';
+import '../../../../data/models/order_item.dart';
 import '../../../../data/models/course.dart';
 import '../../../../data/models/extra.dart';
 import '../../providers/tables_provider.dart';
@@ -15,7 +15,7 @@ import '../../providers/menu_provider.dart';
 import 'item_edit_dialog.dart';
 
 class HistoryTab extends ConsumerWidget {
-  final TableItem table;
+  final TableSession table;
 
   const HistoryTab({super.key, required this.table});
 
@@ -30,11 +30,11 @@ class HistoryTab extends ConsumerWidget {
         duration: const Duration(seconds: 1)));
   }
 
-  void _markServed(WidgetRef ref, CartItem item) {
+  void _markServed(WidgetRef ref, OrderItem item) {
     ref.read(tablesProvider.notifier).markAsServed(table.id, item.internalId);
   }
 
-  void _performVoid(BuildContext context, WidgetRef ref, CartItem item, int qty,
+  void _performVoid(BuildContext context, WidgetRef ref, OrderItem item, int qty,
       String reason, bool isRefunded) {
     ref
         .read(tablesProvider.notifier)
@@ -46,7 +46,7 @@ class HistoryTab extends ConsumerWidget {
     ));
   }
 
-  void _performUpdate(BuildContext context, WidgetRef ref, CartItem item,
+  void _performUpdate(BuildContext context, WidgetRef ref, OrderItem item,
       int qty, String note, Course course, List<Extra> extras) {
     ref.read(tablesProvider.notifier).updateOrderedItem(
         table.id, item.internalId, qty, note, course, extras);
@@ -160,9 +160,9 @@ class HistoryTab extends ConsumerWidget {
   }
 
 
-  void _showItemOptions(BuildContext context, WidgetRef ref, CartItem item) {
+  void _showItemOptions(BuildContext context, WidgetRef ref, OrderItem item) {
     final colors = context.colors;
-    final bool canEdit = item.status == ItemStatus.pending;
+    final bool canEdit = item.status == OrderItemStatus.pending;
 
     // Responsive Logic
     final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
@@ -236,7 +236,7 @@ class HistoryTab extends ConsumerWidget {
 
 
 
-  void _showEditDialog(BuildContext context, WidgetRef ref, CartItem item) {
+  void _showEditDialog(BuildContext context, WidgetRef ref, OrderItem item) {
     final menuItems = ref.read(menuProvider);
     final menuItem = menuItems.firstWhere((m) => m.id == item.id,
         orElse: () => menuItems[0]);
@@ -253,7 +253,7 @@ class HistoryTab extends ConsumerWidget {
     );
   }
 
-  void _showVoidDialog(BuildContext context, WidgetRef ref, CartItem item) {
+  void _showVoidDialog(BuildContext context, WidgetRef ref, OrderItem item) {
     int qtyToVoid = 1;
     String selectedReason = "";
     bool isRefunded = true;
@@ -445,7 +445,7 @@ class HistoryTab extends ConsumerWidget {
       );
     }
 
-    final Map<Course, List<CartItem>> groupedOrders = {};
+    final Map<Course, List<OrderItem>> groupedOrders = {};
     for (var course in Course.values) {
       final items = table.orders.where((o) => o.course == course).toList();
       if (items.isNotEmpty) groupedOrders[course] = items;
@@ -494,13 +494,13 @@ class HistoryTab extends ConsumerWidget {
   // ma per completezza li includo qui sotto:
 
   Widget _buildCourseSection(BuildContext context, WidgetRef ref, Course course,
-      List<CartItem> items) {
+      List<OrderItem> items) {
     final colors = context.colors;
     final bool hasPendingItems =
-    items.any((i) => i.status == ItemStatus.pending);
-    final bool hasReady = items.any((i) => i.status == ItemStatus.ready);
-    final bool hasCooking = items.any((i) => i.status == ItemStatus.cooking);
-    final bool isCompleted = items.every((i) => i.status == ItemStatus.served);
+    items.any((i) => i.status == OrderItemStatus.pending);
+    final bool hasReady = items.any((i) => i.status == OrderItemStatus.ready);
+    final bool hasCooking = items.any((i) => i.status == OrderItemStatus.cooking);
+    final bool isCompleted = items.every((i) => i.status == OrderItemStatus.served);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,7 +602,7 @@ class HistoryTab extends ConsumerWidget {
   }
 
   Widget _buildHistoryItemRow(
-      BuildContext context, WidgetRef ref, CartItem item,
+      BuildContext context, WidgetRef ref, OrderItem item,
       {bool isLast = false, bool isFirst = false}) {
     final colors = context.colors;
     Color bgColor = colors.surface;
@@ -613,32 +613,32 @@ class HistoryTab extends ConsumerWidget {
     double opacity = 1.0;
 
     switch (item.status) {
-      case ItemStatus.pending:
+      case OrderItemStatus.pending:
         bgColor = colors.warningContainer;
         iconColor = colors.warning;
         icon = Icons.schedule;
         statusLabel = AppLocalizations.of(context)!.itemStatusPending;
         break;
-      case ItemStatus.fired:
+      case OrderItemStatus.fired:
         bgColor = colors.infoSurfaceFaint;
         iconColor = colors.primary;
         icon = Icons.hourglass_top;
         statusLabel = AppLocalizations.of(context)!.itemStatusFired;
         break;
-      case ItemStatus.cooking:
+      case OrderItemStatus.cooking:
         bgColor = colors.infoSurfaceWeak;
         iconColor = colors.primary;
         icon = Icons.local_fire_department;
         statusLabel = AppLocalizations.of(context)!.itemStatusCooking;
         break;
-      case ItemStatus.ready:
+      case OrderItemStatus.ready:
         bgColor = colors.successContainer;
         iconColor = colors.success;
         icon = Icons.room_service;
         statusLabel = AppLocalizations.of(context)!.itemStatusReady;
         isInteractive = true;
         break;
-      case ItemStatus.served:
+      case OrderItemStatus.served:
         bgColor = colors.surface;
         iconColor = colors.textTertiary;
         icon = Icons.check;
@@ -666,8 +666,8 @@ class HistoryTab extends ConsumerWidget {
             decoration: BoxDecoration(
               borderRadius: borderRadius,
               border: Border(
-                bottom: (item.status == ItemStatus.fired ||
-                    item.status == ItemStatus.served) &&
+                bottom: (item.status == OrderItemStatus.fired ||
+                    item.status == OrderItemStatus.served) &&
                     !isLast
                     ? BorderSide(color: colors.divider)
                     : BorderSide.none,
@@ -722,7 +722,7 @@ class HistoryTab extends ConsumerWidget {
                       ]),
                 ),
                 const SizedBox(width: 8),
-                if (item.status == ItemStatus.ready)
+                if (item.status == OrderItemStatus.ready)
                   Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),

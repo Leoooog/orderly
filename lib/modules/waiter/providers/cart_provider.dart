@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/models/cart_item.dart';
+import '../../../data/models/order_item.dart';
 import '../../../data/models/menu_item.dart';
 import '../../../data/models/extra.dart';
 import '../../../data/models/course.dart';
 
-final cartProvider = NotifierProvider<CartNotifier, List<CartItem>>(CartNotifier.new);
+final cartProvider = NotifierProvider<CartNotifier, List<OrderItem>>(CartNotifier.new);
 
-class CartNotifier extends Notifier<List<CartItem>> {
+class CartNotifier extends Notifier<List<OrderItem>> {
 
   @override
-  List<CartItem> build() {
+  List<OrderItem> build() {
     return [];
   }
 
@@ -27,7 +27,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
           if (i == existingIndex) state[i].copyWith(qty: state[i].qty + 1) else state[i]
       ];
     } else {
-      final newItem = CartItem(
+      final newItem = OrderItem(
         internalId: DateTime.now().millisecondsSinceEpoch,
         id: item.id,
         name: item.name,
@@ -65,7 +65,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
   }
 
   // --- UPDATED: Split & Merge logic for Cart ---
-  void updateItemConfig(CartItem originalItem, int qtyToModify, String newNote, Course newCourse, List<Extra> newExtras) {
+  void updateItemConfig(OrderItem originalItem, int qtyToModify, String newNote, Course newCourse, List<Extra> newExtras) {
     if (qtyToModify <= 0 || qtyToModify > originalItem.qty) return;
 
     if (originalItem.notes == newNote &&
@@ -74,7 +74,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
       return;
     }
 
-    final newState = List<CartItem>.from(state);
+    final newState = List<OrderItem>.from(state);
     final index = newState.indexWhere((c) => c.internalId == originalItem.internalId);
     if (index == -1) return;
 
@@ -102,7 +102,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
     state = newState;
   }
 
-  void _mergeOrAdd(List<CartItem> items, CartItem newItem, {int? insertAt}) {
+  void _mergeOrAdd(List<OrderItem> items, OrderItem newItem, {int? insertAt}) {
     final mergeTargetIndex = items.indexWhere((o) =>
     o.id == newItem.id &&
         o.notes == newItem.notes &&

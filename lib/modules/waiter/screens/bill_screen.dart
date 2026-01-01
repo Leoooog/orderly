@@ -6,12 +6,12 @@ import 'package:orderly/shared/widgets/circle_button.dart';
 import 'package:orderly/shared/widgets/quantity_control_button.dart';
 import 'package:orderly/shared/widgets/payment_method_button.dart';
 
-import '../../../data/models/cart_item.dart';
+import '../../../data/models/order_item.dart';
 import '../../../data/models/table_item.dart';
 
 class BillScreen extends StatefulWidget {
-  final TableItem table;
-  final Function(List<CartItem>) onConfirmPayment;
+  final TableSession table;
+  final Function(List<OrderItem>) onConfirmPayment;
 
   const BillScreen(
       {super.key, required this.table, required this.onConfirmPayment});
@@ -97,8 +97,8 @@ class _BillScreenState extends State<BillScreen>
     });
   }
 
-  List<CartItem> _getPaidItems() {
-    List<CartItem> paid = [];
+  List<OrderItem> _getPaidItems() {
+    List<OrderItem> paid = [];
     for (var item in widget.table.orders) {
       if (selection.containsKey(item.internalId)) {
         paid.add(item.copyWith(qty: selection[item.internalId]!));

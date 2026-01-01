@@ -1,35 +1,40 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive.dart';
-import '../../../data/hive_keys.dart';
+import '../../../config/hive_keys.dart';
+import '../../../data/models/enums/order_item_status.dart';
+import '../../../data/models/enums/table_status.dart';
+import '../../../data/models/session/order_item.dart';
+import '../../../data/models/session/table_session.dart';
+import '../../../data/models/session/void_record.dart';
 import '../../../data/models/table_item.dart';
-import '../../../data/models/cart_item.dart';
+import '../../../data/models/order_item.dart';
 import '../../../data/models/course.dart';
-import '../../../data/models/void_item.dart';
+import '../../../data/models/void_record.dart';
 import '../../../data/models/extra.dart';
 import '../../../data/mock_data.dart';
 
 
-final tablesProvider = NotifierProvider<TablesNotifier, List<TableItem>>(TablesNotifier.new);
+final tablesProvider = NotifierProvider<TablesNotifier, List<TableSession>>(TablesNotifier.new);
 
-class TablesNotifier extends Notifier<List<TableItem>> {
+class TablesNotifier extends Notifier<List<TableSession>> {
 
   late Box _tablesBox;
   late Box _voidsBox;
 
   @override
-  List<TableItem> build() {
+  List<TableSession> build() {
     _tablesBox = Hive.box<dynamic>(kTablesBox);
     _voidsBox = Hive.box<dynamic>(kVoidsBox);
     return _loadFromDisk();
   }
 
   // --- PERSISTENZA ---
-  List<TableItem> _loadFromDisk() {
+  List<TableSession> _loadFromDisk() {
     final dynamic data = _tablesBox.get(kTablesKey);
-    List<TableItem> loadedTables;
+    List<TableSession> loadedTables;
 
     if (data != null && data is List) {
-      loadedTables = data.map((e) => TableItem.fromJson(Map<String, dynamic>.from(e))).toList();
+      loadedTables = data.map((e) => TableSession.fromJson(Map<String, dynamic>.from(e))).toList();
     } else {
       loadedTables = globalTables;
     }
@@ -51,31 +56,31 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     return sanitizedTables;
   }
 
-  void _saveToDisk(List<TableItem> tables) {
+  void _saveToDisk(List<TableSession> tables) {
     final jsonList = tables.map((t) => t.toJson()).toList();
     _tablesBox.put(kTablesKey, jsonList);
   }
 
   @override
-  set state(List<TableItem> newState) {
+  set state(List<TableSession> newState) {
     super.state = newState;
     _saveToDisk(newState);
   }
 
   // --- LOGICA MACRO-STATO TAVOLO ---
-  TableStatus _calculateTableStatus(TableStatus currentStatus, List<CartItem> orders) {
+  TableStatus _calculateTableStatus(TableStatus currentStatus, List<OrderItem> orders) {
     if (currentStatus == TableStatus.free) return TableStatus.free;
     if (orders.isEmpty) return TableStatus.seated;
 
-    if (orders.any((o) => o.status == ItemStatus.ready)) {
+    if (orders.any((o) => o.status == OrderItemStatus.ready)) {
       return TableStatus.ready;
     }
 
-    if (orders.any((o) => o.status == ItemStatus.pending || o.status == ItemStatus.fired || o.status == ItemStatus.cooking)) {
+    if (orders.any((o) => o.status == OrderItemStatus.pending || o.status == OrderItemStatus.fired || o.status == OrderItemStatus.cooking)) {
       return TableStatus.ordered;
     }
 
-    if (orders.every((o) => o.status == ItemStatus.served)) {
+    if (orders.every((o) => o.status == OrderItemStatus.served)) {
       return TableStatus.eating;
     }
 
@@ -83,15 +88,15 @@ class TablesNotifier extends Notifier<List<TableItem>> {
   }
 
   // --- LETTURA STORNI ---
-  List<VoidItem> getVoidsForTable(int tableId) {
+  List<VoidRecord> getVoidsForTable(int tableId) {
     if (!Hive.isBoxOpen(kVoidsBox)) return [];
 
     // Filtriamo i log salvati nel box
-    final allVoids = _voidsBox.values.map((e) => VoidItem.fromJson(Map<String, dynamic>.from(e))).toList();
+    final allVoids = _voidsBox.values.map((e) => VoidRecord.fromJson(Map<String, dynamic>.from(e))).toList();
     return allVoids.where((v) => v.tableId == tableId).toList();
   }
 
-  TableItem getTableById(int tableId) {
+  TableSession getTableById(int tableId) {
     return state.firstWhere((t) => t.id == tableId);
   }
 
@@ -107,7 +112,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     ];
   }
 
-  void addOrdersToTable(int tableId, List<CartItem> newOrders) {
+  void addOrdersToTable(int tableId, List<OrderItem> newOrders) {
     state = [
       for (final table in state)
         if (table.id == tableId)
@@ -117,9 +122,9 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     ];
   }
 
-  TableItem _updateTableWithNewOrders(TableItem table, List<CartItem> newOrders) {
+  TableSession _updateTableWithNewOrders(TableSession table, List<OrderItem> newOrders) {
     // Creiamo una copia mutabile degli ordini attuali
-    final List<CartItem> currentOrders = List.from(table.orders);
+    final List<OrderItem> currentOrders = List.from(table.orders);
 
     // Iteriamo sui nuovi ordini per tentare il merge
     for (var newOrder in newOrders) {
@@ -160,7 +165,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     ];
   }
 
-  TableItem _performUpdateItem(TableItem table, int itemInternalId, int qtyToModify, String newNote, Course newCourse, List<Extra> newExtras) {
+  TableSession _performUpdateItem(TableSession table, int itemInternalId, int qtyToModify, String newNote, Course newCourse, List<Extra> newExtras) {
     final index = table.orders.indexWhere((i) => i.internalId == itemInternalId);
     if (index == -1) return table;
 
@@ -177,7 +182,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     }
 
     // Creiamo una copia modificabile della lista attuale
-    final List<CartItem> updatedOrders = List.from(table.orders);
+    final List<OrderItem> updatedOrders = List.from(table.orders);
 
     if (qtyToModify < originalItem.qty) {
       // CASO A: SPLIT PARZIALE (Modifico solo una parte)
@@ -219,7 +224,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
   }
 
   // Helper per unire o aggiungere alla lista
-  void _mergeOrAdd(List<CartItem> orders, CartItem newItem, {int? insertAt}) {
+  void _mergeOrAdd(List<OrderItem> orders, OrderItem newItem, {int? insertAt}) {
     // Cerchiamo un target identico per il merge
     final mergeTargetIndex = orders.indexWhere((o) =>
     o.id == newItem.id &&
@@ -259,8 +264,8 @@ class TablesNotifier extends Notifier<List<TableItem>> {
       for (final table in state)
         if (table.id == tableId)
           _updateItemsInTable(table,
-                  (item) => item.course == course && item.status == ItemStatus.pending,
-              ItemStatus.fired
+                  (item) => item.course == course && item.status == OrderItemStatus.pending,
+              OrderItemStatus.fired
           )
         else
           table
@@ -268,15 +273,15 @@ class TablesNotifier extends Notifier<List<TableItem>> {
 
 
     Future.delayed(const Duration(seconds: 5), () {
-      mockKitchenStatus(tableId, course, ItemStatus.fired, ItemStatus.cooking);
+      mockKitchenStatus(tableId, course, OrderItemStatus.fired, OrderItemStatus.cooking);
     });
     Future.delayed(const Duration(seconds: 10), () {
-      mockKitchenStatus(tableId, course, ItemStatus.cooking, ItemStatus.ready);
+      mockKitchenStatus(tableId, course, OrderItemStatus.cooking, OrderItemStatus.ready);
     });
 
   }
 
-  void mockKitchenStatus(int tableId, Course course, ItemStatus fromStatus, ItemStatus toStatus) {
+  void mockKitchenStatus(int tableId, Course course, OrderItemStatus fromStatus, OrderItemStatus toStatus) {
     state = [
       for (final table in state)
         if (table.id == tableId)
@@ -296,7 +301,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
         if (table.id == tableId)
           _updateItemsInTable(table,
                   (item) => item.internalId == itemInternalId,
-              ItemStatus.served
+              OrderItemStatus.served
           )
         else
           table
@@ -313,7 +318,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     final item = table.orders.firstWhere((i) => i.internalId == itemInternalId);
 
     // 1. Salva log storno
-    final voidLog = VoidItem(
+    final voidLog = VoidRecord(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       tableId: tableId,
       tableName: table.name,
@@ -337,8 +342,8 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     ];
   }
 
-  TableItem _performVoidOnTable(TableItem table, int itemInternalId, int qtyToVoid) {
-    final updatedOrders = List<CartItem>.from(table.orders);
+  TableSession _performVoidOnTable(TableSession table, int itemInternalId, int qtyToVoid) {
+    final updatedOrders = List<OrderItem>.from(table.orders);
     final index = updatedOrders.indexWhere((i) => i.internalId == itemInternalId);
 
     if (index != -1) {
@@ -388,7 +393,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     ];
   }
 
-  TableItem _performMerge(TableItem target, TableItem source) {
+  TableSession _performMerge(TableSession target, TableSession source) {
     final combinedOrders = [...target.orders, ...source.orders];
     return target.copyWith(
       guests: target.guests + source.guests,
@@ -397,7 +402,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     );
   }
 
-  TableItem _updateItemsInTable(TableItem table, bool Function(CartItem) condition, ItemStatus newStatus) {
+  TableSession _updateItemsInTable(TableSession table, bool Function(OrderItem) condition, OrderItemStatus newStatus) {
     final updatedOrders = table.orders.map((item) {
       return condition(item) ? item.copyWith(status: newStatus) : item;
     }).toList();
@@ -408,7 +413,7 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     );
   }
 
-  void processPayment(int tableId, List<CartItem> paidItems) {
+  void processPayment(int tableId, List<OrderItem> paidItems) {
     state = [
       for (final table in state)
         if (table.id == tableId)
@@ -418,8 +423,8 @@ class TablesNotifier extends Notifier<List<TableItem>> {
     ];
   }
 
-  TableItem _calculateRemaining(TableItem table, List<CartItem> paidItems) {
-    final remaining = List<CartItem>.from(table.orders);
+  TableSession _calculateRemaining(TableSession table, List<OrderItem> paidItems) {
+    final remaining = List<OrderItem>.from(table.orders);
     for (var paid in paidItems) {
       final index = remaining.indexWhere((o) => o.internalId == paid.internalId);
       if (index != -1) {

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
 
-import '../../../../data/models/cart_item.dart';
+import '../../../../data/models/order_item.dart';
 import '../../../../data/models/course.dart';
 import '../../../../shared/widgets/quantity_button.dart';
 import '../../providers/cart_provider.dart';
@@ -41,7 +41,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     }
   }
 
-  void _openEditDialog(CartItem item) {
+  void _openEditDialog(OrderItem item) {
     final menuItems = ref.read(menuProvider);
     final menuItem = menuItems.firstWhere((m) => m.id == item.id,
         orElse: () => menuItems[0]);
@@ -72,7 +72,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     // Limitiamo a 600px su tablet, altrimenti infinito (tutto lo schermo) su telefono
     final double maxContentWidth = isTablet ? 600.0 : double.infinity;
 
-    Map<Course, List<CartItem>> groupedCart = {};
+    Map<Course, List<OrderItem>> groupedCart = {};
     for (var c in Course.values) {
       groupedCart[c] = cart.where((item) => item.course == c).toList();
     }
@@ -226,7 +226,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     );
   }
 
-  Widget _buildCartItemRow(BuildContext context, CartItem item) {
+  Widget _buildCartItemRow(BuildContext context, OrderItem item) {
     final colors = context.colors;
     bool hasExtras = item.selectedExtras.isNotEmpty;
     bool hasNotes = item.notes.isNotEmpty;

@@ -4,7 +4,7 @@ import 'package:orderly/config/orderly_colors.dart';
 import '../../../../data/models/table_item.dart';
 
 class TableCard extends StatefulWidget {
-  final TableItem table;
+  final TableSession table;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 

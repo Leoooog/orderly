@@ -5,7 +5,8 @@ import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
 import 'package:vibration/vibration.dart';
 
-import '../../../data/models/cart_item.dart';
+import '../../../data/models/order_item.dart';
+import '../../../data/models/enums/table_status.dart';
 import '../../../data/models/table_item.dart';
 import '../../../shared/widgets/payment_method_button.dart';
 import '../providers/tables_provider.dart';
@@ -23,21 +24,21 @@ class TablesView extends ConsumerStatefulWidget {
 class _TablesViewState extends ConsumerState<TablesView> {
   // --- LOGICA INTERNA ---
 
-  void _performMove(TableItem source, TableItem target) {
+  void _performMove(TableSession source, TableSession target) {
     ref.read(tablesProvider.notifier).moveTable(source.id, target.id);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.tableMoved)));
   }
 
-  void _performMerge(TableItem source, TableItem target) {
+  void _performMerge(TableSession source, TableSession target) {
     ref.read(tablesProvider.notifier).mergeTable(source.id, target.id);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.tableMerged)));
   }
 
-  void _performCancel(TableItem table) {
+  void _performCancel(TableSession table) {
     ref.read(tablesProvider.notifier).cancelTable(table.id);
     Navigator.pop(context); // Chiude dialog
     Navigator.pop(context); // Chiude bottom sheet azioni
@@ -49,7 +50,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     ));
   }
 
-  void _performPayment(TableItem table, List<CartItem> paidItems) {
+  void _performPayment(TableSession table, List<OrderItem> paidItems) {
     ref.read(tablesProvider.notifier).processPayment(table.id, paidItems);
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -59,7 +60,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     ));
   }
 
-  void _performOccupy(TableItem table, int guests) {
+  void _performOccupy(TableSession table, int guests) {
     ref.read(tablesProvider.notifier).occupyTable(table.id, guests);
     Navigator.pop(context);
     context.push('/menu/${table.id}');
@@ -71,7 +72,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
 
   // --- GESTORI UI ---
 
-  void _handleTableTap(TableItem table) {
+  void _handleTableTap(TableSession table) {
     if (table.status == TableStatus.free) {
       _showGuestsDialog(table);
     } else {
@@ -79,7 +80,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     }
   }
 
-  void _handleTableLongPress(TableItem table) {
+  void _handleTableLongPress(TableSession table) {
     if (table.status == TableStatus.free) return;
 
     // Responsive Bottom Sheet logic
@@ -174,7 +175,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
 
   // --- DIALOGHI ---
 
-  void _openSplitBillScreen(TableItem table) {
+  void _openSplitBillScreen(TableSession table) {
     // Responsive Logic per BillScreen (che è un full screen modal solitamente)
     // Se BillScreen supporta constraints, bene, altrimenti qui lo limitiamo
     final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
@@ -216,7 +217,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     );
   }
 
-  void _showConfirmCancelDialog(TableItem table) {
+  void _showConfirmCancelDialog(TableSession table) {
     final TextEditingController pinController = TextEditingController();
     showDialog(
       context: context,
@@ -291,7 +292,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     );
   }
 
-  void _showPaymentDialog(TableItem table) {
+  void _showPaymentDialog(TableSession table) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -356,7 +357,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     );
   }
 
-  void _showTableSelectionDialog(TableItem source, {required bool isMerge}) {
+  void _showTableSelectionDialog(TableSession source, {required bool isMerge}) {
     final allTables = ref.read(tablesProvider);
 
     final candidates = allTables.where((t) {
@@ -424,7 +425,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
     );
   }
 
-  void _showGuestsDialog(TableItem table) {
+  void _showGuestsDialog(TableSession table) {
     int guests = 2;
 
     showDialog(
@@ -510,7 +511,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
   @override
   Widget build(BuildContext context) {
     final tables = ref.watch(tablesProvider);
-    ref.listen<List<TableItem>>(tablesProvider, (previous, next) async {
+    ref.listen<List<TableSession>>(tablesProvider, (previous, next) async {
       final prevReadyIds = previous
           ?.where((t) => t.status == TableStatus.ready)
           .map((t) => t.id)

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:orderly/config/orderly_colors.dart';
 
-import '../../../data/models/cart_item.dart';
+import '../../../data/models/order_item.dart';
 import '../../../data/models/table_item.dart';
 
 // Import Providers
@@ -17,8 +17,8 @@ import 'menu_widgets/history_tab.dart';
 import 'menu_widgets/cart_sheet.dart';
 
 class MenuView extends ConsumerStatefulWidget {
-  final TableItem table;
-  final Function(List<CartItem>) onSuccess;
+  final TableSession table;
+  final Function(List<OrderItem>) onSuccess;
 
   const MenuView({super.key, required this.table, required this.onSuccess});
 
@@ -103,7 +103,7 @@ class _MenuViewState extends ConsumerState<MenuView>
         orElse: () => widget.table
     );
 
-    ref.listen<List<CartItem>>(cartProvider, (previous, next) {
+    ref.listen<List<OrderItem>>(cartProvider, (previous, next) {
       if (next.isEmpty && _isExpanded) {
         _controller.animateTo(0, curve: Curves.easeOutQuint);
         setState(() => _isExpanded = false);

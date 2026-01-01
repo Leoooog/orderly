@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:orderly/modules/waiter/config/waiter_router.dart';
 
-import 'data/hive_keys.dart';
+import 'config/hive_keys.dart';
 import 'l10n/app_localizations.dart';
 import 'orderly_app.dart';
 

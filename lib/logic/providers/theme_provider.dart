@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive_ce.dart';
-import 'package:orderly/data/hive_keys.dart';
+
+import '../../config/hive_keys.dart';
+
 
 final themeModeProvider =
     NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
@@ -9,9 +11,9 @@ final themeModeProvider =
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
-    final box = Hive.box(kSettingsBox);
+    final box = Hive.box(HiveKeys.settingsBox);
     final storedTheme =
-        box.get(kThemeModeKey, defaultValue: 'system') as String;
+        box.get(HiveKeys.themeMode, defaultValue: 'system') as String;
     return ThemeMode.values.firstWhere(
       (mode) => mode.toString() == storedTheme,
       orElse: () => ThemeMode.system,
@@ -19,12 +21,12 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   }
 
   void setTheme(ThemeMode mode) {
-    final box = Hive.box(kSettingsBox);
-    box.put(kThemeModeKey, mode.toString());
+    final box = Hive.box(HiveKeys.settingsBox);
+    box.put(HiveKeys.themeMode, mode.toString());
     state = mode;
   }
 
   void setSystem() {
-    state = ThemeMode.system;
+    setTheme(ThemeMode.system);
   }
 }

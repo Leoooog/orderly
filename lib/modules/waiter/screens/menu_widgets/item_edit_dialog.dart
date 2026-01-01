@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
-import '../../../../data/models/cart_item.dart';
+import '../../../../data/models/order_item.dart';
 import '../../../../data/models/course.dart';
 import '../../../../data/models/extra.dart';
 import '../../../../data/models/menu_item.dart';
 
 class ItemEditDialog extends StatefulWidget {
-  final CartItem cartItem;
+  final OrderItem cartItem;
   final MenuItem menuItem;
   final Function(int qty, String note, Course course, List<Extra> extras) onSave;
 

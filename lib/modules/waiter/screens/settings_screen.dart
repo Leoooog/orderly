@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive_ce.dart';
-import 'package:orderly/data/hive_keys.dart';
+import 'package:orderly/config/hive_keys.dart';
 import 'package:orderly/config/orderly_colors.dart';
 import '../providers/tables_provider.dart';
 import '../../../logic/providers/locale_provider.dart';
