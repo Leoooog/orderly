@@ -48,3 +48,12 @@ app.*.map.json
 /linux/.gitignore
 /linux/CMakeLists.txt
 /lib/l10n/untranslated_messages.txt
+/backend/pb_migrations/
+/backend/CHANGELOG.md
+/backend/LICENSE.md
+/backend/pocketbase
+/backend/pb_data/types.d.ts
+/backend/pb_data/data.db-wal
+/backend/pb_data/data.db-shm
+/backend/pb_data/data.db
+/backend/pb_data/auxiliary.db
