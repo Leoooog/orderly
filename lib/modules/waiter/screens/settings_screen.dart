@@ -14,12 +14,28 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final currentLocale = ref.watch(localeProvider);
-    final String languageName = currentLocale.languageCode == 'it' ? 'Italiano' : 'English';
+    final String languageName =
+        currentLocale.languageCode == 'it' ? 'Italiano' : 'English';
+    final ThemeMode themeMode = ref.watch(themeModeProvider);
+
+    String themeName;
+    switch (themeMode) {
+      case ThemeMode.light:
+        themeName = "Chiaro";
+        break;
+      case ThemeMode.dark:
+        themeName = "Scuro";
+        break;
+      case ThemeMode.system:
+        themeName = "Automatico";
+        break;
+    }
 
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: const Text("Impostazioni", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text("Impostazioni",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: colors.surface,
         foregroundColor: colors.textPrimary,
         elevation: 0,
@@ -56,7 +72,7 @@ class SettingsScreen extends ConsumerWidget {
                     context,
                     icon: Icons.dark_mode_outlined,
                     title: "Tema",
-                    subtitle: "Chiaro (Default)",
+                    subtitle: themeName,
                     onTap: () => _showThemeDialog(context, ref),
                   ),
                   const SizedBox(height: 24),
@@ -66,7 +82,7 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.delete_forever,
                     title: "Reset Database Locale",
                     subtitle:
-                    "Cancella cache tavoli e ordini (Solo questo dispositivo)",
+                        "Cancella cache tavoli e ordini (Solo questo dispositivo)",
                     iconColor: colors.danger,
                     textColor: colors.danger,
                     onTap: () => _showResetDialog(context, ref),
@@ -80,7 +96,8 @@ class SettingsScreen extends ConsumerWidget {
                       child: Text(
                         "Orderly Pocket v1.0.0\nBuild 2024.10.25",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                        style:
+                            TextStyle(color: colors.textTertiary, fontSize: 12),
                       ),
                     ),
                   ),
@@ -95,21 +112,31 @@ class SettingsScreen extends ConsumerWidget {
 
   void _showLanguageDialog(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
+    final currentLocale = ref.watch(localeProvider);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: colors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text("Seleziona Lingua", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: colors.textPrimary)),
+              child: Text("Seleziona Lingua",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: colors.textPrimary)),
             ),
             ListTile(
               leading: const Text("🇮🇹", style: TextStyle(fontSize: 24)),
               title: const Text("Italiano", style: TextStyle(fontSize: 14)),
+              trailing: currentLocale.languageCode == 'it'
+                  ? Icon(Icons.check, color: colors.primary)
+                  : null,
               onTap: () {
                 ref.read(localeProvider.notifier).setLocale(const Locale('it'));
                 Navigator.pop(ctx);
@@ -118,6 +145,9 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const Text("🇬🇧", style: TextStyle(fontSize: 24)),
               title: const Text("English", style: TextStyle(fontSize: 14)),
+              trailing: currentLocale.languageCode == 'en'
+                  ? Icon(Icons.check, color: colors.primary)
+                  : null,
               onTap: () {
                 ref.read(localeProvider.notifier).setLocale(const Locale('en'));
                 Navigator.pop(ctx);
@@ -134,11 +164,22 @@ class SettingsScreen extends ConsumerWidget {
     final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Text(title.toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: colors.textSecondary, fontSize: 11, letterSpacing: 1.2)),
+      child: Text(title.toUpperCase(),
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: colors.textSecondary,
+              fontSize: 11,
+              letterSpacing: 1.2)),
     );
   }
 
-  Widget _buildTile(BuildContext context, {required IconData icon, required String title, String? subtitle, required VoidCallback onTap, Color? iconColor, Color? textColor}) {
+  Widget _buildTile(BuildContext context,
+      {required IconData icon,
+      required String title,
+      String? subtitle,
+      required VoidCallback onTap,
+      Color? iconColor,
+      Color? textColor}) {
     final colors = context.colors;
     final effectiveIconColor = iconColor ?? colors.textSecondary;
     final effectiveTextColor = textColor ?? colors.textPrimary;
@@ -148,19 +189,37 @@ class SettingsScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: colors.shadow, blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: colors.shadow, blurRadius: 4, offset: const Offset(0, 2))
+        ],
       ),
-      child: ListTile(
-        hoverColor: colors.hover,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: effectiveIconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: effectiveIconColor, size: 20),
+      child: Material(
+        color: colors.hover,
+        child: ListTile(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          hoverColor: colors.hover,
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: effectiveIconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: effectiveIconColor, size: 20),
+          ),
+          title: Text(title,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: effectiveTextColor,
+                  fontSize: 14)),
+          subtitle: subtitle != null
+              ? Text(subtitle,
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary))
+              : null,
+          trailing:
+              Icon(Icons.chevron_right, color: colors.textTertiary, size: 20),
+          onTap: onTap,
         ),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: effectiveTextColor, fontSize: 14)),
-        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: colors.textSecondary)) : null,
-        trailing: Icon(Icons.chevron_right, color: colors.textTertiary, size: 20),
-        onTap: onTap,
       ),
     );
   }
@@ -172,11 +231,17 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface,
         title: const Text("Reset Dati", style: TextStyle(fontSize: 16)),
-        content: const Text("Sei sicuro? Tutti i tavoli aperti verranno chiusi e resettati.", style: TextStyle(fontSize: 14)),
+        content: const Text(
+            "Sei sicuro? Tutti i tavoli aperti verranno chiusi e resettati.",
+            style: TextStyle(fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Annulla", style: TextStyle(fontSize: 14))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Annulla", style: TextStyle(fontSize: 14))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: colors.danger, foregroundColor: colors.textInverse),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: colors.danger,
+                foregroundColor: colors.textInverse),
             onPressed: () async {
               final tablesBox = Hive.box(kTablesBox);
               final voidsBox = Hive.box(kVoidsBox);
@@ -186,7 +251,8 @@ class SettingsScreen extends ConsumerWidget {
 
               ref.invalidate(tablesProvider);
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Reset effettuato!")));
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Reset effettuato!")));
             },
             child: const Text("Conferma Reset", style: TextStyle(fontSize: 14)),
           ),
@@ -197,21 +263,30 @@ class SettingsScreen extends ConsumerWidget {
 
   void _showThemeDialog(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
+    final currentTheme = ref.watch(themeModeProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: colors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text("Seleziona Tema", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: colors.textPrimary)),
+              child: Text("Seleziona Tema",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: colors.textPrimary)),
             ),
             ListTile(
               leading: const Icon(Icons.wb_sunny_outlined, size: 20),
               title: const Text("Chiaro", style: TextStyle(fontSize: 14)),
+              trailing: currentTheme == ThemeMode.light
+                  ? Icon(Icons.check, color: colors.primary)
+                  : null,
               onTap: () {
                 ref.read(themeModeProvider.notifier).setTheme(ThemeMode.light);
                 Navigator.pop(ctx);
@@ -220,6 +295,9 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.nights_stay_outlined, size: 20),
               title: const Text("Scuro", style: TextStyle(fontSize: 14)),
+              trailing: currentTheme == ThemeMode.dark
+                  ? Icon(Icons.check, color: colors.primary)
+                  : null,
               onTap: () {
                 ref.read(themeModeProvider.notifier).setTheme(ThemeMode.dark);
                 Navigator.pop(ctx);
@@ -228,6 +306,9 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.brightness_auto_outlined, size: 20),
               title: const Text("Automatico", style: TextStyle(fontSize: 14)),
+              trailing: currentTheme == ThemeMode.system
+                  ? Icon(Icons.check, color: colors.primary)
+                  : null,
               onTap: () {
                 ref.read(themeModeProvider.notifier).setSystem();
                 Navigator.pop(ctx);
@@ -239,5 +320,4 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
-
 }

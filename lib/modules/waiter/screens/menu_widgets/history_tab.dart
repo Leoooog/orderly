@@ -71,86 +71,94 @@ class HistoryTab extends ConsumerWidget {
       context: context,
       isScrollControlled: true, // Necessario per gestire i constraints custom
       backgroundColor: Colors.transparent, // TRUCCO: Sfondo trasparente per evitare full screen colorato
-      builder: (ctx) => Align(
-        alignment: Alignment.bottomCenter,
+      builder: (ctx) => GestureDetector(
+        onTap: () => Navigator.of(ctx).pop(),
         child: Container(
-          constraints: BoxConstraints(
-            maxWidth: maxWidth,
-            maxHeight: maxHeight,
-          ),
-          decoration: BoxDecoration(
-            color: colors.surface, // Il colore va QUI
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // Adatta l'altezza al contenuto
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                      AppLocalizations.of(context)!.labelVoidedList(table.name),
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: colors.danger)),
-                ),
-                const Divider(height: 1),
-                if (voids.isEmpty)
-                  SizedBox(
-                    height: 100,
-                    child: Center(
-                        child: Text(
-                            AppLocalizations.of(context)!.labelNoVoidedItems,
-                            style: TextStyle(
-                                color: colors.textTertiary, fontSize: 14))),
-                  )
-                else
-                // Flexible permette alla lista di occupare MENO spazio se ha pochi elementi
-                // o di scrollare se ne ha troppi, fino al maxHeight definito sopra.
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.only(bottom: 24),
-                      itemCount: voids.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final v = voids[index];
-                        return ListTile(
-                          title: Text("${v.quantity}x ${v.itemName}",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 14)),
-                          subtitle: Text(
-                            AppLocalizations.of(context)!.labelVoidReason(
-                                v.reason,
-                                v.timestamp.hour.toString(),
-                                v.timestamp.minute.toString().padLeft(2, '0'),
-                                v.isRefunded.toString(),
-                                v.statusWhenVoided.toString()),
-                          ),
-                          trailing: Text(
-                              v.isRefunded
-                                  ? "-${v.totalVoidAmount.toCurrency()}"
-                                  : "",
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: v.isRefunded
-                                      ? colors.danger
-                                      : colors.textTertiary,
-                                  fontWeight: FontWeight.bold)),
-                          isThreeLine: true,
-                        );
-                      },
+          color: Colors.transparent, // Catch taps on the transparent area
+          alignment: Alignment.bottomCenter,
+          child: GestureDetector(
+            onTap: () {}, // Prevent taps inside the sheet from closing it
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: maxWidth,
+                maxHeight: maxHeight,
+              ),
+              decoration: BoxDecoration(
+                color: colors.surface, // Il colore va QUI
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Adatta l'altezza al contenuto
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                          AppLocalizations.of(context)!.labelVoidedList(table.name),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: colors.danger)),
                     ),
-                  )
-              ],
+                    const Divider(height: 1),
+                    if (voids.isEmpty)
+                      SizedBox(
+                        height: 100,
+                        child: Center(
+                            child: Text(
+                                AppLocalizations.of(context)!.labelNoVoidedItems,
+                                style: TextStyle(
+                                    color: colors.textTertiary, fontSize: 14))),
+                      )
+                    else
+                    // Flexible permette alla lista di occupare MENO spazio se ha pochi elementi
+                    // o di scrollare se ne ha troppi, fino al maxHeight definito sopra.
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(bottom: 24),
+                          itemCount: voids.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final v = voids[index];
+                            return ListTile(
+                              title: Text("${v.quantity}x ${v.itemName}",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 14)),
+                              subtitle: Text(
+                                AppLocalizations.of(context)!.labelVoidReason(
+                                    v.reason,
+                                    v.timestamp.hour.toString(),
+                                    v.timestamp.minute.toString().padLeft(2, '0'),
+                                    v.isRefunded.toString(),
+                                    v.statusWhenVoided.toString()),
+                              ),
+                              trailing: Text(
+                                  v.isRefunded
+                                      ? "-${v.totalVoidAmount.toCurrency()}"
+                                      : "",
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: v.isRefunded
+                                          ? colors.danger
+                                          : colors.textTertiary,
+                                      fontWeight: FontWeight.bold)),
+                              isThreeLine: true,
+                            );
+                          },
+                        ),
+                      )
+                  ],
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
 
   void _showItemOptions(BuildContext context, WidgetRef ref, CartItem item) {
     final colors = context.colors;
@@ -163,54 +171,70 @@ class HistoryTab extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent, // TRUCCO: Sfondo trasparente
-      builder: (ctx) => Align(
-        alignment: Alignment.bottomCenter,
+      builder: (ctx) => GestureDetector(
+        onTap: () => Navigator.of(ctx).pop(),
         child: Container(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          decoration: BoxDecoration(
-            color: colors.surface, // Il colore va QUI
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // Occupa solo lo spazio necessario
-              children: [
-                Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(item.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18))),
-                if (canEdit)
-                  ListTile(
-                    leading: Icon(Icons.edit, color: colors.primary),
-                    title: Text(AppLocalizations.of(context)!.labelEdit),
-                    subtitle: Text(
-                        AppLocalizations.of(context)!.subtitleEditItemAction),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showEditDialog(context, ref, item);
-                    },
+          color: Colors.transparent,
+          alignment: Alignment.bottomCenter,
+          child: GestureDetector(
+            onTap: () {}, // Prevent taps inside the sheet from closing it
+            child: Container(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              decoration: BoxDecoration(
+                color: colors.surface, // Il colore va QUI
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              // ClipRRect assicura che i figli rispettino i bordi arrotondati
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: SafeArea(
+                  child: Material(
+                    type: MaterialType.transparency, // Permette agli Ink di "salire"
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min, // Occupa solo lo spazio necessario
+                      children: [
+                        Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(item.name,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18))),
+                        if (canEdit)
+                          ListTile(
+                            leading: Icon(Icons.edit, color: colors.primary),
+                            title: Text(AppLocalizations.of(context)!.labelEdit),
+                            subtitle: Text(
+                                AppLocalizations.of(context)!.subtitleEditItemAction),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _showEditDialog(context, ref, item);
+                            },
+                          ),
+                        ListTile(
+                          leading: Icon(Icons.delete_forever, color: colors.danger),
+                          title:
+                          Text(AppLocalizations.of(context)!.titleVoidItemAction),
+                          subtitle: Text(
+                              AppLocalizations.of(context)!.subtitleVoidItemAction),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _showVoidDialog(context, ref, item);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   ),
-                ListTile(
-                  leading: Icon(Icons.delete_forever, color: colors.danger),
-                  title:
-                  Text(AppLocalizations.of(context)!.titleVoidItemAction),
-                  subtitle: Text(
-                      AppLocalizations.of(context)!.subtitleVoidItemAction),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showVoidDialog(context, ref, item);
-                  },
                 ),
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+
 
   void _showEditDialog(BuildContext context, WidgetRef ref, CartItem item) {
     final menuItems = ref.read(menuProvider);
@@ -623,106 +647,113 @@ class HistoryTab extends ConsumerWidget {
         break;
     }
 
-    return InkWell(
-      onTap: isInteractive ? () => _markServed(ref, item) : null,
-      onLongPress: () => _showItemOptions(context, ref, item),
-      hoverColor: colors.hover,
-      child: Opacity(
-        opacity: opacity,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.vertical(
-              top: isFirst ? const Radius.circular(12) : Radius.zero,
-              bottom: isLast ? const Radius.circular(12) : Radius.zero,
-            ),
-            border: Border(
-              bottom: (item.status == ItemStatus.fired ||
-                  item.status == ItemStatus.served) &&
-                  !isLast
-                  ? BorderSide(color: colors.divider)
-                  : BorderSide.none,
-            ),
-            color: bgColor,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border:
-                    Border.all(color: iconColor.withValues(alpha: 0.3))),
-                child: Text("${item.qty}x",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: iconColor,
-                        fontSize: 12)),
+    final borderRadius = BorderRadius.vertical(
+      top: isFirst ? const Radius.circular(12) : Radius.zero,
+      bottom: isLast ? const Radius.circular(12) : Radius.zero,
+    );
+
+    return Opacity(
+      opacity: opacity,
+      child: Material(
+        color: bgColor,
+        borderRadius: borderRadius,
+        child: InkWell(
+          onTap: isInteractive ? () => _markServed(ref, item) : null,
+          onLongPress: () => _showItemOptions(context, ref, item),
+          hoverColor: colors.hover,
+          borderRadius: borderRadius,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              border: Border(
+                bottom: (item.status == ItemStatus.fired ||
+                    item.status == ItemStatus.served) &&
+                    !isLast
+                    ? BorderSide(color: colors.divider)
+                    : BorderSide.none,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: colors.textPrimary)),
-                      if (item.selectedExtras.isNotEmpty)
-                        Text(
-                            item.selectedExtras
-                                .map((e) => "+ ${e.name}")
-                                .join(", "),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 11, color: colors.textSecondary)),
-                      if (item.notes.isNotEmpty)
-                        Text(item.notes,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: colors.warning,
-                                fontStyle: FontStyle.italic)),
-                    ]),
-              ),
-              const SizedBox(width: 8),
-              if (item.status == ItemStatus.ready)
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
                 Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: colors.success,
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Text(AppLocalizations.of(context)!.btnMarkServed,
-                        style: TextStyle(
-                            color: colors.textInverse,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                            letterSpacing: 0.5)))
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Icon(icon, size: 18, color: iconColor),
-                    const SizedBox(height: 2),
-                    Text(statusLabel,
-                        style: TextStyle(
-                            fontSize: 8,
-                            color: iconColor,
-                            fontWeight: FontWeight.bold)),
-                  ],
-                )
-            ],
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                      Border.all(color: iconColor.withValues(alpha: 0.3))),
+                  child: Text("${item.qty}x",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: iconColor,
+                          fontSize: 12)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: colors.textPrimary)),
+                        if (item.selectedExtras.isNotEmpty)
+                          Text(
+                              item.selectedExtras
+                                  .map((e) => "+ ${e.name}")
+                                  .join(", "),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 11, color: colors.textSecondary)),
+                        if (item.notes.isNotEmpty)
+                          Text(item.notes,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: colors.warning,
+                                  fontStyle: FontStyle.italic)),
+                      ]),
+                ),
+                const SizedBox(width: 8),
+                if (item.status == ItemStatus.ready)
+                  Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                          color: colors.success,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text(AppLocalizations.of(context)!.btnMarkServed,
+                          style: TextStyle(
+                              color: colors.textInverse,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5)))
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Icon(icon, size: 18, color: iconColor),
+                      const SizedBox(height: 2),
+                      Text(statusLabel,
+                          style: TextStyle(
+                              fontSize: 8,
+                              color: iconColor,
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  )
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
 }

@@ -9,4 +9,4 @@
 - Configurazione Localizzazione da backend
 - Motivazioni storno da backend
 - Pagamento alla romana
-- Fixare UI responsive
+- Localizzazione widgets shared

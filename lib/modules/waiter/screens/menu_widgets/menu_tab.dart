@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:orderly/config/restaurant_settings.dart';
@@ -146,26 +147,33 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
 
             // CATEGORIE
             if (searchQuery.isEmpty)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    _buildCategoryPill(
-                      id: 'ALL',
-                      name: AppLocalizations.of(context)!.labelAll,
-                      isActive: currentCategory == 'ALL',
-                    ),
-                    ...categoriesList.map((cat) {
-                      return _buildCategoryPill(
-                        id: cat.id,
-                        name: cat.name,
-                        isActive: currentCategory == cat.id,
-                      );
-                    }),
-                  ],
+              ScrollConfiguration(
+                behavior: _MyCustomScrollBehavior(),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      _buildCategoryPill(
+                        id: 'ALL',
+                        name: AppLocalizations.of(context)!.labelAll,
+                        isActive: currentCategory == 'ALL',
+                      ),
+                      ...categoriesList.map((cat) {
+                        return _buildCategoryPill(
+                          id: cat.id,
+                          name: cat.name,
+                          isActive: currentCategory == cat.id,
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ),
+
+            if(searchQuery.isEmpty)
+              Divider(color: colors.divider, height: 1),
 
             // LISTA PRODOTTI
             Expanded(
@@ -173,25 +181,28 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
                 color: colors.background,
                 child: filteredItems.isEmpty
                     ? Center(child: Text(AppLocalizations.of(context)!.labelNoProducts, style: TextStyle(color: colors.textTertiary, fontSize: 14)))
-                    : ListView.separated(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
-                  itemCount: filteredItems.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = filteredItems[index];
-                    final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
-                    final isExpanded = _expandedItems.contains(item.id);
+                    : ScrollConfiguration(
+                      behavior: _MyCustomScrollBehavior(),
+                      child: ListView.separated(
+                                        padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
+                                        itemCount: filteredItems.length,
+                                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                        itemBuilder: (context, index) {
+                      final item = filteredItems[index];
+                      final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
+                      final isExpanded = _expandedItems.contains(item.id);
 
-                    return _ProductCard(
-                      key: ValueKey(item.id),
-                      item: item,
-                      totalQty: totalQty,
-                      isExpanded: isExpanded,
-                      onAdd: () => _addToCart(item),
-                      onExpand: () => _toggleProductExpansion(item.id),
-                    );
-                  },
-                ),
+                      return _ProductCard(
+                        key: ValueKey(item.id),
+                        item: item,
+                        totalQty: totalQty,
+                        isExpanded: isExpanded,
+                        onAdd: () => _addToCart(item),
+                        onExpand: () => _toggleProductExpansion(item.id),
+                      );
+                                        },
+                                      ),
+                    ),
               ),
             ),
           ],
@@ -200,34 +211,42 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
     );
   }
 
+
   Widget _buildCategoryPill({required String id, required String name, required bool isActive}) {
     final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () => setState(() => activeCategory = id),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isActive ? colors.secondary : colors.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isActive ? colors.secondary : colors.divider),
-          ),
-          child: Text(
-            name,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: isActive ? colors.onSecondary : colors.textSecondary,
-            ),
-          ),
+      child: ActionChip(
+        onPressed: () => setState(() => activeCategory = id),
+        label: Text(name),
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+          color: isActive ? colors.onSecondary : colors.textSecondary,
         ),
+        backgroundColor: isActive ? colors.secondary : colors.surface,
+        side: BorderSide(color: isActive ? colors.secondary : colors.divider),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
 }
 
+class _MyCustomScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+  };
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const AlwaysScrollableScrollPhysics();
+  }
+}
 class _ProductCard extends StatelessWidget {
   final MenuItem item;
   final int totalQty;
@@ -247,113 +266,192 @@ class _ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      decoration: BoxDecoration(
-        color: colors.surface, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isExpanded ? colors.borderExpanded : colors.divider),
-        boxShadow: [BoxShadow(color: colors.shadow, blurRadius: 4, offset: const Offset(0, 2))],
+    return Material(
+      color: colors.surface,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 2,
+      shadowColor: colors.shadow,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: isExpanded ? colors.borderExpanded : colors.divider),
+        ),
+        child: Column(
+          children: [
+            _buildMainTile(context),
+            _buildExpansionTile(context),
+          ],
+        ),
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildMainTile(BuildContext context) {
+    final colors = context.colors;
+    return InkWell(
+      onTap: onExpand,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      child: Row(
         children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: onAdd,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                        width: 64, height: 64, color: colors.background,
-                        child: Image.network(
-                            item.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_,__,___)=> Icon(Icons.restaurant, color: colors.textTertiary, size: 24)
-                        )
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onExpand,
-                      child: Row(
-                        children: [
-                          Expanded(
-                              child: Text(
-                                  item.name,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis, // RESPONSIVE TEXT
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: colors.textPrimary)
-                              )
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 20, color: colors.textTertiary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    GestureDetector(
-                      onTap: onAdd,
-                      child: Text(item.price.toCurrency(), style: TextStyle(fontWeight: FontWeight.w600, color: colors.primary, fontSize: 14)),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: onAdd,
+          // Image with tap to add
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: InkResponse(
+              onTap: onAdd,
+              radius: 38,
+              borderRadius: BorderRadius.circular(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.all(8),
-                  child: totalQty > 0
-                      ? Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle), alignment: Alignment.center, child: Text("$totalQty", style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.bold, fontSize: 14)))
-                      : Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.background, shape: BoxShape.circle), child: Icon(Icons.add, size: 18, color: colors.textTertiary)),
-                ),
-              )
-            ],
-          ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(height: 0, width: double.infinity),
-            secondChild: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              decoration: BoxDecoration(border: Border(top: BorderSide(color: colors.divider))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const SizedBox(height: 12),
-                Text(AppLocalizations.of(context)!.labelIngredients, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colors.textTertiary, letterSpacing: 1)),
-                const SizedBox(height: 6),
-                Wrap(spacing: 6, runSpacing: 6, children: item.ingredients.map((ing) => _buildTag(context, ing, colors.background, colors.textSecondary)).toList()),
-                if (item.allergens.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(AppLocalizations.of(context)!.labelAllergens, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: colors.danger, letterSpacing: 1)),
-                  const SizedBox(height: 6),
-                  Wrap(spacing: 6, runSpacing: 6, children: item.allergens.map((alg) => _buildTag(context, alg, colors.dangerContainer, colors.danger, isWarning: true)).toList()),
-                ],
-              ]),
+                    width: 64,
+                    height: 64,
+                    color: colors.background,
+                    child: Image.network(item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.restaurant,
+                            color: colors.textTertiary, size: 24))),
+              ),
             ),
-            crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 300),
+          ),
+          // Name and Price
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: colors.textPrimary)),
+                const SizedBox(height: 4),
+                Text(item.price.toCurrency(),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: colors.primary,
+                        fontSize: 14)),
+              ],
+            ),
+          ),
+          // Add button
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: InkResponse(
+              onTap: onAdd,
+              radius: 24,
+              child: totalQty > 0
+                  ? Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                      color: colors.primary, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Text("$totalQty",
+                      style: TextStyle(
+                          color: colors.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14)))
+                  : Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                      color: colors.background, shape: BoxShape.circle),
+                  child: Icon(Icons.add,
+                      size: 18, color: colors.textTertiary)),
+            ),
+          ),
+          // Expansion Icon
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(
+                isExpanded
+                    ? Icons.keyboard_arrow_up
+                    : Icons.keyboard_arrow_down,
+                size: 20,
+                color: colors.textTertiary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTag(BuildContext context, String text, Color bg, Color textCol, {bool isWarning = false}) {
+  Widget _buildExpansionTile(BuildContext context) {
+    return AnimatedCrossFade(
+      firstChild: const SizedBox(height: 0, width: double.infinity),
+      secondChild: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        decoration:
+        BoxDecoration(border: Border(top: BorderSide(color: context.colors.divider))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: 12),
+          Text(AppLocalizations.of(context)!.labelIngredients,
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: context.colors.textTertiary,
+                  letterSpacing: 1)),
+          const SizedBox(height: 6),
+          Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: item.ingredients
+                  .map((ing) => _buildTag(context, ing,
+                  context.colors.background, context.colors.textSecondary))
+                  .toList()),
+          if (item.allergens.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(AppLocalizations.of(context)!.labelAllergens,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: context.colors.danger,
+                    letterSpacing: 1)),
+            const SizedBox(height: 6),
+            Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: item.allergens
+                    .map((alg) => _buildTag(context, alg,
+                    context.colors.dangerContainer, context.colors.danger,
+                    isWarning: true))
+                    .toList()),
+          ],
+        ]),
+      ),
+      crossFadeState:
+      isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  Widget _buildTag(BuildContext context, String text, Color bg, Color textCol,
+      {bool isWarning = false}) {
     final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: isWarning ? textCol.withValues(alpha: 0.2) : colors.divider)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+              color: isWarning
+                  ? textCol.withValues(alpha: 0.2)
+                  : colors.divider)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if(isWarning) ...[Icon(Icons.warning_amber, size: 12, color: colors.danger), const SizedBox(width: 4)],
-        Flexible(child: Text(text, style: TextStyle(fontSize: 11, color: textCol, fontWeight: isWarning ? FontWeight.bold : FontWeight.normal)))
+        if (isWarning) ...[
+          Icon(Icons.warning_amber, size: 12, color: colors.danger),
+          const SizedBox(width: 4)
+        ],
+        Flexible(
+            child: Text(text,
+                style: TextStyle(
+                    fontSize: 11,
+                    color: textCol,
+                    fontWeight:
+                    isWarning ? FontWeight.bold : FontWeight.normal)))
       ]),
     );
   }

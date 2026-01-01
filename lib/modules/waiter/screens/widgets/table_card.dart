@@ -116,172 +116,177 @@ class _TableCardState extends State<TableCard>
         break;
     }
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: AnimatedBuilder(
-        animation: _pulseController,
-        builder: (BuildContext context, Widget? child) {
-          double scale = 1.0;
-          if (isReady) {
-            scale = 1.0 + 0.05 * _pulseController.value;
-          }
-          return Transform.scale(
-            scale: scale,
-            child: child,
-          );
-        },
-        child: Container(
-          // Rimuovo alignment center qui per permettere allo Stack di riempire
-          decoration: BoxDecoration(
-            color: cardBgColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: borderColor,
-              width: isReady ? 3 : 2,
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (BuildContext context, Widget? child) {
+        double scale = 1.0;
+        if (isReady) {
+          scale = 1.0 + 0.05 * _pulseController.value;
+        }
+        return Transform.scale(
+          scale: scale,
+          child: child,
+        );
+      },
+      child: Material(
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 2.0,
+        shadowColor: colors.shadow.withValues(alpha: 0.5),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: borderColor,
+                width: isReady ? 3 : 2,
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                  color: colors.shadow,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2))
-            ],
-          ),
-          child: Stack(
-            children: [
-              // CAMPANELLA NOTIFICA (In alto a destra)
-              if (isReady)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: ScaleTransition(
-                    scale: _bellScaleAnimation,
+            child: Stack(
+              children: [
+                // CAMPANELLA NOTIFICA (In alto a destra)
+                if (isReady)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: ScaleTransition(
+                      scale: _bellScaleAnimation,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                            color: colors.success, shape: BoxShape.circle),
+                        child: Icon(Icons.notifications_active,
+                            color: colors.textInverse, size: 12),
+                      ),
+                    ),
+                  ),
+
+                // PUNTINO DI STATO (In alto a destra se non Ready)
+                if (isOccupied && !isReady)
+                  Positioned(
+                    top: 10,
+                    right: 10,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
+                      width: 6,
+                      height: 6,
                       decoration: BoxDecoration(
-                          color: colors.success, shape: BoxShape.circle),
-                      child: Icon(Icons.notifications_active,
-                          color: colors.textInverse, size: 12),
+                          color: accentColor.withValues(alpha: 0.5),
+                          shape: BoxShape.circle),
                     ),
                   ),
-                ),
 
-              // PUNTINO DI STATO (In alto a destra se non Ready)
-              if (isOccupied && !isReady)
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.5),
-                        shape: BoxShape.circle),
-                  ),
-                ),
-
-              // CONTENUTO CENTRALE RESPONSIVE
-              Padding(
-                padding: const EdgeInsets.all(8.0), // Padding interno generale
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // NOME TAVOLO (Scalabile)
-                    Flexible(
-                      flex: 2,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          widget.table.name,
-                          style: TextStyle(
-                              fontSize: 24, // Dimensione base
-                              fontWeight: FontWeight.bold,
-                              color: isOccupied ? contentColor : colors.textPrimary),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // INFO STATO (Scalabile)
-                    if (isOccupied) ...[
+                // CONTENUTO CENTRALE RESPONSIVE
+                Padding(
+                  padding: const EdgeInsets.all(8.0), // Padding interno generale
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // NOME TAVOLO (Scalabile)
                       Flexible(
-                        flex: 1,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min, // Occupa solo spazio necessario
-                          children: [
-                            // BADGE STATO
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: accentColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (statusIcon != null) statusIcon,
-                                  if (statusIcon != null) const SizedBox(width: 4),
-                                  Flexible( // Permette al testo di restringersi se necessario
-                                    child: Text(
-                                      statusLabel,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                          fontSize: 9, // Leggermente più grande per leggibilità
-                                          fontWeight: FontWeight.w900,
-                                          color: accentColor),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            // COPERTI
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.people,
-                                    size: 12,
-                                    color: contentColor.withValues(alpha: 0.7)),
-                                const SizedBox(width: 4),
-                                Text("${widget.table.guests}",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: contentColor,
-                                        fontSize: 11)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else
-                    // BADGE FREE
-                    // BADGE FREE
-                      Flexible(
-                        flex: 1,
-                        child: Center( // <--- QUESTO è il widget magico che risolve il problema
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                                color: colors.successContainer,
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Text(
-                                AppLocalizations.of(context)!.tableStatusFree,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: colors.success)),
+                        flex: 2,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            widget.table.name,
+                            style: TextStyle(
+                                fontSize: 24, // Dimensione base
+                                fontWeight: FontWeight.bold,
+                                color: isOccupied
+                                    ? contentColor
+                                    : colors.textPrimary),
                           ),
                         ),
                       ),
-                  ],
+
+                      const SizedBox(height: 4),
+
+                      // INFO STATO (Scalabile)
+                      if (isOccupied) ...[
+                        Flexible(
+                          flex: 1,
+                          child: Column(
+                            mainAxisSize:
+                            MainAxisSize.min, // Occupa solo spazio necessario
+                            children: [
+                              // BADGE STATO
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (statusIcon != null) statusIcon,
+                                    if (statusIcon != null)
+                                      const SizedBox(width: 4),
+                                    Flexible(
+                                      // Permette al testo di restringersi se necessario
+                                      child: Text(
+                                        statusLabel,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize:
+                                            9, // Leggermente più grande per leggibilità
+                                            fontWeight: FontWeight.w900,
+                                            color: accentColor),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              // COPERTI
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.people,
+                                      size: 12,
+                                      color: contentColor.withValues(alpha: 0.7)),
+                                  const SizedBox(width: 4),
+                                  Text("${widget.table.guests}",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: contentColor,
+                                          fontSize: 11)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else
+                      // BADGE FREE
+                        Flexible(
+                          flex: 1,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                  color: colors.successContainer,
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Text(
+                                  AppLocalizations.of(context)!.tableStatusFree,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: colors.success)),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

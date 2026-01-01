@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:orderly/config/themes.dart';
+import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
 
 class QuantityButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const QuantityButton({super.key, required this.icon, required this.onTap});
+  const QuantityButton({
+    super.key,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final colors = context.colors;
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
         child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Icon(icon, size: 16, color: AppColors.cSlate600)));
+          padding: const EdgeInsets.all(6.0),
+          child: Icon(icon, size: 16, color: colors.textSecondary),
+        ),
+      ),
+    );
   }
 }

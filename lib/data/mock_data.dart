@@ -10,6 +10,7 @@ final List<Category> categories = [
   Category('drinks', 'Bevande', Icons.wine_bar),
   Category('food', 'Primi', Icons.restaurant),
   Category('main', 'Secondi', Icons.restaurant_menu),
+  Category('sides', 'Contorni', Icons.fastfood),
   Category('coffee', 'Caffè', Icons.coffee),
 ];
 

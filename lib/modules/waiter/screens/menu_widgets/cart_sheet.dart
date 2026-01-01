@@ -118,67 +118,78 @@ class _CartSheetState extends ConsumerState<CartSheet> {
           child: Column(
             children: [
               // --- HEADER DEL CARRELLO ---
-              Container(
-                height: widget.minHeight,
-                color: Colors.transparent,
-                child: Column(children: [
-                  const SizedBox(height: 12),
-                  // Maniglia
-                  Container(
-                      width: 48,
-                      height: 6,
-                      decoration: BoxDecoration(
-                          color: colors.divider,
-                          borderRadius: BorderRadius.circular(3))),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(children: [
-                            Icon(Icons.shopping_bag,
-                                color: colors.primary, size: 20),
-                            const SizedBox(width: 12),
-                            Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(AppLocalizations.of(context)!.cartSheetTitle,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14)),
-                                  Text(
-                                      AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
-                                      style: TextStyle(
-                                          color: colors.textSecondary,
-                                          fontSize: 12)),
-                                ]),
+              GestureDetector(
+                onTap: () {
+                  if (widget.isExpanded) {
+                    widget.controller.animateTo(0, curve: Curves.easeOutQuint);
+                    widget.onExpandChange(false);
+                  } else {
+                    widget.controller.animateTo(1, curve: Curves.easeOutQuint);
+                    widget.onExpandChange(true);
+                  }
+                },
+                child: Container(
+                  height: widget.minHeight,
+                  color: Colors.transparent,
+                  child: Column(children: [
+                    const SizedBox(height: 12),
+                    // Maniglia
+                    Container(
+                        width: 48,
+                        height: 6,
+                        decoration: BoxDecoration(
+                            color: colors.divider,
+                            borderRadius: BorderRadius.circular(3))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(children: [
+                              Icon(Icons.shopping_bag,
+                                  color: colors.primary, size: 20),
+                              const SizedBox(width: 12),
+                              Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(AppLocalizations.of(context)!.cartSheetTitle,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14)),
+                                    Text(
+                                        AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
+                                        style: TextStyle(
+                                            color: colors.textSecondary,
+                                            fontSize: 12)),
+                                  ]),
+                            ]),
+                            Row(
+                              children: [
+                                Text(
+                                    "€ ${cart.fold(0.0, (s, i) => s + (i.unitPrice * i.qty)).toStringAsFixed(2)}",
+                                    style: const TextStyle(
+                                        fontFamily: 'RobotoMono',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18)),
+                                // Mostra il pulsante invia rapido solo se non è espanso
+                                if (!widget.isExpanded) ... [
+                                  const SizedBox(width: 16),
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: colors.success,
+                                    child: IconButton(
+                                        icon: Icon(Icons.send,
+                                            color: colors.textInverse, size: 18),
+                                        onPressed: () => widget.onSendOrder()),
+                                  ),
+                                ]
+                              ],
+                            ),
                           ]),
-                          Row(
-                            children: [
-                              Text(
-                                  "€ ${cart.fold(0.0, (s, i) => s + (i.unitPrice * i.qty)).toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                      fontFamily: 'RobotoMono',
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18)),
-                              // Mostra il pulsante invia rapido solo se non è espanso
-                              if (!widget.isExpanded) ... [
-                                const SizedBox(width: 16),
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: colors.success,
-                                  child: IconButton(
-                                      icon: Icon(Icons.send,
-                                          color: colors.textInverse, size: 18),
-                                      onPressed: () => widget.onSendOrder()),
-                                ),
-                              ]
-                            ],
-                          ),
-                        ]),
-                  ),
-                ]),
+                    ),
+                  ]),
+                ),
               ),
 
               // --- LISTA PRODOTTI ---
@@ -219,103 +230,114 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     final colors = context.colors;
     bool hasExtras = item.selectedExtras.isNotEmpty;
     bool hasNotes = item.notes.isNotEmpty;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: (hasNotes || hasExtras) ? colors.warningContainer : colors.surface,
+
+    Color cardColor = (hasNotes || hasExtras) ? colors.warningContainer : colors.surface;
+    Color borderColor = (hasNotes || hasExtras) ? colors.warningContainer : colors.divider;
+
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: (hasNotes || hasExtras)
-                  ? colors.warningContainer
-                  : colors.divider)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Expanded( // Aggiunto Expanded per evitare overflow del testo lungo
-            child: Text(item.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
+          border: Border.all(color: borderColor),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Expanded(
+              child: Text(item.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text("€ ${(item.unitPrice * item.qty).toStringAsFixed(2)}",
-              style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-        ]),
-        if (hasExtras)
-          Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Wrap(
-                  spacing: 4,
-                  children: item.selectedExtras
-                      .map((e) => Text("+${e.name}",
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: colors.warning,
-                          fontWeight: FontWeight.bold)))
-                      .toList())),
-        if (hasNotes)
-          Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(children: [
-                Icon(Icons.error_outline,
-                    size: 12, color: colors.warning),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(item.notes,
-                      style: TextStyle(
-                          fontSize: 12, color: colors.warning)),
-                )
-              ])),
-        const SizedBox(height: 8),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Container(
-              decoration: BoxDecoration(
-                  color: colors.background,
-                  borderRadius: BorderRadius.circular(8)),
-              child: Row(children: [
-                QuantityButton(
-                    icon: Icons.remove,
-                    onTap: () => _updateQty(item.internalId, -1)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text("${item.qty}",
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                ),
-                QuantityButton(
-                    icon: Icons.add,
-                    onTap: () => _updateQty(item.internalId, 1)),
-              ])),
-          Row(children: [
-            GestureDetector(
-                onTap: () => _openEditDialog(item),
-                child: Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: colors.background,
-                        borderRadius: BorderRadius.circular(6)),
-                    child: Row(children: [
-                      Icon(Icons.edit, size: 14, color: colors.textSecondary),
-                      const SizedBox(width: 4),
-                      Text(AppLocalizations.of(context)!.btnEdit,
-                          style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: colors.textSecondary))
-                    ]))),
             const SizedBox(width: 8),
-            GestureDetector(
-                onTap: () =>
-                    ref.read(cartProvider.notifier).removeItem(item.internalId),
-                child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                        color: colors.dangerContainer,
-                        borderRadius: BorderRadius.circular(6)),
-                    child: Icon(Icons.delete_outline,
-                        size: 16, color: colors.danger))),
+            Text("€ ${(item.unitPrice * item.qty).toStringAsFixed(2)}",
+                style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+          ]),
+          if (hasExtras)
+            Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: item.selectedExtras
+                        .map((e) => Text("+${e.name}",
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: colors.warning,
+                            fontWeight: FontWeight.bold)))
+                        .toList())),
+          if (hasNotes)
+            Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(children: [
+                  Icon(Icons.error_outline, size: 12, color: colors.warning),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(item.notes,
+                        style: TextStyle(fontSize: 12, color: colors.warning)),
+                  )
+                ])),
+          const SizedBox(height: 8),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Container(
+                decoration: BoxDecoration(
+                    color: colors.background,
+                    borderRadius: BorderRadius.circular(8)),
+                child: Row(children: [
+                  QuantityButton(
+                      icon: Icons.remove,
+                      onTap: () => _updateQty(item.internalId, -1)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text("${item.qty}",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                  QuantityButton(
+                      icon: Icons.add,
+                      onTap: () => _updateQty(item.internalId, 1)),
+                ])),
+            Row(children: [
+              Material(
+                color: colors.background,
+                borderRadius: BorderRadius.circular(6),
+                child: InkWell(
+                  onTap: () => _openEditDialog(item),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      child: Row(children: [
+                        Icon(Icons.edit, size: 14, color: colors.textSecondary),
+                        const SizedBox(width: 4),
+                        Text(AppLocalizations.of(context)!.btnEdit,
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: colors.textSecondary))
+                      ])),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Material(
+                color: colors.dangerContainer,
+                borderRadius: BorderRadius.circular(6),
+                child: InkWell(
+                  onTap: () => ref
+                      .read(cartProvider.notifier)
+                      .removeItem(item.internalId),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(Icons.delete_outline,
+                          size: 16, color: colors.danger)),
+                ),
+              ),
+            ]),
           ]),
         ]),
-      ]),
+      ),
     );
   }
 }
