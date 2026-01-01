@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:orderly/config/restaurant_settings.dart';
+import 'package:orderly/data/models/restaurant_settings.dart';
 import 'package:orderly/l10n/app_localizations.dart';
-import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
+import 'package:orderly/config/orderly_colors.dart';
 import 'package:orderly/shared/widgets/circle_button.dart';
 import 'package:orderly/shared/widgets/quantity_control_button.dart';
 import 'package:orderly/shared/widgets/payment_method_button.dart';

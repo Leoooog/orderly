@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:orderly/l10n/app_localizations.dart';
-import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
+import 'package:orderly/config/orderly_colors.dart';
 import '../../../../data/models/table_item.dart';
 
 class TableCard extends StatefulWidget {

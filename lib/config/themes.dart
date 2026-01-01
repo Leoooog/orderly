@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
+import 'package:orderly/config/orderly_colors.dart';
 
 // 1. PALETTE STATICA
 class AppColors {

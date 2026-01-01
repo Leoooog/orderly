@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart'; // Importa go_router
 import 'config/themes.dart';
 import 'l10n/app_localizations.dart';
-import 'modules/waiter/providers/locale_provider.dart';
-import 'modules/waiter/providers/theme_provider.dart';
+import 'logic/providers/locale_provider.dart';
+import 'logic/providers/theme_provider.dart';
 
 class OrderlyApp extends ConsumerWidget {
   // Non serve più passare "home", passiamo il routerConfig

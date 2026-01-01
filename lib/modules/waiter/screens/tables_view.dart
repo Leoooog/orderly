@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:orderly/l10n/app_localizations.dart';
-import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
+import 'package:orderly/config/orderly_colors.dart';
 import 'package:vibration/vibration.dart';
 
 import '../../../data/models/cart_item.dart';
 import '../../../data/models/table_item.dart';
 import '../../../shared/widgets/payment_method_button.dart';
 import '../providers/tables_provider.dart';
-import '../providers/auth_provider.dart';
+import '../../../logic/providers/auth_provider.dart';
 import 'bill_screen.dart';
 import 'widgets/table_card.dart';
 

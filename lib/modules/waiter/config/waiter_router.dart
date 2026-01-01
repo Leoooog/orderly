@@ -10,8 +10,8 @@ import '../screens/menu_view.dart';
 import '../screens/success_view.dart';
 
 // Providers (Import relativi interni al modulo)
-import 'auth_provider.dart';
-import 'tables_provider.dart';
+import '../../../logic/providers/auth_provider.dart';
+import '../providers/tables_provider.dart';
 
 // Chiave globale per la navigazione
 final _waiterNavigatorKey = GlobalKey<NavigatorState>();

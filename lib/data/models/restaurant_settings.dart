@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 class RestaurantConfig {
   static const String currencySymbol = '€';
   static const String locale = 'it_IT';
+  static const double coverPricePerPerson = 2.0;
 }
 
 extension CurrencyFormatter on double {

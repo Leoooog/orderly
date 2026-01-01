@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:orderly/data/hive_keys.dart';
-import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
+import 'package:orderly/config/orderly_colors.dart';
 import '../providers/tables_provider.dart';
-import '../providers/locale_provider.dart';
-import '../providers/theme_provider.dart'; // Importa il provider lingua
+import '../../../logic/providers/locale_provider.dart';
+import '../../../logic/providers/theme_provider.dart'; // Importa il provider lingua
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

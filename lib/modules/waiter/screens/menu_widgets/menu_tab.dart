@@ -1,9 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:orderly/config/restaurant_settings.dart';
+import 'package:orderly/data/models/restaurant_settings.dart';
 import 'package:orderly/l10n/app_localizations.dart';
-import 'package:orderly/modules/waiter/screens/orderly_colors.dart';
+import 'package:orderly/config/orderly_colors.dart';
 
 import '../../../../data/models/menu_item.dart';
 import '../../../../data/models/course.dart';

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:orderly/modules/waiter/providers/waiter_router_provider.dart';
+import 'package:orderly/modules/waiter/config/waiter_router.dart';
 
-import '../data/hive_keys.dart';
-import '../l10n/app_localizations.dart';
-import '../orderly_app.dart';
+import 'data/hive_keys.dart';
+import 'l10n/app_localizations.dart';
+import 'orderly_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
