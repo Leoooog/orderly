@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:orderly/data/models/enums/table_status.dart';
+import 'package:orderly/data/models/local/table_model.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
-import '../../../../data/models/table_item.dart';
 
 class TableCard extends StatefulWidget {
-  final TableSession table;
+  final TableUiModel table;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
@@ -36,7 +37,7 @@ class _TableCardState extends State<TableCard>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    if (widget.table.status == TableStatus.ready) {
+    if (widget.table.sessionStatus == TableSessionStatus.ready) {
       _pulseController.repeat(reverse: true);
     }
   }
@@ -44,7 +45,7 @@ class _TableCardState extends State<TableCard>
   @override
   void didUpdateWidget(TableCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.table.status == TableStatus.ready) {
+    if (widget.table.sessionStatus == TableSessionStatus.ready) {
       if (!_pulseController.isAnimating) {
         _pulseController.repeat(reverse: true);
       }
@@ -63,57 +64,65 @@ class _TableCardState extends State<TableCard>
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final bool isOccupied = widget.table.status != TableStatus.free;
-    final bool isReady = widget.table.status == TableStatus.ready;
+    final table = widget.table;
+    final isOccupied = table.isOccupied;
+    final isReady = table.sessionStatus == TableSessionStatus.ready;
 
-    // DEFINIZIONE COLORI E STILI
+    // Define default styles
     Color cardBgColor = colors.surface;
     Color borderColor = colors.divider;
     Color contentColor = colors.textPrimary;
     Color accentColor = colors.textSecondary;
-
     Widget? statusIcon;
     String statusLabel = "";
 
-    switch (widget.table.status) {
-      case TableStatus.seated:
-        cardBgColor = colors.dangerContainer;
-        borderColor = colors.danger;
-        contentColor = colors.danger;
-        accentColor = colors.danger;
-        statusIcon = Icon(Icons.hourglass_empty, size: 10, color: colors.danger);
-        statusLabel = AppLocalizations.of(context)!.tableStatusSeated;
-        break;
-      case TableStatus.ordered:
-        cardBgColor = colors.warningContainer;
-        borderColor = colors.warning;
-        contentColor = colors.warning;
-        accentColor = colors.warning;
-        statusIcon = Icon(Icons.sticky_note_2, size: 10, color: colors.warning);
-        statusLabel = AppLocalizations.of(context)!.tableStatusOrdered;
-        break;
-      case TableStatus.ready:
-        cardBgColor = colors.surface;
-        borderColor = colors.success;
-        contentColor = colors.textPrimary;
-        accentColor = colors.success;
-        statusIcon = Icon(Icons.notifications_active, size: 10, color: colors.success);
-        statusLabel = AppLocalizations.of(context)!.tableStatusReady;
-        break;
-      case TableStatus.eating:
-        cardBgColor = colors.surface;
-        borderColor = colors.infoContainer;
-        contentColor = colors.textPrimary;
-        accentColor = colors.primary;
-        statusIcon = Icon(Icons.restaurant, size: 10, color: colors.primary);
-        statusLabel = AppLocalizations.of(context)!.tableStatusEating;
-        break;
-      case TableStatus.free:
-        cardBgColor = colors.surface;
-        borderColor = colors.successContainer;
-        contentColor = colors.textTertiary;
-        accentColor = colors.success;
-        break;
+    if (isOccupied) {
+      switch (table.sessionStatus) {
+        case TableSessionStatus.seated:
+          cardBgColor = colors.dangerContainer;
+          borderColor = colors.danger;
+          contentColor = colors.danger;
+          accentColor = colors.danger;
+          statusIcon =
+              Icon(Icons.hourglass_empty, size: 10, color: colors.danger);
+          statusLabel = AppLocalizations.of(context)!.tableStatusSeated;
+          break;
+        case TableSessionStatus.ordered:
+          cardBgColor = colors.warningContainer;
+          borderColor = colors.warning;
+          contentColor = colors.warning;
+          accentColor = colors.warning;
+          statusIcon =
+              Icon(Icons.sticky_note_2, size: 10, color: colors.warning);
+          statusLabel = AppLocalizations.of(context)!.tableStatusOrdered;
+          break;
+        case TableSessionStatus.ready:
+          cardBgColor = colors.surface;
+          borderColor = colors.success;
+          contentColor = colors.textPrimary;
+          accentColor = colors.success;
+          statusIcon =
+              Icon(Icons.notifications_active, size: 10, color: colors.success);
+          statusLabel = AppLocalizations.of(context)!.tableStatusReady;
+          break;
+        case TableSessionStatus.eating:
+          cardBgColor = colors.surface;
+          borderColor = colors.infoContainer;
+          contentColor = colors.textPrimary;
+          accentColor = colors.primary;
+          statusIcon = Icon(Icons.restaurant, size: 10, color: colors.primary);
+          statusLabel = AppLocalizations.of(context)!.tableStatusEating;
+          break;
+        default:
+          // Should not reach here
+          break;
+      }
+    } else {
+      // Styles for TableStatus.free
+      cardBgColor = colors.surface;
+      borderColor = colors.successContainer;
+      contentColor = colors.textTertiary;
+      accentColor = colors.success;
     }
 
     return AnimatedBuilder(
@@ -132,7 +141,7 @@ class _TableCardState extends State<TableCard>
         color: cardBgColor,
         borderRadius: BorderRadius.circular(16),
         elevation: 2.0,
-        shadowColor: colors.shadow.withValues(alpha: 0.5),
+        shadowColor: colors.shadow.withValues(alpha:0.1),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: widget.onTap,
@@ -148,7 +157,7 @@ class _TableCardState extends State<TableCard>
             ),
             child: Stack(
               children: [
-                // CAMPANELLA NOTIFICA (In alto a destra)
+                // Notification Bell (Top Right)
                 if (isReady)
                   Positioned(
                     top: 8,
@@ -165,7 +174,7 @@ class _TableCardState extends State<TableCard>
                     ),
                   ),
 
-                // PUNTINO DI STATO (In alto a destra se non Ready)
+                // Status Dot (Top Right if not Ready)
                 if (isOccupied && !isReady)
                   Positioned(
                     top: 10,
@@ -174,26 +183,26 @@ class _TableCardState extends State<TableCard>
                       width: 6,
                       height: 6,
                       decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.5),
+                          color: accentColor.withValues(alpha:0.5),
                           shape: BoxShape.circle),
                     ),
                   ),
 
-                // CONTENUTO CENTRALE RESPONSIVE
+                // Responsive Central Content
                 Padding(
-                  padding: const EdgeInsets.all(8.0), // Padding interno generale
+                  padding: const EdgeInsets.all(8.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // NOME TAVOLO (Scalabile)
+                      // Table Name (Scalable)
                       Flexible(
                         flex: 2,
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            widget.table.name,
+                            table.name,
                             style: TextStyle(
-                                fontSize: 24, // Dimensione base
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: isOccupied
                                     ? contentColor
@@ -204,20 +213,19 @@ class _TableCardState extends State<TableCard>
 
                       const SizedBox(height: 4),
 
-                      // INFO STATO (Scalabile)
+                      // Status Info (Scalable)
                       if (isOccupied) ...[
                         Flexible(
                           flex: 1,
                           child: Column(
-                            mainAxisSize:
-                            MainAxisSize.min, // Occupa solo spazio necessario
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              // BADGE STATO
+                              // Status Badge
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: accentColor.withValues(alpha: 0.1),
+                                  color: accentColor.withValues(alpha:0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Row(
@@ -227,14 +235,12 @@ class _TableCardState extends State<TableCard>
                                     if (statusIcon != null)
                                       const SizedBox(width: 4),
                                     Flexible(
-                                      // Permette al testo di restringersi se necessario
                                       child: Text(
                                         statusLabel,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                            fontSize:
-                                            9, // Leggermente più grande per leggibilità
+                                            fontSize: 9,
                                             fontWeight: FontWeight.w900,
                                             color: accentColor),
                                       ),
@@ -243,15 +249,15 @@ class _TableCardState extends State<TableCard>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              // COPERTI
+                              // Guests Count
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.people,
                                       size: 12,
-                                      color: contentColor.withValues(alpha: 0.7)),
+                                      color: contentColor.withValues(alpha:0.7)),
                                   const SizedBox(width: 4),
-                                  Text("${widget.table.guests}",
+                                  Text("${table.guestsCount}",
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: contentColor,
@@ -262,7 +268,7 @@ class _TableCardState extends State<TableCard>
                           ),
                         ),
                       ] else
-                      // BADGE FREE
+                        // Free Badge
                         Flexible(
                           flex: 1,
                           child: Center(
@@ -293,3 +299,4 @@ class _TableCardState extends State<TableCard>
     );
   }
 }
+

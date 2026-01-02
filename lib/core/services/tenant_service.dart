@@ -57,7 +57,7 @@ class TenantService {
       }
 
       // CASO 3: Tenant Discovery (Cloud)
-      // Se è un codice breve (es. "R101"), chiediamo al server centrale
+      // Se è un codice, chiamiamo l'API di discovery.
       final response = await http.get(
         Uri.parse('$_discoveryApiUrl?filter=(code="$code")'),
       );

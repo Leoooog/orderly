@@ -25,4 +25,16 @@ class Category extends BaseModel {
       sortOrder: (json['sort_order'] ?? 0).toInt(),
     );
   }
+
+  factory Category.empty() {
+    return Category(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      name: '',
+      sortOrder: 0,
+    );
+  }
 }

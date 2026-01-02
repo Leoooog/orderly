@@ -716,6 +716,30 @@ abstract class AppLocalizations {
   /// **'{price} cad.'**
   String infoPriceEach(String price);
 
+  /// No description provided for @titleTenantSelection.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci il tuo codice locale'**
+  String get titleTenantSelection;
+
+  /// No description provided for @fieldTenantPlaceholder.
+  ///
+  /// In it, this message translates to:
+  /// **'Es. ristorante-123 o 192.168.1.100'**
+  String get fieldTenantPlaceholder;
+
+  /// No description provided for @tenantSelectionDevHelper.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci l\'indirizzo IP del server locale'**
+  String get tenantSelectionDevHelper;
+
+  /// No description provided for @btnTenantSelection.
+  ///
+  /// In it, this message translates to:
+  /// **'SELEZIONA LOCALE'**
+  String get btnTenantSelection;
+
   /// No description provided for @btnPay.
   ///
   /// In it, this message translates to:

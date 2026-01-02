@@ -1,44 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:orderly/data/models/restaurant_settings.dart';
+import 'package:orderly/data/models/local/cart_entry.dart';
+import 'package:orderly/data/models/local/table_model.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
 
-import '../../../../data/models/table_item.dart';
-import '../../../../data/models/order_item.dart';
-import '../../../../data/models/course.dart';
-import '../../../../data/models/extra.dart';
-import '../../providers/tables_provider.dart';
+import '../../../../data/models/config/void_reason.dart';
+import '../../../../data/models/enums/order_item_status.dart';
+import '../../../../data/models/menu/course.dart';
+import '../../../../data/models/menu/extra.dart';
+import '../../../../data/models/session/order_item.dart';
+import '../../../../data/models/session/void_record.dart';
 import '../../providers/menu_provider.dart';
-
-// Importa il nuovo widget
+import '../../providers/tables_provider.dart';
 import 'item_edit_dialog.dart';
 
 class HistoryTab extends ConsumerWidget {
-  final TableSession table;
+  final TableUiModel table;
 
   const HistoryTab({super.key, required this.table});
 
-  // --- LOGICA ---
+  // --- LOGIC ---
 
   void _fireCourse(BuildContext context, WidgetRef ref, Course course) {
-    ref.read(tablesProvider.notifier).fireCourse(table.id, course);
+    if (table.sessionId == null) return;
+    ref
+        .read(tablesControllerProvider.notifier)
+        .fireCourse(table.sessionId!, course.id);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content:
-        Text(AppLocalizations.of(context)!.msgCourseFired(course.label)),
+            Text(AppLocalizations.of(context)!.msgCourseFired(course.name)),
         backgroundColor: context.colors.primary,
         duration: const Duration(seconds: 1)));
   }
 
   void _markServed(WidgetRef ref, OrderItem item) {
-    ref.read(tablesProvider.notifier).markAsServed(table.id, item.internalId);
+    if (table.sessionId == null) return;
+    ref.read(tablesControllerProvider.notifier).markAsServed(item.id);
   }
 
-  void _performVoid(BuildContext context, WidgetRef ref, OrderItem item, int qty,
-      String reason, bool isRefunded) {
-    ref
-        .read(tablesProvider.notifier)
-        .voidItem(table.id, item.internalId, qty, reason, isRefunded);
+  void _performVoid(BuildContext context, WidgetRef ref, OrderItem item,
+      int qty, VoidReason reasonId, bool refund, String? notes) {
+    if (table.sessionId == null) return;
+    ref.read(tablesControllerProvider.notifier).voidOrderItem(
+          orderItemId: item.id,
+          quantity: qty,
+          reason: reasonId,
+          notes: notes, refund: refund,
+        );
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(AppLocalizations.of(context)!.msgVoidItem),
@@ -48,8 +57,14 @@ class HistoryTab extends ConsumerWidget {
 
   void _performUpdate(BuildContext context, WidgetRef ref, OrderItem item,
       int qty, String note, Course course, List<Extra> extras) {
-    ref.read(tablesProvider.notifier).updateOrderedItem(
-        table.id, item.internalId, qty, note, course, extras);
+    if (table.sessionId == null) return;
+    ref.read(tablesControllerProvider.notifier).updateOrderItem(
+          orderItemId: item.id,
+          newQty: qty,
+          newNote: note,
+          newCourseId: course.id,
+          newExtrasIds: extras.map((e) => e.id).toList(),
+        );
     Navigator.pop(context); // Chiudi dialog
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.msgChangesSaved)));
@@ -59,7 +74,9 @@ class HistoryTab extends ConsumerWidget {
 
   void _showVoidsHistory(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    final voids = ref.read(tablesProvider.notifier).getVoidsForTable(table.id);
+    if (table.sessionId == null) return;
+
+    final allVoids = table.activeSession?.voids ?? [];
 
     // Responsive Logic
     final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
@@ -70,7 +87,8 @@ class HistoryTab extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true, // Necessario per gestire i constraints custom
-      backgroundColor: Colors.transparent, // TRUCCO: Sfondo trasparente per evitare full screen colorato
+      backgroundColor:
+          Colors.transparent, // TRUCCO: Sfondo trasparente per evitare full screen colorato
       builder: (ctx) => GestureDetector(
         onTap: () => Navigator.of(ctx).pop(),
         child: Container(
@@ -85,58 +103,65 @@ class HistoryTab extends ConsumerWidget {
               ),
               decoration: BoxDecoration(
                 color: colors.surface, // Il colore va QUI
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: SafeArea(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // Adatta l'altezza al contenuto
+                  mainAxisSize:
+                      MainAxisSize.min, // Adatta l'altezza al contenuto
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                          AppLocalizations.of(context)!.labelVoidedList(table.name),
+                          AppLocalizations.of(context)!
+                              .labelVoidedList(table.name),
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
                               color: colors.danger)),
                     ),
                     const Divider(height: 1),
-                    if (voids.isEmpty)
+                    if (allVoids.isEmpty)
                       SizedBox(
                         height: 100,
                         child: Center(
                             child: Text(
-                                AppLocalizations.of(context)!.labelNoVoidedItems,
+                                AppLocalizations.of(context)!
+                                    .labelNoVoidedItems,
                                 style: TextStyle(
-                                    color: colors.textTertiary, fontSize: 14))),
+                                    color: colors.textTertiary,
+                                    fontSize: 14))),
                       )
                     else
-                    // Flexible permette alla lista di occupare MENO spazio se ha pochi elementi
-                    // o di scrollare se ne ha troppi, fino al maxHeight definito sopra.
                       Flexible(
                         child: ListView.separated(
                           shrinkWrap: true,
                           padding: const EdgeInsets.only(bottom: 24),
-                          itemCount: voids.length,
+                          itemCount: allVoids.length,
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (context, index) {
-                            final v = voids[index];
+                            final v = allVoids[index];
                             return ListTile(
-                              title: Text("${v.quantity}x ${v.itemName}",
+                              title: Text(
+                                  "${v.quantity}x ${v.menuItemName ?? 'N/A'}",
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 14)),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14)),
                               subtitle: Text(
                                 AppLocalizations.of(context)!.labelVoidReason(
-                                    v.reason,
-                                    v.timestamp.hour.toString(),
-                                    v.timestamp.minute.toString().padLeft(2, '0'),
+                                    v.reason?.reason ?? 'N/A',
+                                    v.created.hour.toString(),
+                                    v.created.minute
+                                        .toString()
+                                        .padLeft(2, '0'),
                                     v.isRefunded.toString(),
-                                    v.statusWhenVoided.toString()),
+                                    v.expand.orderItem?.status ?? 'N/A'),
                               ),
                               trailing: Text(
                                   v.isRefunded
-                                      ? "-${v.totalVoidAmount.toCurrency()}"
+                                      ? "-€${v.amount.toStringAsFixed(2)}"
                                       : "",
                                   style: TextStyle(
                                       fontSize: 14,
@@ -148,7 +173,7 @@ class HistoryTab extends ConsumerWidget {
                             );
                           },
                         ),
-                      )
+                      ),
                   ],
                 ),
               ),
@@ -158,7 +183,6 @@ class HistoryTab extends ConsumerWidget {
       ),
     );
   }
-
 
   void _showItemOptions(BuildContext context, WidgetRef ref, OrderItem item) {
     final colors = context.colors;
@@ -182,40 +206,47 @@ class HistoryTab extends ConsumerWidget {
               constraints: BoxConstraints(maxWidth: maxWidth),
               decoration: BoxDecoration(
                 color: colors.surface, // Il colore va QUI
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               // ClipRRect assicura che i figli rispettino i bordi arrotondati
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
                 child: SafeArea(
                   child: Material(
-                    type: MaterialType.transparency, // Permette agli Ink di "salire"
+                    type: MaterialType
+                        .transparency, // Permette agli Ink di "salire"
                     child: Column(
-                      mainAxisSize: MainAxisSize.min, // Occupa solo lo spazio necessario
+                      mainAxisSize:
+                          MainAxisSize.min, // Occupa solo lo spazio necessario
                       children: [
                         Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Text(item.name,
+                            child: Text(item.expand.menuItem?.name ?? 'N/A',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18))),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18))),
                         if (canEdit)
                           ListTile(
                             leading: Icon(Icons.edit, color: colors.primary),
-                            title: Text(AppLocalizations.of(context)!.labelEdit),
-                            subtitle: Text(
-                                AppLocalizations.of(context)!.subtitleEditItemAction),
+                            title:
+                                Text(AppLocalizations.of(context)!.labelEdit),
+                            subtitle: Text(AppLocalizations.of(context)!
+                                .subtitleEditItemAction),
                             onTap: () {
                               Navigator.pop(ctx);
                               _showEditDialog(context, ref, item);
                             },
                           ),
                         ListTile(
-                          leading: Icon(Icons.delete_forever, color: colors.danger),
-                          title:
-                          Text(AppLocalizations.of(context)!.titleVoidItemAction),
-                          subtitle: Text(
-                              AppLocalizations.of(context)!.subtitleVoidItemAction),
+                          leading:
+                              Icon(Icons.delete_forever, color: colors.danger),
+                          title: Text(AppLocalizations.of(context)!
+                              .titleVoidItemAction),
+                          subtitle: Text(AppLocalizations.of(context)!
+                              .subtitleVoidItemAction),
                           onTap: () {
                             Navigator.pop(ctx);
                             _showVoidDialog(context, ref, item);
@@ -234,18 +265,16 @@ class HistoryTab extends ConsumerWidget {
     );
   }
 
-
-
   void _showEditDialog(BuildContext context, WidgetRef ref, OrderItem item) {
-    final menuItems = ref.read(menuProvider);
-    final menuItem = menuItems.firstWhere((m) => m.id == item.id,
-        orElse: () => menuItems[0]);
+    // The full MenuItem is already in the OrderItem's expand property
+    final menuItem = item.expand.menuItem;
+    if (menuItem == null) return; // Should not happen
 
     showDialog(
       context: context,
       builder: (ctx) => ItemEditDialog(
-        cartItem: item,
-        menuItem: menuItem,
+        // We need to convert the OrderItem to a CartEntry for the dialog
+        cartEntry: CartEntry.fromOrderItem(item),
         onSave: (qty, note, course, extras) {
           _performUpdate(context, ref, item, qty, note, course, extras);
         },
@@ -255,15 +284,11 @@ class HistoryTab extends ConsumerWidget {
 
   void _showVoidDialog(BuildContext context, WidgetRef ref, OrderItem item) {
     int qtyToVoid = 1;
-    String selectedReason = "";
+    String? selectedReasonId;
     bool isRefunded = true;
     final TextEditingController pinController = TextEditingController();
-    final List<String> reasons = [
-      "Errore inserimento",
-      "Cliente cambiato idea",
-      "Piatto non conforme",
-      "Altro"
-    ];
+    final voidReasonsAsync =
+        ref.watch(menuDataProvider.select((data) => data.value?.voidReasons));
 
     showDialog(
       context: context,
@@ -284,11 +309,11 @@ class HistoryTab extends ConsumerWidget {
                   children: [
                     Text(
                         AppLocalizations.of(context)!
-                            .titleVoidItemDialog(item.name),
+                            .titleVoidItemDialog(item.expand.menuItem?.name ?? 'N/A'),
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 16),
-                    if (item.qty > 1) ...[
+                    if (item.quantity > 1) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -311,7 +336,7 @@ class HistoryTab extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                     color: colors.background,
                                     borderRadius: BorderRadius.circular(8)),
-                                child: Text("$qtyToVoid / ${item.qty}",
+                                child: Text("$qtyToVoid / ${item.quantity}",
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -319,10 +344,10 @@ class HistoryTab extends ConsumerWidget {
                               ),
                               IconButton(
                                   icon: Icon(Icons.add_circle_outline,
-                                      color: qtyToVoid < item.qty
+                                      color: qtyToVoid < item.quantity
                                           ? colors.primary
                                           : colors.divider),
-                                  onPressed: qtyToVoid < item.qty
+                                  onPressed: qtyToVoid < item.quantity
                                       ? () => setStateDialog(() => qtyToVoid++)
                                       : null),
                             ],
@@ -353,28 +378,31 @@ class HistoryTab extends ConsumerWidget {
                             .labelVoidReasonPlaceholder,
                         style: TextStyle(
                             fontSize: 12, color: colors.textSecondary)),
-                    Wrap(
-                        spacing: 8,
-                        children: reasons
-                            .map((r) => ChoiceChip(
-                          checkmarkColor: colors.textInverse,
-                          label:
-                          Text(r, style: const TextStyle(fontSize: 12)),
-                          selected: selectedReason == r,
-                          onSelected: (v) => setStateDialog(
-                                  () => selectedReason = v ? r : ""),
-                          selectedColor: colors.danger,
-                          labelStyle: TextStyle(
-                              color: selectedReason == r
-                                  ? colors.textInverse
-                                  : colors.textPrimary,
-                              fontSize: 12),
-                          side: BorderSide.none,
-                          backgroundColor: colors.background,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ))
-                            .toList()),
+                    if (voidReasonsAsync != null)
+                      Wrap(
+                          spacing: 8,
+                          children: voidReasonsAsync
+                              .map((r) => ChoiceChip(
+                                    checkmarkColor: colors.textInverse,
+                                    label: Text(r.reason,
+                                        style: const TextStyle(fontSize: 12)),
+                                    selected: selectedReasonId == r.id,
+                                    onSelected: (v) => setStateDialog(
+                                        () => selectedReasonId = v ? r.id : null),
+                                    selectedColor: colors.danger,
+                                    labelStyle: TextStyle(
+                                        color: selectedReasonId == r.id
+                                            ? colors.textInverse
+                                            : colors.textPrimary,
+                                        fontSize: 12),
+                                    side: BorderSide.none,
+                                    backgroundColor: colors.background,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8)),
+                                  ))
+                              .toList())
+                    else
+                      const LinearProgressIndicator(),
                     const SizedBox(height: 16),
                     TextField(
                       controller: pinController,
@@ -400,10 +428,10 @@ class HistoryTab extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: colors.danger,
                     foregroundColor: colors.textInverse),
-                onPressed:
-                (selectedReason.isNotEmpty && pinController.text == "1234")
-                    ? () => _performVoid(context, ref, item, qtyToVoid,
-                    selectedReason, isRefunded)
+                onPressed: (selectedReasonId != null &&
+                        pinController.text == "1234")
+                    ? () => _performVoid(
+                        context, ref, item, qtyToVoid, selectedReasonId!, null)
                     : null,
                 child: Text(AppLocalizations.of(context)!.dialogConfirmVoid),
               )
@@ -417,11 +445,19 @@ class HistoryTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
+    final allCourses =
+        ref.watch(menuDataProvider.select((data) => data.value?.courses)) ?? [];
 
     final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
     final double maxWidth = isTablet ? 700 : double.infinity;
 
-    if (table.orders.isEmpty) {
+    final orders = table.activeSession?.orders ?? [];
+    final voids = table.activeSession?.orders
+            .expand((order) => order.items.expand((item) => item.voids))
+            .toList() ??
+        [];
+
+    if (orders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -433,10 +469,7 @@ class HistoryTab extends ConsumerWidget {
                     color: colors.textTertiary,
                     fontWeight: FontWeight.bold,
                     fontSize: 14)),
-            if (ref
-                .read(tablesProvider.notifier)
-                .getVoidsForTable(table.id)
-                .isNotEmpty)
+            if (voids.isNotEmpty)
               TextButton(
                   onPressed: () => _showVoidsHistory(context, ref),
                   child: Text(AppLocalizations.of(context)!.labelViewVoided)),
@@ -446,8 +479,11 @@ class HistoryTab extends ConsumerWidget {
     }
 
     final Map<Course, List<OrderItem>> groupedOrders = {};
-    for (var course in Course.values) {
-      final items = table.orders.where((o) => o.course == course).toList();
+    for (var course in allCourses) {
+      final items = orders
+          .expand((o) => o.items)
+          .where((item) => item.expand.menuItem?.course?.id == course.id)
+          .toList();
       if (items.isNotEmpty) groupedOrders[course] = items;
     }
 
@@ -497,10 +533,12 @@ class HistoryTab extends ConsumerWidget {
       List<OrderItem> items) {
     final colors = context.colors;
     final bool hasPendingItems =
-    items.any((i) => i.status == OrderItemStatus.pending);
+        items.any((i) => i.status == OrderItemStatus.pending);
     final bool hasReady = items.any((i) => i.status == OrderItemStatus.ready);
-    final bool hasCooking = items.any((i) => i.status == OrderItemStatus.cooking);
-    final bool isCompleted = items.every((i) => i.status == OrderItemStatus.served);
+    final bool hasCooking =
+        items.any((i) => i.status == OrderItemStatus.cooking);
+    final bool isCompleted =
+        items.every((i) => i.status == OrderItemStatus.served);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,7 +547,7 @@ class HistoryTab extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: Text(course.label.toUpperCase(),
+              child: Text(course.name.toUpperCase(),
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -526,8 +564,8 @@ class HistoryTab extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: colors.primary,
                     foregroundColor: colors.onPrimary,
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
                     textStyle: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 12)),
               )
@@ -538,23 +576,23 @@ class HistoryTab extends ConsumerWidget {
                   colors.success,
                   colors.successContainer)
             else if (hasCooking)
-                _buildSectionBadge(
-                    Icons.local_fire_department,
-                    AppLocalizations.of(context)!.badgeStatusCooking,
-                    colors.warning,
-                    colors.warningContainer)
-              else if (isCompleted)
-                  _buildSectionBadge(
-                      Icons.check_circle,
-                      AppLocalizations.of(context)!.badgeStatusCompleted,
-                      colors.textTertiary,
-                      colors.background)
-                else
-                  _buildSectionBadge(
-                      Icons.hourglass_top,
-                      AppLocalizations.of(context)!.badgeStatusInQueue,
-                      colors.primary,
-                      colors.infoSurfaceStrong)
+              _buildSectionBadge(
+                  Icons.local_fire_department,
+                  AppLocalizations.of(context)!.badgeStatusCooking,
+                  colors.warning,
+                  colors.warningContainer)
+            else if (isCompleted)
+              _buildSectionBadge(
+                  Icons.check_circle,
+                  AppLocalizations.of(context)!.badgeStatusCompleted,
+                  colors.textTertiary,
+                  colors.background)
+            else
+              _buildSectionBadge(
+                  Icons.hourglass_top,
+                  AppLocalizations.of(context)!.badgeStatusInQueue,
+                  colors.primary,
+                  colors.infoSurfaceStrong)
           ],
         ),
         const SizedBox(height: 8),
@@ -580,8 +618,8 @@ class HistoryTab extends ConsumerWidget {
     return Flexible(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration:
-        BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(
+            color: bgColor, borderRadius: BorderRadius.circular(6)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -667,8 +705,8 @@ class HistoryTab extends ConsumerWidget {
               borderRadius: borderRadius,
               border: Border(
                 bottom: (item.status == OrderItemStatus.fired ||
-                    item.status == OrderItemStatus.served) &&
-                    !isLast
+                            item.status == OrderItemStatus.served) &&
+                        !isLast
                     ? BorderSide(color: colors.divider)
                     : BorderSide.none,
               ),
@@ -684,8 +722,8 @@ class HistoryTab extends ConsumerWidget {
                       color: colors.surface,
                       borderRadius: BorderRadius.circular(8),
                       border:
-                      Border.all(color: iconColor.withValues(alpha: 0.3))),
-                  child: Text("${item.qty}x",
+                          Border.all(color: iconColor.withValues(alpha: 0.3))),
+                  child: Text("${item.quantity}x",
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: iconColor,
@@ -696,23 +734,23 @@ class HistoryTab extends ConsumerWidget {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.name,
+                        Text(item.expand.menuItem?.name ?? 'N/A',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: colors.textPrimary)),
-                        if (item.selectedExtras.isNotEmpty)
+                        if (item.expand.extras.isNotEmpty)
                           Text(
-                              item.selectedExtras
+                              item.expand.extras
                                   .map((e) => "+ ${e.name}")
                                   .join(", "),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   fontSize: 11, color: colors.textSecondary)),
-                        if (item.notes.isNotEmpty)
-                          Text(item.notes,
+                        if (item.notes != null && item.notes!.isNotEmpty)
+                          Text(item.notes!,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -755,5 +793,5 @@ class HistoryTab extends ConsumerWidget {
       ),
     );
   }
-
 }
+

@@ -352,6 +352,19 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get titleTenantSelection => 'Inserisci il tuo codice locale';
+
+  @override
+  String get fieldTenantPlaceholder => 'Es. ristorante-123 o 192.168.1.100';
+
+  @override
+  String get tenantSelectionDevHelper =>
+      'Inserisci l\'indirizzo IP del server locale';
+
+  @override
+  String get btnTenantSelection => 'SELEZIONA LOCALE';
+
+  @override
   String get btnPay => 'PAGA';
 
   @override

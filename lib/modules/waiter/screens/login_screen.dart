@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:orderly/config/orderly_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../config/orderly_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../logic/providers/session_provider.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   final VoidCallback onLoginSuccess;
 
   const LoginScreen({super.key, required this.onLoginSuccess});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _pin = "";
-  final String _correctPin = "1234";
 
   void _onDigitPress(String digit) {
     if (_pin.length < 4) {
@@ -21,19 +22,23 @@ class _LoginScreenState extends State<LoginScreen> {
         _pin += digit;
       });
 
-      if (_pin == _correctPin) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          widget.onLoginSuccess();
-          setState(() => _pin = "");
-        });
-      } else if (_pin.length == 4) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppLocalizations.of(context)!.loginPinError),
-          backgroundColor: context.colors.danger,
-          duration: const Duration(milliseconds: 500),
-        ));
-        Future.delayed(const Duration(milliseconds: 500), () {
-          setState(() => _pin = "");
+      if (_pin.length == 4) {
+        ref.read(sessionProvider.notifier).login(_pin).then((_) {
+          // Dopo il tentativo di login, controlla lo stato.
+          // Se il login fallisce, lo stato conterrà un errore.
+          final session = ref.read(sessionProvider);
+          if (session.errorMessage != null &&
+              session.appState != AppState.authenticated) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(session.errorMessage!),
+              backgroundColor: context.colors.danger,
+              duration: const Duration(milliseconds: 800),
+            ));
+            Future.delayed(const Duration(milliseconds: 800), () {
+              setState(() => _pin = "");
+            });
+          }
+          // Se il login ha successo, il redirect del router farà il resto.
         });
       }
     }
@@ -50,155 +55,72 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
         child: LayoutBuilder(builder: (context, constraints) {
-          // Determine dot size based on screen width
-          final dotSize = constraints.maxWidth * 0.04;
-
           return Column(
             children: [
-              // --- SECTION 1: HEADER (Flex 3) ---
-              Expanded(
-                flex: 3,
-                child: Column(
+              const Spacer(flex: 2),
+              Icon(Icons.restaurant_menu, size: 64, color: colors.primary),
+              const SizedBox(height: 24),
+              Text(
+                AppLocalizations.of(context)!.waiterAppName,
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                    letterSpacing: 1.5),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AppLocalizations.of(context)!.loginInsertPin,
+                style: TextStyle(color: colors.textSecondary, fontSize: 16),
+              ),
+              const Spacer(),
+
+              // PIN Dots
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(4, (index) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: index < _pin.length
+                            ? colors.primary
+                            : colors.surface,
+                        border: Border.all(
+                            color: index < _pin.length
+                                ? colors.primary
+                                : colors.divider,
+                            width: 2)),
+                  );
+                }),
+              ),
+              const Spacer(),
+
+              // Keypad
+              SizedBox(
+                width: constraints.maxWidth * 0.7,
+                child: GridView.count(
+                  shrinkWrap: true,
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 24,
+                  crossAxisSpacing: 24,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    const Spacer(flex: 2),
-                    Expanded(
-                      flex: 3,
-                      child: FittedBox(
-                        fit: BoxFit.contain,
-                        child: Icon(
-                          Icons.restaurant_menu,
-                          color: colors.primary,
-                        ),
-                      ),
-                    ),
-                    const Spacer(flex: 1),
-                    Expanded(
-                      flex: 2,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          AppLocalizations.of(context)!.waiterAppName,
-                          style: TextStyle(
-                            fontSize: 28, // Base size, FittedBox will scale it down
-                            fontWeight: FontWeight.bold,
-                            color: colors.textPrimary,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        AppLocalizations.of(context)!.loginInsertPin,
-                        style: TextStyle(
-                          color: colors.textSecondary,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    const Spacer(flex: 1),
+                    for (var i = 1; i <= 9; i++)
+                      _buildKeypadBtn("$i", () => _onDigitPress("$i")),
+                    const SizedBox(),
+                    _buildKeypadBtn("0", () => _onDigitPress("0")),
+                    _buildIconBtn(Icons.backspace_outlined, _onDeletePress),
                   ],
                 ),
               ),
-
-              // --- SECTION 2: PIN DOTS (Flex 1) ---
-              Expanded(
-                flex: 1,
-                child: Center(
-                  child: SizedBox(
-                    width: constraints.maxWidth * 0.5, // Constrain width
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(4, (index) {
-                        final isFilled = index < _pin.length;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: dotSize,
-                          height: dotSize,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isFilled ? colors.primary : colors.surface,
-                            border: Border.all(
-                              color: isFilled ? colors.primary : colors.divider,
-                              width: 2,
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-              ),
-
-              // --- SECTION 3: KEYPAD (Flex 6) ---
-              Expanded(
-                flex: 6,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: constraints.maxWidth * 0.15,
-                    vertical: constraints.maxHeight * 0.02,
-                  ),
-                  child: Column(
-                    children: [
-                      // Row 1-3
-                      Expanded(
-                        child: Row(
-                          children: [
-                            _buildKeypadBtn("1", () => _onDigitPress("1")),
-                            _buildKeypadBtn("2", () => _onDigitPress("2")),
-                            _buildKeypadBtn("3", () => _onDigitPress("3")),
-                          ],
-                        ),
-                      ),
-                      // Row 4-6
-                      Expanded(
-                        child: Row(
-                          children: [
-                            _buildKeypadBtn("4", () => _onDigitPress("4")),
-                            _buildKeypadBtn("5", () => _onDigitPress("5")),
-                            _buildKeypadBtn("6", () => _onDigitPress("6")),
-                          ],
-                        ),
-                      ),
-                      // Row 7-9
-                      Expanded(
-                        child: Row(
-                          children: [
-                            _buildKeypadBtn("7", () => _onDigitPress("7")),
-                            _buildKeypadBtn("8", () => _onDigitPress("8")),
-                            _buildKeypadBtn("9", () => _onDigitPress("9")),
-                          ],
-                        ),
-                      ),
-                      // Row 0 & Backspace
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Spacer(), // Empty slot
-                            _buildKeypadBtn("0", () => _onDigitPress("0")),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: _buildIconBtn(
-                                  Icons.backspace_outlined,
-                                  _onDeletePress,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const Spacer(flex: 1), // Bottom buffer
+              const Spacer(flex: 2),
             ],
           );
         }),
@@ -206,34 +128,19 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Uses Expanded to ensure the button fills its cell in the Flex layout
   Widget _buildKeypadBtn(String label, VoidCallback onTap) {
     final colors = context.colors;
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0), // The "gap" between buttons
-        child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Material(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(100), // Fully rounded
-                child: InkWell(
-                  onTap: onTap,
-                  borderRadius: BorderRadius.circular(100),
-                  child: Center(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        // Scale font relative to button height to avoid overflow
-                        fontSize: constraints.maxHeight * 0.35,
-                        fontWeight: FontWeight.bold,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }
+    return Material(
+      color: colors.surface,
+      borderRadius: BorderRadius.circular(40),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(40),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colors.textPrimary),
+          ),
         ),
       ),
     );
@@ -241,25 +148,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildIconBtn(IconData icon, VoidCallback onTap) {
     final colors = context.colors;
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          return Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(100),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(100),
-              child: Center(
-                child: Icon(
-                  icon,
-                  color: colors.textSecondary,
-                  // Scale icon relative to container
-                  size: constraints.maxHeight * 0.4,
-                ),
-              ),
-            ),
-          );
-        }
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(40),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(40),
+        child: Center(
+          child: Icon(icon, color: colors.textSecondary, size: 28),
+        ),
+      ),
     );
   }
 }

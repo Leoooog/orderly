@@ -22,4 +22,15 @@ class Table extends BaseModel {
       name: json['name'] ?? '',
     );
   }
+
+  factory Table.empty() {
+    return Table(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      name: '',
+    );
+  }
 }

@@ -1,88 +1,99 @@
 import 'package:orderly/data/models/config/restaurant.dart';
+import 'package:orderly/data/models/config/void_reason.dart';
 import 'package:orderly/data/models/session/order.dart';
 import 'package:orderly/data/models/session/table_session.dart';
-import 'package:orderly/data/models/session/void_record.dart';
 import 'package:orderly/data/models/user.dart';
 
 import '../models/config/department.dart';
 import '../models/config/table.dart';
+import '../models/enums/order_item_status.dart';
 import '../models/local/cart_entry.dart';
 import '../models/menu/category.dart';
 import '../models/menu/course.dart';
 import '../models/menu/menu_item.dart';
+
+/// Defines the contract for data operations within the Orderly app.
+/// This interface abstracts the data source, allowing for different implementations (e.g., PocketBase, Firebase, Mock).
 abstract class IOrderlyRepository {
   // --- Auth & Config ---
-  /// Verifica se il server è raggiungibile
-  Future<bool> checkHealth();
 
-  /// Esegue il login dello staff tramite PIN (hash SHA-256)
+  /// Esegue il login dello staff tramite PIN.
   Future<User> loginWithPin(String pin);
 
-  /// Recupera le informazioni del ristorante (nome, valuta, ecc.)
+  /// Recupera le informazioni di base del ristorante.
   Future<Restaurant> getRestaurantInfo();
 
-  // --- Master Data (Menu & Struttura) ---
-  /// Recupera tutte le categorie del menu
-  Future<List<Category>> getCategories();
+  // --- Master Data (Dati di configurazione) ---
 
-  /// Recupera tutti i piatti disponibili (con relazioni espande)
-  Future<List<MenuItem>> getMenuItems();
-
-  /// Recupera le portate (Courses)
-  Future<List<Course>> getCourses();
-
-  /// Recupera i dipartimenti (Cucina, Bar, ecc.)
-  Future<List<Department>> getDepartments();
-
-  /// Recupera la lista statica di tutti i tavoli fisici del ristorante
+  /// Recupera la lista statica di tutti i tavoli fisici del ristorante.
   Future<List<Table>> getTables();
 
-  // --- Realtime ---
-  /// Stream che emette la lista aggiornata delle sessioni tavolo attive
+  /// Recupera tutte le categorie del menu.
+  Future<List<Category>> getCategories();
+
+  /// Recupera tutti i piatti disponibili.
+  Future<List<MenuItem>> getMenuItems();
+
+  /// Recupera le portate (es. Antipasti, Primi).
+  Future<List<Course>> getCourses();
+
+  /// Recupera i dipartimenti di produzione (es. Cucina, Bar).
+  Future<List<Department>> getDepartments();
+
+  /// Recupera le motivazioni di storno predefinite.
+  Future<List<VoidReason>> getVoidReasons();
+
+  // --- Realtime Data Streams ---
+
+  /// Stream che emette la lista aggiornata delle sessioni tavolo attive (status != 'closed').
   Stream<List<TableSession>> watchActiveSessions();
 
-  // --- Tables & Sessions ---
-  /// Recupera una tantum la lista delle sessioni attive
-  Future<List<TableSession>> getActiveSessions();
+  /// Stream che emette la lista aggiornata di tutti gli ordini del turno corrente.
+  Stream<List<Order>> watchActiveOrders();
 
-  /// Recupera una sessione specifica per ID
-  Future<TableSession> getTableSessionById(String id);
+  // --- Actions ---
 
-  /// Apre un nuovo tavolo (crea una TableSession)
-  Future<TableSession> openTable(String tableId, int guests, String waiterId);
+  /// Apre un nuovo tavolo (crea una `TableSession`).
+  Future<void> openTable(String tableId, int guests, String waiterId);
 
-  /// Chiude definitivamente una sessione tavolo
+  /// Chiude definitivamente una sessione tavolo.
   Future<void> closeTableSession(String sessionId);
 
-  /// Recupera gli ordini associati a una sessione tavolo
-  Future<List<Order>> getOrdersForTableSession(String tableSessionId);
-
-  /// Recupera i dettagli di un ordine specifico
-  Future<Order> getOrderById(String orderId);
-
-  // --- Orders ---
-  /// Invia un ordine completo (crea Order record + OrderItems records)
+  /// Invia una nuova comanda (crea record `Order` e `OrderItem`).
   Future<void> sendOrder({
     required String sessionId,
     required String waiterId,
     required List<CartEntry> items,
   });
 
-  // --- Voids & Cancellations (Giorno 4) ---
-  /// Recupera lo storico degli storni per una sessione
-  Future<List<VoidRecord>> getVoidsForTableSession(String tableSessionId);
+  /// Registra uno storno.
+  Future<void> voidItem(
+      {required String orderItemId,
+        required VoidReason reason,
+        required int quantity,
+        required bool refund,
+        required String voidedBy,
+        String? notes});
 
-  /// Registra uno storno: crea un record in 'voids' e aggiorna l'OrderItem originale
-  /// (riducendo la quantità o cambiandone lo stato)
-  Future<void> voidItem({
-    required String sessionId,
+  /// Sposta una sessione da un tavolo a un altro (libero).
+  Future<void> moveTable(String sourceSessionId, String targetTableId);
+
+  /// Unisce due sessioni tavolo.
+  Future<void> mergeTable(String sourceSessionId, String targetSessionId);
+
+  /// Gestisce il pagamento (parziale o totale) di una lista di `OrderItem`.
+  Future<void> processPayment(
+      String tableSessionId, List<String> orderItemIds);
+
+  /// Aggiorna lo stato di un singolo OrderItem.
+  Future<void> updateOrderItemStatus(String orderItemId, OrderItemStatus status);
+
+  /// Aggiorna i dettagli di un OrderItem.
+  Future<void> updateOrderItem({
     required String orderItemId,
-    required int quantityToVoid,
-    required String reasonId,
-    required String voidedById,
-    String? notes,
+    required int newQty,
+    required String newNote,
+    required String newCourseId,
+    required List<String> newExtrasIds,
   });
-
-// --- Payments (Giorno 4) ---
-// Future<Payment> registerPayment(...) // Da definire nel dettaglio successivamente
 }

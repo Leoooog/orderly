@@ -1,16 +1,24 @@
+import 'package:orderly/data/models/config/department.dart';
+import 'package:orderly/data/models/menu/allergen.dart';
+import 'package:orderly/data/models/menu/extra.dart';
+import 'package:orderly/data/models/menu/ingredient.dart';
+
 import '../base_model.dart';
+import 'category.dart';
 
 class MenuItem extends BaseModel {
   final String name;
   final String? description;
   final double price;
-  final String? categoryId; // Relation
   final bool isAvailable;
-  final List<String> ingredientIds; // Relation
-  final List<String> allergenIds; // Relation
-  final List<String> allowedExtraIds; // Relation
-  final String? producedById; // Relation (Department)
   final String? image; // File
+
+  // Da inizializzare nel repository
+  final List<Ingredient> ingredients; // Relation
+  final Category category;
+  final List<Allergen> allergens; // Relation
+  final List<Extra> allowedExtras; // Relation
+  final List<Department> producedBy; // Relation (Department)
 
   MenuItem({
     required super.id,
@@ -21,12 +29,12 @@ class MenuItem extends BaseModel {
     required this.name,
     this.description,
     this.price = 0.0,
-    this.categoryId,
+    required this.category,
     this.isAvailable = true,
-    this.ingredientIds = const [],
-    this.allergenIds = const [],
-    this.allowedExtraIds = const [],
-    this.producedById,
+    this.ingredients = const [],
+    this.allergens = const [],
+    this.allowedExtras = const [],
+    this.producedBy = const [],
     this.image,
   });
 
@@ -40,22 +48,46 @@ class MenuItem extends BaseModel {
       name: json['name'] ?? '',
       description: json['description'],
       price: (json['price'] ?? 0).toDouble(),
-      categoryId: json['category'],
       isAvailable: json['is_available'] ?? true,
-      ingredientIds: (json['ingredients'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ??
-          [],
-      allergenIds: (json['allergens'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ??
-          [],
-      allowedExtraIds: (json['allowed_extras'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ??
-          [],
-      producedById: json['produced_by'],
       image: json['image'],
+      category: Category.empty(), // Placeholder
+      // Note: Relations should be initialized in the repository
+    );
+  }
+
+  MenuItem copyWith({
+    String? id,
+    DateTime? created,
+    DateTime? updated,
+    String? collectionId,
+    String? collectionName,
+    String? name,
+    String? description,
+    double? price,
+    Category? category,
+    bool? isAvailable,
+    List<Ingredient>? ingredients,
+    List<Allergen>? allergens,
+    List<Extra>? allowedExtras,
+    List<Department>? producedBy,
+    String? image,
+  }) {
+    return MenuItem(
+      id: id ?? this.id,
+      created: created ?? this.created,
+      updated: updated ?? this.updated,
+      collectionId: collectionId ?? this.collectionId,
+      collectionName: collectionName ?? this.collectionName,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      category: category ?? this.category,
+      isAvailable: isAvailable ?? this.isAvailable,
+      ingredients: ingredients ?? this.ingredients,
+      allergens: allergens ?? this.allergens,
+      allowedExtras: allowedExtras ?? this.allowedExtras,
+      producedBy: producedBy ?? this.producedBy,
+      image: image ?? this.image,
     );
   }
 }

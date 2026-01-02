@@ -1,4 +1,4 @@
-enum TableStatus {
+enum TableSessionStatus {
   seated,
   ordered,
   ready,
@@ -6,12 +6,18 @@ enum TableStatus {
   closed,
   unknown, free; //TODO: FREE È DA RIMUOVERE DOPO AVER AGGIUSTATO TUTTO
 
-  static TableStatus fromString(String value) {
-    return TableStatus.values.firstWhere(
+  static TableSessionStatus fromString(String value) {
+    return TableSessionStatus.values.firstWhere(
           (e) => e.name == value,
-      orElse: () => TableStatus.seated,
+      orElse: () => TableSessionStatus.seated,
     );
   }
 
   String toJson() => name;
+}
+
+enum TableStatus {
+  free,
+  occupied,
+  reserved, // per future implementazioni di prenotazioni
 }

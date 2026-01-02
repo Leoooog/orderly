@@ -28,4 +28,17 @@ class Course extends BaseModel {
       requiresFiring: json['requires_firing'] ?? false,
     );
   }
+
+  factory Course.empty() {
+    return Course(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      name: '',
+      sortOrder: 0,
+      requiresFiring: false,
+    );
+  }
 }

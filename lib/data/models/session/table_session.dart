@@ -1,14 +1,25 @@
+import 'package:orderly/data/models/session/order.dart';
+import 'package:orderly/data/models/session/payment.dart';
+
 import '../base_model.dart';
 import '../enums/table_status.dart';
+import 'void_record.dart';
 
 class TableSession extends BaseModel {
   final String tableId; // Relation
-  final String? waiterId; // Relation
+  final String waiterId; // Relation
   final int guestsCount;
-  final TableStatus status; // TYPED
+  final TableSessionStatus status; // TYPED
   final DateTime openedAt; // Autodate (mapped to created)
   final DateTime? closedAt; // Date
   final String? notes;
+
+  // Relazioni
+  final List<Order> orders;
+  final List<Payment> payments;
+  final List<VoidRecord> voids;
+
+
 
   TableSession({
     required super.id,
@@ -17,12 +28,15 @@ class TableSession extends BaseModel {
     required super.collectionId,
     required super.collectionName,
     required this.tableId,
-    this.waiterId,
-    this.guestsCount = 0,
+    required this.waiterId,
+    required this.guestsCount,
     required this.status,
     required this.openedAt,
     this.closedAt,
     this.notes,
+    this.orders = const [],
+    this.payments = const [],
+    this.voids = const [],
   });
 
   factory TableSession.fromJson(Map<String, dynamic> json) {
@@ -40,12 +54,82 @@ class TableSession extends BaseModel {
       tableId: json['table'] ?? '',
       waiterId: json['waiter'],
       guestsCount: (json['guests_count'] ?? 0).toInt(),
-      status: TableStatus.fromString(json['status'] ?? ''),
+      status: TableSessionStatus.fromString(json['status'] ?? ''),
       openedAt: openedAt,
       closedAt: json['closed_at'] != null && json['closed_at'] != ''
           ? DateTime.tryParse(json['closed_at'].toString())
           : null,
       notes: json['notes'],
+      orders: (json['orders'] as List<dynamic>?)
+              ?.map((e) => Order.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      payments: (json['payments'] as List<dynamic>?)
+              ?.map((e) => Payment.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      voids: (json['voids'] as List<dynamic>?)
+              ?.map((e) => VoidRecord.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+
+  factory TableSession.empty() {
+    return TableSession(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      tableId: '',
+      waiterId: '',
+      guestsCount: 0,
+      status: TableSessionStatus.closed,
+      openedAt: DateTime.now(),
+      closedAt: null,
+      notes: null,
+      orders: [],
+      payments: [],
+      voids: [],
+    );
+  }
+
+  bool get isEmpty => id.isEmpty;
+
+  TableSession copyWith({
+    String? id,
+    DateTime? created,
+    DateTime? updated,
+    String? collectionId,
+    String? collectionName,
+    String? tableId,
+    String? waiterId,
+    int? guestsCount,
+    TableSessionStatus? status,
+    DateTime? openedAt,
+    DateTime? closedAt,
+    String? notes,
+    List<Order>? orders,
+    List<Payment>? payments,
+    List<VoidRecord>? voids,
+  }) {
+    return TableSession(
+      id: id ?? this.id,
+      created: created ?? this.created,
+      updated: updated ?? this.updated,
+      collectionId: collectionId ?? this.collectionId,
+      collectionName: collectionName ?? this.collectionName,
+      tableId: tableId ?? this.tableId,
+      waiterId: waiterId ?? this.waiterId,
+      guestsCount: guestsCount ?? this.guestsCount,
+      status: status ?? this.status,
+      openedAt: openedAt ?? this.openedAt,
+      closedAt: closedAt ?? this.closedAt,
+      notes: notes ?? this.notes,
+      orders: orders ?? this.orders,
+      payments: payments ?? this.payments,
+      voids: voids ?? this.voids,
     );
   }
 }

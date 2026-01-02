@@ -1,37 +1,43 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/models/order_item.dart';
-import '../../../data/models/menu_item.dart';
-import '../../../data/models/extra.dart';
-import '../../../data/models/course.dart';
+import 'package:orderly/data/models/local/cart_entry.dart';
+import '../../../data/models/menu/course.dart';
+import '../../../data/models/menu/extra.dart';
+import '../../../data/models/menu/menu_item.dart';
 
-final cartProvider = NotifierProvider<CartNotifier, List<OrderItem>>(CartNotifier.new);
+final cartProvider =
+    NotifierProvider<CartNotifier, List<CartEntry>>(CartNotifier.new);
 
-class CartNotifier extends Notifier<List<OrderItem>> {
-
+class CartNotifier extends Notifier<List<CartEntry>> {
   @override
-  List<OrderItem> build() {
+  List<CartEntry> build() {
     return [];
   }
 
   void addItem(MenuItem item, Course activeCourse) {
+    // Cerca un articolo esistente che sia "semplice" (senza note, extra, ecc.)
     final existingIndex = state.indexWhere((c) =>
-    c.id == item.id &&
-        c.notes.isEmpty &&
-        c.course == activeCourse &&
-        c.selectedExtras.isEmpty
-    );
+        c.item.id == item.id &&
+        (c.notes == null || c.notes!.isEmpty) &&
+        c.course.id == activeCourse.id &&
+        c.selectedExtras.isEmpty &&
+        c.removedIngredients.isEmpty);
 
     if (existingIndex >= 0) {
+      // Se esiste, incrementa la quantità
+      final existingItem = state[existingIndex];
       state = [
         for (int i = 0; i < state.length; i++)
-          if (i == existingIndex) state[i].copyWith(qty: state[i].qty + 1) else state[i]
+          if (i == existingIndex)
+            existingItem.copyWith(quantity: existingItem.quantity + 1)
+          else
+            state[i]
       ];
     } else {
-      final newItem = OrderItem(
+      // Altrimenti, crea un nuovo CartEntry
+      final newItem = CartEntry(
         internalId: DateTime.now().millisecondsSinceEpoch,
-        id: item.id,
-        name: item.name,
-        basePrice: item.price,
+        item: item,
+        quantity: 1,
         course: activeCourse,
       );
       state = [...state, newItem];
@@ -40,20 +46,28 @@ class CartNotifier extends Notifier<List<OrderItem>> {
 
   void incrementQty(int internalId) {
     state = [
-      for (final item in state)
-        if (item.internalId == internalId) item.copyWith(qty: item.qty + 1) else item
+      for (final entry in state)
+        if (entry.internalId == internalId)
+          entry.copyWith(quantity: entry.quantity + 1)
+        else
+          entry
     ];
   }
 
   void decrementQty(int internalId) {
-    state = [
-      for (final item in state)
-        if (item.internalId == internalId)
-          if (item.qty > 1) item.copyWith(qty: item.qty - 1) else item.copyWith(qty: 0)
-        else
-          item
-    ];
-    state = state.where((item) => item.qty > 0).toList();
+    final target = state.firstWhere((e) => e.internalId == internalId);
+    if (target.quantity > 1) {
+      state = [
+        for (final entry in state)
+          if (entry.internalId == internalId)
+            entry.copyWith(quantity: entry.quantity - 1)
+          else
+            entry
+      ];
+    } else {
+      // Se la quantità è 1, rimuovi l'articolo
+      removeItem(internalId);
+    }
   }
 
   void removeItem(int internalId) {
@@ -64,54 +78,61 @@ class CartNotifier extends Notifier<List<OrderItem>> {
     state = [];
   }
 
-  // --- UPDATED: Split & Merge logic for Cart ---
-  void updateItemConfig(OrderItem originalItem, int qtyToModify, String newNote, Course newCourse, List<Extra> newExtras) {
-    if (qtyToModify <= 0 || qtyToModify > originalItem.qty) return;
+  // --- Logica di modifica e unione per il carrello ---
+  void updateItemConfig(CartEntry originalItem, int qtyToModify, String newNote,
+      Course newCourse, List<Extra> newExtras) {
+    if (qtyToModify <= 0 || qtyToModify > originalItem.quantity) return;
 
+    // Se non è cambiato nulla, non fare niente
     if (originalItem.notes == newNote &&
-        originalItem.course == newCourse &&
+        originalItem.course.id == newCourse.id &&
         _areExtrasEqual(originalItem.selectedExtras, newExtras)) {
       return;
     }
 
-    final newState = List<OrderItem>.from(state);
-    final index = newState.indexWhere((c) => c.internalId == originalItem.internalId);
+    final newState = List<CartEntry>.from(state);
+    final index =
+        newState.indexWhere((c) => c.internalId == originalItem.internalId);
     if (index == -1) return;
 
-    if (qtyToModify < originalItem.qty) {
-      // Split
-      newState[index] = originalItem.copyWith(qty: originalItem.qty - qtyToModify);
+    if (qtyToModify < originalItem.quantity) {
+      // SPLIT: Modifica solo una parte della quantità
+      newState[index] =
+          originalItem.copyWith(quantity: originalItem.quantity - qtyToModify);
       final newItem = originalItem.copyWith(
-          internalId: DateTime.now().millisecondsSinceEpoch,
-          qty: qtyToModify,
-          notes: newNote,
-          course: newCourse,
-          selectedExtras: newExtras
+        internalId: DateTime.now().millisecondsSinceEpoch,
+        quantity: qtyToModify,
+        notes: newNote,
+        course: newCourse,
+        selectedExtras: newExtras,
       );
       _mergeOrAdd(newState, newItem);
     } else {
-      // Full Update
+      // UPDATE COMPLETO: Modifica l'intero blocco
       newState.removeAt(index);
       final updatedItem = originalItem.copyWith(
-          notes: newNote,
-          course: newCourse,
-          selectedExtras: newExtras
+        notes: newNote,
+        course: newCourse,
+        selectedExtras: newExtras,
       );
       _mergeOrAdd(newState, updatedItem, insertAt: index);
     }
     state = newState;
   }
 
-  void _mergeOrAdd(List<OrderItem> items, OrderItem newItem, {int? insertAt}) {
+  void _mergeOrAdd(List<CartEntry> items, CartEntry newItem, {int? insertAt}) {
     final mergeTargetIndex = items.indexWhere((o) =>
-    o.id == newItem.id &&
+        o.item.id == newItem.item.id &&
         o.notes == newItem.notes &&
-        o.course == newItem.course &&
-        _areExtrasEqual(o.selectedExtras, newItem.selectedExtras)
-    );
+        o.course.id == newItem.course.id &&
+        _areExtrasEqual(o.selectedExtras, newItem.selectedExtras) &&
+        o.removedIngredients.isEmpty && // Semplificazione: non uniamo se ci sono ingredienti rimossi
+        newItem.removedIngredients.isEmpty);
 
     if (mergeTargetIndex != -1) {
-      items[mergeTargetIndex] = items[mergeTargetIndex].copyWith(qty: items[mergeTargetIndex].qty + newItem.qty);
+      final target = items[mergeTargetIndex];
+      items[mergeTargetIndex] =
+          target.copyWith(quantity: target.quantity + newItem.quantity);
     } else {
       if (insertAt != null && insertAt <= items.length) {
         items.insert(insertAt, newItem);

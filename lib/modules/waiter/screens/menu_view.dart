@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:orderly/config/orderly_colors.dart';
-
-import '../../../data/models/order_item.dart';
-import '../../../data/models/table_item.dart';
+import 'package:orderly/data/models/local/cart_entry.dart';
+import 'package:orderly/data/models/local/table_model.dart';
 
 // Import Providers
 import '../../../l10n/app_localizations.dart';
@@ -17,10 +16,9 @@ import 'menu_widgets/history_tab.dart';
 import 'menu_widgets/cart_sheet.dart';
 
 class MenuView extends ConsumerStatefulWidget {
-  final TableSession table;
-  final Function(List<OrderItem>) onSuccess;
+  final String tableSessionId;
 
-  const MenuView({super.key, required this.table, required this.onSuccess});
+  const MenuView({super.key, required this.tableSessionId});
 
   @override
   ConsumerState<MenuView> createState() => _MenuViewState();
@@ -66,7 +64,7 @@ class _MenuViewState extends ConsumerState<MenuView>
                   backgroundColor: context.colors.danger,
                   foregroundColor: context.colors.textInverse),
               onPressed: () {
-                back();
+                _goBack();
               },
               child: Text(AppLocalizations.of(context)!.exit),
             )
@@ -74,13 +72,15 @@ class _MenuViewState extends ConsumerState<MenuView>
         ),
       );
     } else {
-      back();
+      _goBack();
     }
   }
 
   void _handleSendOrder() {
     final currentCart = ref.read(cartProvider);
-    widget.onSuccess(currentCart);
+    ref
+        .read(tablesControllerProvider.notifier)
+        .sendOrder(widget.tableSessionId, currentCart);
     ref.read(cartProvider.notifier).clear();
   }
 
@@ -93,22 +93,29 @@ class _MenuViewState extends ConsumerState<MenuView>
     final isTablet = size.shortestSide > 600;
     final isLandscape = size.width > size.height;
     // Larghezza massima per il contenuto centrale (Header, Tab, etc.)
-    final double maxContentWidth = isTablet || isLandscape ? 600.0 : double.infinity;
+    final double maxContentWidth =
+        isTablet || isLandscape ? 600.0 : double.infinity;
 
     final cart = ref.watch(cartProvider);
-    final allTables = ref.watch(tablesProvider);
+    final TableUiModel? currentTable = ref
+        .watch(tablesControllerProvider.notifier)
+        .getTableBySessionId(widget.tableSessionId);
 
-    final currentTable = allTables.firstWhere(
-            (t) => t.id == widget.table.id,
-        orElse: () => widget.table
-    );
-
-    ref.listen<List<OrderItem>>(cartProvider, (previous, next) {
+    ref.listen<List<CartEntry>>(cartProvider, (previous, next) {
       if (next.isEmpty && _isExpanded) {
         _controller.animateTo(0, curve: Curves.easeOutQuint);
         setState(() => _isExpanded = false);
       }
     });
+
+    if (currentTable == null) {
+      // This can happen if the session is closed while the user is on this screen.
+      // We show a loading/error state and navigate back.
+      Future.microtask(() => _goBack());
+      return Scaffold(
+          backgroundColor: colors.background,
+          body: const Center(child: CircularProgressIndicator()));
+    }
 
     return LayoutBuilder(builder: (context, constraints) {
       final double heightFactor = (isLandscape && !isTablet) ? 0.85 : 0.75;
@@ -134,33 +141,45 @@ class _MenuViewState extends ConsumerState<MenuView>
                           height: 60,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
-                              border: Border(bottom: BorderSide(color: colors.divider))),
+                              border: Border(
+                                  bottom: BorderSide(color: colors.divider))),
                           child: Stack(
                             children: [
                               Align(
                                 alignment: Alignment.centerLeft,
                                 child: IconButton(
-                                  icon: Icon(Icons.chevron_left, color: colors.textSecondary),
+                                  icon: Icon(Icons.chevron_left,
+                                      color: colors.textSecondary),
                                   onPressed: _handleBack,
                                 ),
                               ),
                               Align(
                                 alignment: Alignment.center,
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 48.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 48.0),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          AppLocalizations.of(context)!.tableName(currentTable.name),
+                                          AppLocalizations.of(context)!
+                                              .tableName(currentTable.name),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary),
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: colors.textPrimary),
                                         ),
                                       ),
-                                      Text(AppLocalizations.of(context)!.labelGuests(currentTable.guests),
-                                          style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+                                      Text(
+                                          AppLocalizations.of(context)!
+                                              .labelGuests(
+                                                  currentTable.guestsCount),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: colors.textSecondary)),
                                     ],
                                   ),
                                 ),
@@ -174,10 +193,13 @@ class _MenuViewState extends ConsumerState<MenuView>
                         labelColor: colors.primary,
                         unselectedLabelColor: colors.textSecondary,
                         indicatorColor: colors.primary,
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        labelStyle:
+                            const TextStyle(fontWeight: FontWeight.bold),
                         tabs: [
                           Tab(text: AppLocalizations.of(context)!.navMenu),
-                          Tab(text: "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.orders.length})"),
+                          Tab(
+                              text:
+                                  "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.activeSession?.orders.length ?? 0})"),
                         ],
                       ),
                       // TAB CONTENT
@@ -198,9 +220,6 @@ class _MenuViewState extends ConsumerState<MenuView>
               if (cart.isNotEmpty) _buildBackdrop(),
 
               // --- CART SHEET ---
-              // CORREZIONE: Qui abbiamo rimosso ConstrainedBox/Align.
-              // CartSheet è tornato ad essere figlio diretto dello Stack.
-              // La responsività deve essere gestita DENTRO CartSheet.dart (vedi punto 2).
               if (cart.isNotEmpty)
                 CartSheet(
                   controller: _controller,
@@ -212,7 +231,6 @@ class _MenuViewState extends ConsumerState<MenuView>
                 ),
 
               // --- SEND BUTTON ---
-              // Il bottone fluttuante lo limitiamo in larghezza qui perché usa Transform, non Positioned.
               if (cart.isNotEmpty)
                 Align(
                   alignment: Alignment.bottomCenter,
@@ -280,11 +298,13 @@ class _MenuViewState extends ConsumerState<MenuView>
     );
   }
 
-  void back() {
+  void _goBack() {
     if (context.canPop()) {
       context.pop();
+    } else {
+      // Fallback if there's nothing to pop, go to the main screen
+      context.go('/tables');
     }
-    context.go('/tables');
     ref.read(cartProvider.notifier).clear();
   }
 }

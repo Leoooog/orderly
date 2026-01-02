@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/data/models/local/cart_entry.dart';
+import 'package:orderly/data/models/menu/course.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
 
-import '../../../../data/models/order_item.dart';
-import '../../../../data/models/course.dart';
 import '../../../../shared/widgets/quantity_button.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/menu_provider.dart';
@@ -41,20 +41,15 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     }
   }
 
-  void _openEditDialog(OrderItem item) {
-    final menuItems = ref.read(menuProvider);
-    final menuItem = menuItems.firstWhere((m) => m.id == item.id,
-        orElse: () => menuItems[0]);
-
+  void _openEditDialog(CartEntry entry) {
     showDialog(
       context: context,
       builder: (ctx) => ItemEditDialog(
-        cartItem: item,
-        menuItem: menuItem,
+        cartEntry: entry,
         onSave: (qty, note, course, extras) {
           ref
               .read(cartProvider.notifier)
-              .updateItemConfig(item, qty, note, course, extras);
+              .updateItemConfig(entry, qty, note, course, extras);
           Navigator.pop(ctx);
         },
       ),
@@ -65,6 +60,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final cart = ref.watch(cartProvider);
+    final courses = ref.watch(coursesProvider);
 
     // --- LOGICA RESPONSIVE ---
     final size = MediaQuery.sizeOf(context);
@@ -72,9 +68,10 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     // Limitiamo a 600px su tablet, altrimenti infinito (tutto lo schermo) su telefono
     final double maxContentWidth = isTablet ? 600.0 : double.infinity;
 
-    Map<Course, List<OrderItem>> groupedCart = {};
-    for (var c in Course.values) {
-      groupedCart[c] = cart.where((item) => item.course == c).toList();
+    Map<Course, List<CartEntry>> groupedCart = {};
+    for (var course in courses) {
+      groupedCart[course] =
+          cart.where((entry) => entry.course.id == course.id).toList();
     }
 
     return AnimatedBuilder(
@@ -158,7 +155,8 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14)),
                                     Text(
-                                        AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(0, (s, i) => s + i.qty)),
+                                        AppLocalizations.of(context)!.cartSheetItemsCountLabel(cart.fold(
+                                                0, (s, entry) => s + entry.quantity)),
                                         style: TextStyle(
                                             color: colors.textSecondary,
                                             fontSize: 12)),
@@ -167,7 +165,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                             Row(
                               children: [
                                 Text(
-                                    "€ ${cart.fold(0.0, (s, i) => s + (i.unitPrice * i.qty)).toStringAsFixed(2)}",
+                                    "€ ${cart.fold(0.0, (s, entry) => s + entry.totalItemPrice).toStringAsFixed(2)}",
                                     style: const TextStyle(
                                         fontFamily: 'RobotoMono',
                                         fontWeight: FontWeight.bold,
@@ -199,18 +197,19 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      for (var course in Course.values)
-                        if (groupedCart[course]!.isNotEmpty) ...[
+                      for (var course in courses)
+                        if (groupedCart[course] != null &&
+                            groupedCart[course]!.isNotEmpty) ...[
                           Padding(
                               padding: const EdgeInsets.only(bottom: 8, top: 8),
-                              child: Text(course.label.toUpperCase(),
+                              child: Text(course.name.toUpperCase(),
                                   style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       color: colors.textSecondary,
                                       letterSpacing: 1))),
                           ...groupedCart[course]!
-                              .map((item) => _buildCartItemRow(context, item)),
+                              .map((entry) => _buildCartItemRow(context, entry)),
                           const SizedBox(height: 8),
                         ],
                       // Spazio extra in fondo per evitare che l'ultimo elemento sia coperto dal pulsante floating (se presente)
@@ -226,13 +225,15 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     );
   }
 
-  Widget _buildCartItemRow(BuildContext context, OrderItem item) {
+  Widget _buildCartItemRow(BuildContext context, CartEntry entry) {
     final colors = context.colors;
-    bool hasExtras = item.selectedExtras.isNotEmpty;
-    bool hasNotes = item.notes.isNotEmpty;
+    bool hasExtras = entry.selectedExtras.isNotEmpty;
+    bool hasNotes = entry.notes != null && entry.notes!.isNotEmpty;
 
-    Color cardColor = (hasNotes || hasExtras) ? colors.warningContainer : colors.surface;
-    Color borderColor = (hasNotes || hasExtras) ? colors.warningContainer : colors.divider;
+    Color cardColor =
+        (hasNotes || hasExtras) ? colors.warningContainer : colors.surface;
+    Color borderColor =
+        (hasNotes || hasExtras) ? colors.warningContainer : colors.divider;
 
     return Material(
       color: cardColor,
@@ -247,11 +248,12 @@ class _CartSheetState extends ConsumerState<CartSheet> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Expanded(
-              child: Text(item.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              child: Text(entry.item.name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14)),
             ),
             const SizedBox(width: 8),
-            Text("€ ${(item.unitPrice * item.qty).toStringAsFixed(2)}",
+            Text("€ ${entry.totalItemPrice.toStringAsFixed(2)}",
                 style: TextStyle(fontSize: 12, color: colors.textSecondary)),
           ]),
           if (hasExtras)
@@ -260,7 +262,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                 child: Wrap(
                     spacing: 4,
                     runSpacing: 4,
-                    children: item.selectedExtras
+                    children: entry.selectedExtras
                         .map((e) => Text("+${e.name}",
                         style: TextStyle(
                             fontSize: 11,
@@ -274,7 +276,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                   Icon(Icons.error_outline, size: 12, color: colors.warning),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(item.notes,
+                    child: Text(entry.notes!,
                         style: TextStyle(fontSize: 12, color: colors.warning)),
                   )
                 ])),
@@ -287,23 +289,23 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                 child: Row(children: [
                   QuantityButton(
                       icon: Icons.remove,
-                      onTap: () => _updateQty(item.internalId, -1)),
+                      onTap: () => _updateQty(entry.internalId, -1)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text("${item.qty}",
+                    child: Text("${entry.quantity}",
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                   ),
                   QuantityButton(
                       icon: Icons.add,
-                      onTap: () => _updateQty(item.internalId, 1)),
+                      onTap: () => _updateQty(entry.internalId, 1)),
                 ])),
             Row(children: [
               Material(
                 color: colors.background,
                 borderRadius: BorderRadius.circular(6),
                 child: InkWell(
-                  onTap: () => _openEditDialog(item),
+                  onTap: () => _openEditDialog(entry),
                   borderRadius: BorderRadius.circular(6),
                   child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -326,7 +328,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                 child: InkWell(
                   onTap: () => ref
                       .read(cartProvider.notifier)
-                      .removeItem(item.internalId),
+                      .removeItem(entry.internalId),
                   borderRadius: BorderRadius.circular(6),
                   child: Container(
                       padding: const EdgeInsets.all(6),

@@ -197,6 +197,10 @@
       }
     }
   },
+  "titleTenantSelection": "Inserisci il tuo codice locale",
+  "fieldTenantPlaceholder": "Es. ristorante-123 o 192.168.1.100",
+  "tenantSelectionDevHelper": "Inserisci l'indirizzo IP del server locale",
+  "btnTenantSelection": "SELEZIONA LOCALE",
   "btnPay": "PAGA",
   "msgPaymentSuccess": "Pagamento registrato",
   "headerVoids": "--- Storni e Cancellazioni ---",

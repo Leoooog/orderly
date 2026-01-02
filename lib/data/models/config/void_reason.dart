@@ -22,4 +22,15 @@ class VoidReason extends BaseModel {
       name: json['name'] ?? '',
     );
   }
+
+  factory VoidReason.empty() {
+    return VoidReason(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      name: '',
+    );
+  }
 }

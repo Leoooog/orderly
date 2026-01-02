@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:orderly/modules/waiter/config/waiter_router.dart';
 
-import 'config/hive_keys.dart';
 import 'l10n/app_localizations.dart';
 import 'orderly_app.dart';
 
@@ -14,17 +13,12 @@ void main() async {
 
   await Hive.initFlutter();
 
-  await Hive.openBox(kTablesBox);
-  await Hive.openBox(kVoidsBox);
-  await Hive.openBox(kSettingsBox);
-
   runApp(const ProviderScope(
     child: WaiterAppEntry(),
   ));
 }
 
-// Piccolo widget wrapper per leggere il provider del router
-// (Necessario perché non puoi leggere un provider prima di essere dentro un ProviderScope)
+// L'entry point principale dell'app che utilizza il router.
 class WaiterAppEntry extends ConsumerWidget {
   const WaiterAppEntry({super.key});
 

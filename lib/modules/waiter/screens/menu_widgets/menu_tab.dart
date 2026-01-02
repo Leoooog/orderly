@@ -1,12 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:orderly/data/models/restaurant_settings.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
 
-import '../../../../data/models/menu_item.dart';
-import '../../../../data/models/course.dart';
+import '../../../../data/models/menu/menu_item.dart';
+import '../../../../data/models/menu/course.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/cart_provider.dart';
 
@@ -17,14 +16,15 @@ class MenuTab extends ConsumerStatefulWidget {
   ConsumerState<MenuTab> createState() => _MenuTabState();
 }
 
-class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClientMixin {
-  String activeCategory = '';
-  Course activeCourse = Course.entree;
+class _MenuTabState extends ConsumerState<MenuTab>
+    with AutomaticKeepAliveClientMixin {
+  String _activeCategoryId = 'ALL';
+  Course? _activeCourse;
 
-  final TextEditingController searchController = TextEditingController();
-  String searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
-  final Set<int> _expandedItems = {};
+  final Set<String> _expandedItems = {};
 
   @override
   bool get wantKeepAlive => true;
@@ -32,22 +32,22 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
   @override
   void initState() {
     super.initState();
-    searchController.addListener(() {
-      setState(() => searchQuery = searchController.text);
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text);
     });
   }
 
   @override
   void dispose() {
-    searchController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  void _addToCart(MenuItem item) {
-    ref.read(cartProvider.notifier).addItem(item, activeCourse);
+  void _addToCart(MenuItem item, Course course) {
+    ref.read(cartProvider.notifier).addItem(item, course);
   }
 
-  void _toggleProductExpansion(int itemId) {
+  void _toggleProductExpansion(String itemId) {
     setState(() {
       if (_expandedItems.contains(itemId)) {
         _expandedItems.remove(itemId);
@@ -57,18 +57,21 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
     });
   }
 
-  List<MenuItem> getFilteredItems(List<MenuItem> allItems, String category) {
-    if (searchQuery.isNotEmpty) {
-      final query = searchQuery.toLowerCase();
-      return allItems.where((i) {
-        return i.name.toLowerCase().contains(query) ||
-            i.ingredients.any((ing) => ing.toLowerCase().contains(query));
+  List<MenuItem> _getFilteredItems(
+      List<MenuItem> allItems, String categoryId) {
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      return allItems.where((item) {
+        final nameMatch = item.name.toLowerCase().contains(query);
+        final ingredientMatch = item.ingredients
+            .any((ing) => ing.name.toLowerCase().contains(query));
+        return nameMatch || ingredientMatch;
       }).toList();
     }
-    if (category == 'ALL') {
+    if (categoryId == 'ALL') {
       return allItems;
     }
-    return allItems.where((i) => i.category == category).toList();
+    return allItems.where((item) => item.category?.id == categoryId).toList();
   }
 
   @override
@@ -76,19 +79,20 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
     super.build(context);
     final colors = context.colors;
 
-    final menuItemsList = ref.watch(menuProvider);
-    final categoriesList = ref.watch(categoriesProvider);
+    // Watch all data from the new providers
+    final menuData = ref.watch(menuDataProvider);
+    final allItems = menuData.value?.menuItems ?? [];
+    final allCategories = menuData.value?.categories ?? [];
+    final allCourses = menuData.value?.courses ?? [];
     final cart = ref.watch(cartProvider);
 
-    String currentCategory = activeCategory;
-    if (currentCategory.isEmpty) {
-      currentCategory = 'ALL';
+    // Set default active course if not set
+    if (_activeCourse == null && allCourses.isNotEmpty) {
+      _activeCourse = allCourses.first;
     }
 
-    final filteredItems = getFilteredItems(menuItemsList, currentCategory);
+    final filteredItems = _getFilteredItems(allItems, _activeCategoryId);
 
-    // RESPONSIVE: Limita la larghezza massima del contenuto centrale
-    // (comodo per tablet in landscape)
     final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
     final double maxWidth = isTablet ? 800 : double.infinity;
 
@@ -97,74 +101,89 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Column(
           children: [
-            // BARRA DI RICERCA
+            // SEARCH BAR
             Padding(
               padding: const EdgeInsets.all(12),
               child: TextField(
-                controller: searchController,
+                controller: _searchController,
                 decoration: InputDecoration(
                   hintText: AppLocalizations.of(context)!.labelSearch,
-                  prefixIcon: Icon(Icons.search, color: colors.textTertiary, size: 20),
-                  suffixIcon: searchQuery.isNotEmpty
-                      ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => searchController.clear())
+                  prefixIcon:
+                      Icon(Icons.search, color: colors.textTertiary, size: 20),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () => _searchController.clear())
                       : null,
                   filled: true,
                   fillColor: colors.background,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 ),
               ),
             ),
 
-            // BARRA USCITE (Courses)
+            // COURSES BAR
             Container(
               height: 50,
-              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colors.divider))),
-              // Center the list if items are few, scroll if many (using ListView + Center feels weird, so using this trick)
+              decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: colors.divider))),
               alignment: Alignment.center,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                //shrinkWrap: true, // Allow centering if possible, but beware on small screens
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: Course.values.length,
+                itemCount: allCourses.length,
                 itemBuilder: (ctx, idx) {
-                  final course = Course.values[idx];
-                  final isActive = activeCourse == course;
+                  final course = allCourses[idx];
+                  final isActive = _activeCourse?.id == course.id;
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: ActionChip(
-                      label: Text(course.label, style: const TextStyle(fontSize: 12)),
-                      backgroundColor: isActive ? colors.primary : colors.background,
-                      labelStyle: TextStyle(color: isActive ? colors.onPrimary : colors.textSecondary, fontWeight: FontWeight.bold, fontSize: 12),
+                      label: Text(course.name,
+                          style: const TextStyle(fontSize: 12)),
+                      backgroundColor:
+                          isActive ? colors.primary : colors.background,
+                      labelStyle: TextStyle(
+                          color: isActive
+                              ? colors.onPrimary
+                              : colors.textSecondary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12),
                       side: BorderSide.none,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      onPressed: () => setState(() => activeCourse = course),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      onPressed: () => setState(() => _activeCourse = course),
                     ),
                   );
                 },
               ),
             ),
 
-            // CATEGORIE
-            if (searchQuery.isEmpty)
+            // CATEGORIES
+            if (_searchQuery.isEmpty)
               ScrollConfiguration(
                 behavior: _MyCustomScrollBehavior(),
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
                       _buildCategoryPill(
                         id: 'ALL',
                         name: AppLocalizations.of(context)!.labelAll,
-                        isActive: currentCategory == 'ALL',
+                        isActive: _activeCategoryId == 'ALL',
                       ),
-                      ...categoriesList.map((cat) {
+                      ...allCategories.map((cat) {
                         return _buildCategoryPill(
                           id: cat.id,
                           name: cat.name,
-                          isActive: currentCategory == cat.id,
+                          isActive: _activeCategoryId == cat.id,
                         );
                       }),
                     ],
@@ -172,37 +191,52 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
                 ),
               ),
 
-            if(searchQuery.isEmpty)
-              Divider(color: colors.divider, height: 1),
+            if (_searchQuery.isEmpty) Divider(color: colors.divider, height: 1),
 
-            // LISTA PRODOTTI
+            // PRODUCTS LIST
             Expanded(
               child: Container(
                 color: colors.background,
-                child: filteredItems.isEmpty
-                    ? Center(child: Text(AppLocalizations.of(context)!.labelNoProducts, style: TextStyle(color: colors.textTertiary, fontSize: 14)))
-                    : ScrollConfiguration(
-                      behavior: _MyCustomScrollBehavior(),
-                      child: ListView.separated(
-                                        padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
-                                        itemCount: filteredItems.length,
-                                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                        itemBuilder: (context, index) {
-                      final item = filteredItems[index];
-                      final totalQty = cart.where((c) => c.id == item.id).fold(0, (sum, c) => sum + c.qty);
-                      final isExpanded = _expandedItems.contains(item.id);
+                child: menuData.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : filteredItems.isEmpty
+                        ? Center(
+                            child: Text(
+                                AppLocalizations.of(context)!.labelNoProducts,
+                                style: TextStyle(
+                                    color: colors.textTertiary,
+                                    fontSize: 14)))
+                        : ScrollConfiguration(
+                            behavior: _MyCustomScrollBehavior(),
+                            child: ListView.separated(
+                              padding: const EdgeInsets.only(
+                                  left: 16, right: 16, top: 16, bottom: 120),
+                              itemCount: filteredItems.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final item = filteredItems[index];
+                                final totalQty = cart
+                                    .where((c) => c.item.id == item.id)
+                                    .fold(0, (sum, c) => sum + c.quantity);
+                                final isExpanded = _expandedItems.contains(item.id);
 
-                      return _ProductCard(
-                        key: ValueKey(item.id),
-                        item: item,
-                        totalQty: totalQty,
-                        isExpanded: isExpanded,
-                        onAdd: () => _addToCart(item),
-                        onExpand: () => _toggleProductExpansion(item.id),
-                      );
-                                        },
-                                      ),
-                    ),
+                                return _ProductCard(
+                                  key: ValueKey(item.id),
+                                  item: item,
+                                  totalQty: totalQty,
+                                  isExpanded: isExpanded,
+                                  onAdd: () {
+                                    if (_activeCourse != null) {
+                                      _addToCart(item, _activeCourse!);
+                                    }
+                                  },
+                                  onExpand: () =>
+                                      _toggleProductExpansion(item.id),
+                                );
+                              },
+                            ),
+                          ),
               ),
             ),
           ],
@@ -211,13 +245,13 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
     );
   }
 
-
-  Widget _buildCategoryPill({required String id, required String name, required bool isActive}) {
+  Widget _buildCategoryPill(
+      {required String id, required String name, required bool isActive}) {
     final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ActionChip(
-        onPressed: () => setState(() => activeCategory = id),
+        onPressed: () => setState(() => _activeCategoryId = id),
         label: Text(name),
         labelStyle: TextStyle(
           fontWeight: FontWeight.bold,
@@ -238,15 +272,16 @@ class _MenuTabState extends ConsumerState<MenuTab> with AutomaticKeepAliveClient
 class _MyCustomScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-    PointerDeviceKind.touch,
-    PointerDeviceKind.mouse,
-  };
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+      };
 
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) {
     return const AlwaysScrollableScrollPhysics();
   }
 }
+
 class _ProductCard extends StatelessWidget {
   final MenuItem item;
   final int totalQty;
@@ -270,13 +305,13 @@ class _ProductCard extends StatelessWidget {
       color: colors.surface,
       borderRadius: BorderRadius.circular(16),
       elevation: 2,
-      shadowColor: colors.shadow,
+      shadowColor: colors.shadow.withValues(alpha:0.1),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: isExpanded ? colors.borderExpanded : colors.divider),
+              color: isExpanded ? colors.primary.withValues(alpha:0.5) : colors.divider),
         ),
         child: Column(
           children: [
@@ -308,10 +343,13 @@ class _ProductCard extends StatelessWidget {
                     width: 64,
                     height: 64,
                     color: colors.background,
-                    child: Image.network(item.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(Icons.restaurant,
-                            color: colors.textTertiary, size: 24))),
+                    child: item.image != null
+                        ? Image.network(item.image!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(Icons.restaurant,
+                                color: colors.textTertiary, size: 24))
+                        : Icon(Icons.restaurant,
+                            color: colors.textTertiary, size: 24)),
               ),
             ),
           ),
@@ -328,7 +366,7 @@ class _ProductCard extends StatelessWidget {
                         fontSize: 16,
                         color: colors.textPrimary)),
                 const SizedBox(height: 4),
-                Text(item.price.toCurrency(),
+                Text("€ ${item.price.toStringAsFixed(2)}",
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: colors.primary,
@@ -344,23 +382,23 @@ class _ProductCard extends StatelessWidget {
               radius: 24,
               child: totalQty > 0
                   ? Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                      color: colors.primary, shape: BoxShape.circle),
-                  alignment: Alignment.center,
-                  child: Text("$totalQty",
-                      style: TextStyle(
-                          color: colors.onPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14)))
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                          color: colors.primary, shape: BoxShape.circle),
+                      alignment: Alignment.center,
+                      child: Text("$totalQty",
+                          style: TextStyle(
+                              color: colors.onPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14)))
                   : Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                      color: colors.background, shape: BoxShape.circle),
-                  child: Icon(Icons.add,
-                      size: 18, color: colors.textTertiary)),
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                          color: colors.background, shape: BoxShape.circle),
+                      child: Icon(Icons.add,
+                          size: 18, color: colors.textTertiary)),
             ),
           ),
           // Expansion Icon
@@ -384,24 +422,32 @@ class _ProductCard extends StatelessWidget {
       secondChild: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        decoration:
-        BoxDecoration(border: Border(top: BorderSide(color: context.colors.divider))),
+        decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: context.colors.divider))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const SizedBox(height: 12),
-          Text(AppLocalizations.of(context)!.labelIngredients,
-              style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: context.colors.textTertiary,
-                  letterSpacing: 1)),
-          const SizedBox(height: 6),
-          Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: item.ingredients
-                  .map((ing) => _buildTag(context, ing,
-                  context.colors.background, context.colors.textSecondary))
-                  .toList()),
+          if (item.description != null && item.description!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(item.description!,
+                style:
+                    TextStyle(fontSize: 12, color: context.colors.textSecondary)),
+          ],
+          if (item.ingredients.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(AppLocalizations.of(context)!.labelIngredients,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: context.colors.textTertiary,
+                    letterSpacing: 1)),
+            const SizedBox(height: 6),
+            Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: item.ingredients
+                    .map((ing) => _buildTag(context, ing.name,
+                        context.colors.background, context.colors.textSecondary))
+                    .toList()),
+          ],
           if (item.allergens.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(AppLocalizations.of(context)!.labelAllergens,
@@ -415,15 +461,15 @@ class _ProductCard extends StatelessWidget {
                 spacing: 6,
                 runSpacing: 6,
                 children: item.allergens
-                    .map((alg) => _buildTag(context, alg,
-                    context.colors.dangerContainer, context.colors.danger,
-                    isWarning: true))
+                    .map((alg) => _buildTag(context, alg.name,
+                        context.colors.dangerContainer, context.colors.danger,
+                        isWarning: true))
                     .toList()),
           ],
         ]),
       ),
       crossFadeState:
-      isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
       duration: const Duration(milliseconds: 300),
     );
   }
@@ -438,7 +484,7 @@ class _ProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
               color: isWarning
-                  ? textCol.withValues(alpha: 0.2)
+                  ? textCol.withValues(alpha:0.2)
                   : colors.divider)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         if (isWarning) ...[
@@ -451,8 +497,9 @@ class _ProductCard extends StatelessWidget {
                     fontSize: 11,
                     color: textCol,
                     fontWeight:
-                    isWarning ? FontWeight.bold : FontWeight.normal)))
+                        isWarning ? FontWeight.bold : FontWeight.normal)))
       ]),
     );
   }
 }
+
