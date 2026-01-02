@@ -111,4 +111,9 @@ class VoidRecord extends BaseModel {
       reason: reason ?? this.reason,
     );
   }
+
+  @override
+  String toString() {
+    return 'VoidRecord{sessionId: $sessionId, menuItemId: $menuItemId, menuItemName: $menuItemName, quantity: $quantity, isRefunded: $isRefunded, notes: $notes, statusWhenVoided: $statusWhenVoided, amount: $amount, reason: $reason, orderItem: $orderItem}';
+  }
 }

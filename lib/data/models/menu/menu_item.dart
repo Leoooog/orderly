@@ -110,4 +110,9 @@ class MenuItem extends BaseModel {
       image: image ?? this.image,
     );
   }
+
+  @override
+  String toString() {
+    return 'MenuItem{name: $name, description: $description, price: $price, isAvailable: $isAvailable, image: $image, ingredients: $ingredients, category: $category, allergens: $allergens, allowedExtras: $allowedExtras, producedBy: $producedBy}';
+  }
 }

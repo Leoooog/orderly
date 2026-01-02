@@ -1,7 +1,4 @@
-import 'package:orderly/data/models/enums/order_item_status.dart';
-import 'package:orderly/data/models/menu/menu_item.dart';
 import 'package:orderly/data/models/session/order_item.dart';
-import 'package:orderly/data/models/session/void_record.dart';
 
 import '../base_model.dart';
 
@@ -48,5 +45,34 @@ class Order extends BaseModel {
       waiterId: '',
       totalAmount: 0.0,
     );
+  }
+
+  Order copyWith({
+    String? id,
+    DateTime? created,
+    DateTime? updated,
+    String? collectionId,
+    String? collectionName,
+    String? sessionId,
+    String? waiterId,
+    double? totalAmount,
+    List<OrderItem>? items,
+  }) {
+    return Order(
+      id: id ?? this.id,
+      created: created ?? this.created,
+      updated: updated ?? this.updated,
+      collectionId: collectionId ?? this.collectionId,
+      collectionName: collectionName ?? this.collectionName,
+      sessionId: sessionId ?? this.sessionId,
+      waiterId: waiterId ?? this.waiterId,
+      totalAmount: totalAmount ?? this.totalAmount,
+      items: items ?? this.items,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'Order{sessionId: $sessionId, waiterId: $waiterId, totalAmount: $totalAmount, items: $items}';
   }
 }

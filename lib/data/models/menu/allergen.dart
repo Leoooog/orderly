@@ -21,8 +21,12 @@ class Allergen extends BaseModel {
       updated: BaseModel.parseDate(json['updated']),
       collectionId: json['collectionId'] ?? '',
       collectionName: json['collectionName'] ?? '',
-      name: json['name'] ?? '',
-      code: json['code'] ?? '',
+      name: json['name'] ?? '', code: '',
     );
+  }
+
+  @override
+  String toString() {
+    return 'Allergen{name: $name, code: $code}';
   }
 }

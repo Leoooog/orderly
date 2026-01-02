@@ -55,4 +55,23 @@ class TableUiModel {
       status: TableStatus.free,
     );
   }
+
+  TableUiModel copyWith({
+    Table? table,
+    TableStatus? status,
+    TableSession? activeSession,
+    TableSessionStatus? sessionStatus,
+  }) {
+    return TableUiModel(
+      table: table ?? this.table,
+      status: status ?? this.status,
+      activeSession: activeSession ?? this.activeSession,
+      sessionStatus: sessionStatus ?? this.sessionStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'TableUiModel(table: ${table.name}, status: $status, sessionId: ${activeSession?.id})';
+  }
 }

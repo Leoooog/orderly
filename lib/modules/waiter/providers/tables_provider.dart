@@ -1,40 +1,48 @@
-// -----------------------------------------------------------------------------
-// PROVIDERS DI DATI GREZZI
-// -----------------------------------------------------------------------------
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/data/models/config/table.dart';
 import 'package:orderly/data/models/config/void_reason.dart';
+import 'package:orderly/data/models/enums/order_item_status.dart';
+import 'package:orderly/data/models/enums/table_status.dart';
 import 'package:orderly/data/models/local/cart_entry.dart';
+import 'package:orderly/data/models/local/table_model.dart';
+import 'package:orderly/data/models/menu/course.dart';
+import 'package:orderly/data/models/menu/extra.dart';
+import 'package:orderly/data/models/menu/ingredient.dart';
+import 'package:orderly/data/models/session/order.dart';
+import 'package:orderly/data/models/session/table_session.dart';
+import 'package:orderly/data/repositories/i_orderly_repository.dart';
 import 'package:orderly/logic/providers/session_provider.dart';
 
-import '../../../data/models/config/table.dart';
-import '../../../data/models/enums/order_item_status.dart';
-import '../../../data/models/enums/table_status.dart';
-import '../../../data/models/menu/course.dart';
-import '../../../data/models/menu/extra.dart';
-import '../../../data/models/menu/ingredient.dart';
-import '../../../data/models/session/order.dart';
-import '../../../data/models/session/table_session.dart';
-import '../../../data/models/local/table_model.dart';
-import '../../../data/repositories/i_orderly_repository.dart';
-
+// -----------------------------------------------------------------------------
+// PROVIDERS DI DATI GREZZI (OTTIMIZZATI)
+// -----------------------------------------------------------------------------
 
 final tablesListProvider = FutureProvider<List<Table>>((ref) async {
-   return ref.watch(sessionProvider).repository!.getTables();
+  // FIX: Usiamo select per ricostruire SOLO se cambia il repository (es. login/logout)
+  print("[tablesListProvider] fetching tables...");
+  final repository = ref.watch(sessionProvider.select((s) => s.repository));
+  print("[tablesListProvider] got repository: $repository");
+  if (repository == null) return [];
+  return repository.getTables();
 });
 
 
 /// Stream delle sessioni APERTE.
-/// Il repository deve ritornare solo le sessioni con status != 'closed'.
 final activeSessionsStreamProvider = StreamProvider<List<TableSession>>((ref) {
-  final repository = ref.watch(sessionProvider).repository!;
+  // FIX: Usiamo select per evitare che lo stream venga killato e ricreato ad ogni notify della sessione
+  print("[activeSessionsStreamProvider] setting up stream...");
+  final repository = ref.watch(sessionProvider.select((s) => s.repository));
+  if (repository == null) return Stream.value([]);
   return repository.watchActiveSessions();
 });
 
 /// Stream degli ordini ATTIVI (del turno corrente).
-/// Questo stream serve per popolare le sessioni in tempo reale.
 final activeOrdersStreamProvider = StreamProvider<List<Order>>((ref) {
-  return ref.watch(sessionProvider).repository!.watchActiveOrders();
+  // FIX: Usiamo select anche qui
+  print("[activeOrdersStreamProvider] setting up stream...");
+  final repository = ref.watch(sessionProvider.select((s) => s.repository));
+  if (repository == null) return Stream.value([]);
+  return repository.watchActiveOrders();
 });
 
 // -----------------------------------------------------------------------------
@@ -42,82 +50,73 @@ final activeOrdersStreamProvider = StreamProvider<List<Order>>((ref) {
 // -----------------------------------------------------------------------------
 
 final tablesControllerProvider =
-    AsyncNotifierProvider<TablesController, List<TableUiModel>>(
-        TablesController.new);
+AsyncNotifierProvider<TablesController, List<TableUiModel>>(
+    TablesController.new);
 
 class TablesController extends AsyncNotifier<List<TableUiModel>> {
   // Getter for convenience
-  IOrderlyRepository get _repository => ref.read(sessionProvider).repository!;
-  String get _currentUserId => ref.read(sessionProvider).currentUser!.id;
+  IOrderlyRepository? get _repository => ref.read(sessionProvider).repository;
+  String? get _currentUserId => ref.read(sessionProvider).currentUser?.id;
 
   @override
   Future<List<TableUiModel>> build() async {
-    print("[TablesController] build started");
-    // 1. Watch all data sources. Riverpod will handle re-running `build` when any of them change.
+    // 1. Watch all data sources.
     final tables = await ref.watch(tablesListProvider.future);
-    final sessions = ref.watch(activeSessionsStreamProvider);
-    final allOrders = ref.watch(activeOrdersStreamProvider);
+    // Per gli stream, osserviamo l'AsyncValue per gestire gli stati senza annidare callback infernali
+    final sessionsValue = ref.watch(activeSessionsStreamProvider);
+    final ordersValue = ref.watch(activeOrdersStreamProvider);
 
-    // Using .when to safely handle the loading/error states of the streams
-    return sessions.when(
-      data: (sessionList) {
-        print("[TablesController] build: received ${sessionList.length} sessions");
-        return allOrders.when(
-          data: (orderList) {
-            print("[TablesController] build: received ${orderList.length} orders");
-            // 2. Join the data sources into the UI model
-            final uiModels = tables.map((table) {
-              final session = sessionList.firstWhere(
-                (s) => s.tableId == table.id,
-                orElse: () => TableSession.empty(),
-              );
+    // Se stiamo caricando gli stream e non abbiamo dati precedenti, possiamo aspettare
+    // o ritornare una lista vuota. Qui manteniamo la logica di ritornare vuoto se non pronto.
+    if (sessionsValue.isLoading || ordersValue.isLoading) {
+      return [];
+    }
 
-              if (session.isEmpty) {
-                return TableUiModel(
-                    table: table, status: TableStatus.free);
-              }
+    final sessionList = sessionsValue.value!;
+    final orderList = ordersValue.value!;
 
-              // Enrich the session with its orders
-              final sessionOrders =
-                  orderList.where((o) => o.sessionId == session.id).toList();
-              sessionOrders.sort((a, b) => b.created.compareTo(a.created));
+    print("[TablesController] Building UI models with "
+        "${tables.length} tables, "
+        "${sessionList.length} active sessions, "
+        "${orderList.length} active orders.");
 
-              final enrichedSession = session.copyWith(orders: sessionOrders);
+    print("Orders: ");
+    for (var order in orderList) {
+      print(order);
+    }
 
-              // Determine the detailed session status
-              final sessionStatus = _calculateSessionStatus(enrichedSession);
+    // 2. Join the data sources into the UI model
+    final uiModels = tables.map((table) {
+      final session = sessionList.firstWhere(
+            (s) => s.tableId == table.id,
+        orElse: () => TableSession.empty(),
+      );
 
-              return TableUiModel(
-                table: table,
-                status: TableStatus.occupied,
-                activeSession: enrichedSession,
-                sessionStatus: sessionStatus,
-              );
-            }).toList();
+      if (session.isEmpty) {
+        return TableUiModel(
+            table: table, status: TableStatus.free);
+      }
 
-            uiModels.sort((a, b) => a.table.name.compareTo(b.table.name));
-            print("[TablesController] build finished, returning ${uiModels.length} UI models");
-            return uiModels;
-          },
-          loading: () {
-            print("[TablesController] build: orders are loading");
-            return [];
-          }, // Or return previous state if available
-          error: (e, st) {
-            print("[TablesController] build error in orders stream: $e");
-            throw e;
-          },
-        );
-      },
-      loading: () {
-        print("[TablesController] build: sessions are loading");
-        return [];
-      },
-      error: (e, st) {
-        print("[TablesController] build error in sessions stream: $e");
-        throw e;
-      },
-    );
+      // Enrich the session with its orders
+      final sessionOrders =
+      orderList.where((o) => o.sessionId == session.id).toList();
+      sessionOrders.sort((a, b) => b.created.compareTo(a.created));
+
+      final enrichedSession = session.copyWith(orders: sessionOrders);
+
+      // Determine the detailed session status
+      final sessionStatus = _calculateSessionStatus(enrichedSession);
+
+      return TableUiModel(
+        table: table,
+        status: TableStatus.occupied,
+        activeSession: enrichedSession,
+        sessionStatus: sessionStatus,
+      );
+    }).toList();
+
+    uiModels.sort((a, b) => a.table.name.compareTo(b.table.name));
+    return uiModels;
   }
 
   /// Calculates the detailed status of an active session based on its orders.
@@ -131,7 +130,7 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
       return TableSessionStatus.ready;
     }
     if (allItems.any((item) =>
-        item.status == OrderItemStatus.pending ||
+    item.status == OrderItemStatus.pending ||
         item.status == OrderItemStatus.fired ||
         item.status == OrderItemStatus.cooking)) {
       return TableSessionStatus.ordered;
@@ -145,89 +144,73 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
   // --- ACTIONS (Business Logic) ---
 
   Future<void> openTable(String tableId, int guests) async {
-    print("[TablesController] openTable: tableId=$tableId, guests=$guests");
     state = const AsyncLoading();
     try {
-      await _repository.openTable(tableId, guests, _currentUserId);
-      print("[TablesController] openTable successful");
-      // Non serve refresh manuale: lo stream aggiornerà la UI
+      if (_repository == null || _currentUserId == null) throw Exception("Utente non autenticato");
+      await _repository!.openTable(tableId, guests, _currentUserId!);
     } catch (e, st) {
-      print("[TablesController] openTable error: $e");
       state = AsyncError(e, st);
     }
   }
 
   Future<void> closeTable(String sessionId) async {
-    print("[TablesController] closeTable: sessionId=$sessionId");
     state = const AsyncLoading();
     try {
-      await _repository.closeTableSession(sessionId);
-      print("[TablesController] closeTable successful");
+      if (_repository == null) throw Exception("Utente non autenticato");
+      await _repository!.closeTableSession(sessionId);
     } catch (e, st) {
-      print("[TablesController] closeTable error: $e");
       state = AsyncError(e, st);
     }
   }
 
   Future<void> sendOrder(String sessionId, List<CartEntry> items) async {
     if (items.isEmpty) return;
-    print("[TablesController] sendOrder: sessionId=$sessionId, items=${items.length}");
     state = const AsyncLoading();
 
     try {
-
-      await _repository.sendOrder(
+      if (_repository == null || _currentUserId == null) throw Exception("Utente non autenticato");
+      await _repository!.sendOrder(
         sessionId: sessionId,
-        waiterId: _currentUserId,
+        waiterId: _currentUserId!,
         items: items,
       );
-      print("[TablesController] sendOrder successful");
-      // Anche qui, activeOrdersStreamProvider rileverà il nuovo ordine
-      // e il controller ricalcolerà il build() automaticamente.
     } catch (e, st) {
-      print("[TablesController] sendOrder error: $e");
       state = AsyncError(e, st);
-      rethrow; // Rilanciamo per gestire errori UI (es. snackbar)
+      rethrow;
     }
   }
 
   Future<void> voidOrderItem(
       {required String orderItemId,
-      required VoidReason reason,
-      required bool refund,
-      required int quantity,
-      String? notes}) async {
-    print(
-        "[TablesController] voidOrderItem: orderItemId=$orderItemId, quantity=$quantity");
+        required VoidReason reason,
+        required bool refund,
+        required int quantity,
+        String? notes}) async {
     state = const AsyncLoading();
 
     try {
-      await _repository.voidItem(
+      if (_repository == null || _currentUserId == null) throw Exception("Utente non autenticato");
+      await _repository!.voidItem(
         orderItemId: orderItemId,
         reason: reason,
         refund: refund,
         quantity: quantity,
-        voidedBy: _currentUserId,
+        voidedBy: _currentUserId!,
         notes: notes,
       );
-      print("[TablesController] voidOrderItem successful");
     } catch (e, st) {
-      print("[TablesController] voidOrderItem error: $e");
       state = AsyncError(e, st);
       rethrow;
     }
   }
 
   Future<void> moveTable(String sourceSessionId, String targetTableId) async {
-    print(
-        "[TablesController] moveTable: source=$sourceSessionId, target=$targetTableId");
     state = const AsyncLoading();
 
     try {
-      await _repository.moveTable(sourceSessionId, targetTableId);
-      print("[TablesController] moveTable successful");
+      if (_repository == null) throw Exception("Utente non autenticato");
+      await _repository!.moveTable(sourceSessionId, targetTableId);
     } catch (e, st) {
-      print("[TablesController] moveTable error: $e");
       state = AsyncError(e, st);
       rethrow;
     }
@@ -235,20 +218,17 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
 
   Future<void> mergeTables(
       String sourceSessionId, String targetSessionId) async {
-    print(
-        "[TablesController] mergeTables: source=$sourceSessionId, target=$targetSessionId");
-    await _repository.mergeTable(sourceSessionId, targetSessionId);
+    if (_repository == null) throw Exception("Utente non autenticato");
+    await _repository!.mergeTable(sourceSessionId, targetSessionId);
   }
 
   Future<void> processPayment(
       String tableSessionId, List<String> orderItemIds) async {
-    print(
-        "[TablesController] processPayment: sessionId=$tableSessionId, items=${orderItemIds.length}");
-    await _repository.processPayment(tableSessionId, orderItemIds);
+    if (_repository == null) throw Exception("Utente non autenticato");
+    await _repository!.processPayment(tableSessionId, orderItemIds);
   }
 
   Future<void> fireCourse(String sessionId, String courseId) async {
-    print("[TablesController] fireCourse: sessionId=$sessionId, courseId=$courseId");
     // This logic would typically be on the backend.
     // Here we simulate it by finding all 'pending' items for that course and updating their status.
     final table = getTableBySessionId(sessionId);
@@ -257,22 +237,23 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     final itemsToFire = table.activeSession!.orders
         .expand((order) => order.items)
         .where((item) =>
-            item.course.id == courseId &&
-            item.status == OrderItemStatus.pending &&
-            item.course.requiresFiring)
+    item.course.id == courseId &&
+        item.status == OrderItemStatus.pending &&
+        item.course.requiresFiring)
         .toList();
 
     for (final item in itemsToFire) {
-      await _repository.updateOrderItemStatus(item.id, OrderItemStatus.fired);
+      if (_repository != null) {
+        await _repository!.updateOrderItemStatus(item.id, OrderItemStatus.fired);
+      }
     }
-    print(
-        "[TablesController] fireCourse: fired ${itemsToFire.length} items for course $courseId");
   }
 
   Future<void> markAsServed(String orderItemId) async {
-    print("[TablesController] markAsServed: orderItemId=$orderItemId");
-    await _repository.updateOrderItemStatus(
-        orderItemId, OrderItemStatus.served);
+    if (_repository != null) {
+      await _repository!.updateOrderItemStatus(
+          orderItemId, OrderItemStatus.served);
+    }
   }
 
   Future<void> updateOrderItemDetails({
@@ -283,15 +264,16 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     required List<Extra> newExtras,
     required List<Ingredient> newRemovedIngredients,
   }) async {
-    print("[TablesController] updateOrderItemDetails: orderItemId=$orderItemId");
-    await _repository.updateOrderItem(
-      orderItemId: orderItemId,
-      newQty: newQty,
-      newNotes: newNotes,
-      newCourse: newCourse,
-      newExtras: newExtras,
-      newRemovedIngredients: newRemovedIngredients,
-    );
+    if (_repository != null) {
+      await _repository!.updateOrderItem(
+        orderItemId: orderItemId,
+        newQty: newQty,
+        newNotes: newNotes,
+        newCourse: newCourse,
+        newExtras: newExtras,
+        newRemovedIngredients: newRemovedIngredients,
+      );
+    }
   }
 
   // --- GETTERS ---
@@ -304,7 +286,4 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     }
     return null;
   }
-
-
-
 }

@@ -47,4 +47,25 @@ class User extends BaseModel {
           [],
     );
   }
+
+  factory User.empty() {
+    return User(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      username: '',
+      email: '',
+      name: '',
+      fullName: '',
+      role: UserRole.unknown,
+      pinHash: '',
+    );
+  }
+
+  @override
+  String toString() {
+    return 'User{username: $username, email: $email, name: $name, fullName: $fullName, role: $role, pinHash: $pinHash, avatar: $avatar, assignedDepartments: $assignedDepartments}';
+  }
 }

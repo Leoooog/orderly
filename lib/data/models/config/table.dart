@@ -33,4 +33,9 @@ class Table extends BaseModel {
       name: '',
     );
   }
+
+  @override
+  String toString() {
+    return 'Table(id: $id, name: $name)';
+  }
 }

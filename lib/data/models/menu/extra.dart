@@ -24,8 +24,12 @@ class Extra extends BaseModel {
       collectionId: json['collectionId'] ?? '',
       collectionName: json['collectionName'] ?? '',
       name: json['name'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
-      isAvailable: json['is_available'] ?? true,
+      price: (json['price'] ?? 0.0).toDouble(),
     );
+  }
+
+  @override
+  String toString() {
+    return 'Extra{name: $name, price: $price, isAvailable: $isAvailable}';
   }
 }

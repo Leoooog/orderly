@@ -12,6 +12,7 @@ import 'package:orderly/data/models/menu/category.dart';
 import 'package:orderly/data/models/menu/course.dart';
 import 'package:orderly/data/models/menu/menu_item.dart';
 import 'package:orderly/data/models/session/order.dart';
+import 'package:orderly/data/models/session/order_item.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../core/services/tenant_service.dart';
@@ -151,13 +152,10 @@ class PocketBaseRepository implements IOrderlyRepository {
     final controller = StreamController<List<TableSession>>();
     List<TableSession> currentList = [];
 
-    const activeStatusFilter =
-        "status != 'closed'";
 
     // 1. Initial Fetch
     _pb.collection('table_sessions').getFullList(
-          filter: activeStatusFilter,
-          sort: '-created',
+          filter: "(status != 'closed')",
         ).then((records) {
       currentList =
           records.map((r) => TableSession.fromJson(r.toJson())).toList();
@@ -171,7 +169,7 @@ class PocketBaseRepository implements IOrderlyRepository {
     });
 
     // 2. Realtime Subscription
-    final subscription = _pb.collection('table_sessions').subscribe('*', (e) {
+    _pb.collection('table_sessions').subscribe('*', (e) {
       if (controller.isClosed || e.record == null) return;
 
       final item = TableSession.fromJson(e.record!.toJson());
@@ -205,15 +203,16 @@ class PocketBaseRepository implements IOrderlyRepository {
     final controller = StreamController<List<Order>>();
     List<Order> currentList = [];
 
-    const filter = 'created >= "@todayStart"';
+    // created less than 24 hours ago
+    const filter = "";
 
     // 1. Initial Fetch
     _pb.collection('orders').getFullList(
           filter: filter,
-          sort: '-created',
           expand: 'items', // Eager load items
         ).then((records) {
       currentList = records.map((r) => Order.fromJson(r.toJson())).toList();
+      print("[PocketBaseRepository] Initial fetch of orders: ${currentList.length} orders loaded.");
       if (!controller.isClosed) {
         controller.add(List.from(currentList));
       }
@@ -224,10 +223,17 @@ class PocketBaseRepository implements IOrderlyRepository {
     });
 
     // 2. Realtime Subscription
-    _pb.collection('orders').subscribe('*', (e) {
+    _pb.collection('orders').subscribe('*', (e) async {
       if (controller.isClosed || e.record == null) return;
 
-      final item = Order.fromJson(e.record!.toJson());
+      var item = Order.fromJson(e.record!.toJson());
+
+      List<OrderItem> orderItems = await _getOrderItemsForOrder(item.id);
+      item = item.copyWith(items: orderItems);
+      // populate order items
+      // Note: In a real implementation, you might want to fetch the items separately
+      // or ensure they are included in the record's expand field.
+
 
       if (e.action == 'delete') {
         currentList.removeWhere((i) => i.id == item.id);
@@ -248,6 +254,33 @@ class PocketBaseRepository implements IOrderlyRepository {
     };
 
     return controller.stream;
+  }
+
+  Future<List<OrderItem>> _getOrderItemsForOrder(String orderId) async {
+    final records = await _pb.collection('order_items').getFullList(
+          filter: 'order = "$orderId"',
+          expand: 'menu_item,extras,course,removed_ingredients',
+        );
+    var items = records.map((r) {
+      OrderItem item = OrderItem.fromJson(r.toJson());
+      List<Extra> selectedExtras =
+          (r.toJson()['expand']?['extras'] as List<dynamic>?)
+                  ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
+                  .toList() ??
+              [];
+      Course course = Course.fromJson(
+          r.toJson()['expand']?['course'] as Map<String, dynamic>? ?? {});
+      List<Ingredient> removedIngredients =
+          (r.toJson()['expand']?['removed_ingredients'] as List<dynamic>?)
+                  ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
+                  .toList() ??
+              [];
+      return item.copyWith(
+          selectedExtras: selectedExtras,
+          course: course,
+          removedIngredients: removedIngredients);
+    }).toList();
+    return items;
   }
 
   // Helper to get current sessions once

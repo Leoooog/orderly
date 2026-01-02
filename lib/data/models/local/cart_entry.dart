@@ -47,4 +47,9 @@ class CartEntry {
       notes: notes ?? this.notes,
     );
   }
+
+  @override
+  String toString() {
+    return 'CartEntry(internalId: $internalId, quantity: $quantity, item: ${item.name})';
+  }
 }

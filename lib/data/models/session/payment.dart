@@ -88,4 +88,9 @@ class Payment extends BaseModel {
       isDeposit: isDeposit ?? this.isDeposit,
     );
   }
+
+  @override
+  String toString() {
+    return 'Payment{sessionId: $sessionId, amount: $amount, method: $method, processedById: $processedById, transactionRef: $transactionRef, isDeposit: $isDeposit, coveredItems: $coveredItems}';
+  }
 }

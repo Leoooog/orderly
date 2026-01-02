@@ -23,4 +23,12 @@ abstract class BaseModel {
     if (dateStr == null || dateStr == '') return null;
     return DateTime.tryParse(dateStr.toString());
   }
+
+  DateTime? get createdDate => created;
+  DateTime? get updatedDate => updated;
+
+  @override
+  String toString() {
+    return 'BaseModel(id: $id, created: $created, updated: $updated)';
+  }
 }

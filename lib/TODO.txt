@@ -1,2 +1,4 @@
 - possibiltà di rimuovere ingredienti da item dialog
 - controllo ruoli al login
+- visualizzare ingredienti congelati
+- invalidare providers dopo logout

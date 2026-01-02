@@ -37,4 +37,9 @@ class Category extends BaseModel {
       sortOrder: 0,
     );
   }
+
+  @override
+  String toString() {
+    return 'Category{name: $name, sortOrder: $sortOrder}';
+  }
 }

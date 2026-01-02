@@ -114,4 +114,8 @@ class TableSession extends BaseModel {
     );
   }
 
+  @override
+  String toString() {
+    return 'TableSession{tableId: $tableId, waiterId: $waiterId, guestsCount: $guestsCount, status: $status, openedAt: $openedAt, closedAt: $closedAt, notes: $notes, orders: $orders, payments: $payments, voids: $voids}';
+  }
 }

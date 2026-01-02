@@ -113,4 +113,9 @@ class OrderItem extends BaseModel {
       paidQuantity: paidQuantity ?? this.paidQuantity,
     );
   }
+
+  @override
+  String toString() {
+    return 'OrderItem{orderId: $orderId, menuItemId: $menuItemId, quantity: $quantity, status: $status, menuItemName: $menuItemName, notes: $notes, firedAt: $firedAt, paidQuantity: $paidQuantity, selectedExtras: $selectedExtras, removedIngredients: $removedIngredients, course: $course}';
+  }
 }

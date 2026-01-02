@@ -25,4 +25,9 @@ class Ingredient extends BaseModel {
       isFrozen: json['is_frozen'] ?? false,
     );
   }
+
+  @override
+  String toString() {
+    return 'Ingredient{name: $name, isFrozen: $isFrozen}';
+  }
 }

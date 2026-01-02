@@ -41,4 +41,9 @@ class Course extends BaseModel {
       requiresFiring: false,
     );
   }
+
+  @override
+  String toString() {
+    return 'Course{name: $name, sortOrder: $sortOrder, requiresFiring: $requiresFiring}';
+  }
 }

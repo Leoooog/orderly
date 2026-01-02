@@ -22,7 +22,11 @@ class Department extends BaseModel {
       collectionId: json['collectionId'] ?? '',
       collectionName: json['collectionName'] ?? '',
       name: json['name'] ?? '',
-      printerIp: json['printer_ip'],
     );
+  }
+
+  @override
+  String toString() {
+    return 'Department(id: $id, name: $name)';
   }
 }

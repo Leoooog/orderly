@@ -41,4 +41,9 @@ class Restaurant extends BaseModel {
       serviceFeePercent: (json['serviceFeePercent'] ?? 0).toDouble(),
     );
   }
+
+  @override
+  String toString() {
+    return 'Restaurant(id: $id, name: $name)';
+  }
 }

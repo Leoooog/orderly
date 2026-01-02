@@ -33,4 +33,9 @@ class VoidReason extends BaseModel {
       name: '',
     );
   }
+
+  @override
+  String toString() {
+    return 'VoidReason(id: $id, reason: $name)';
+  }
 }
