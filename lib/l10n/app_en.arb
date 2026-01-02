@@ -134,6 +134,7 @@
   "itemStatusCooking": "Cooking",
   "itemStatusReady": "Ready",
   "itemStatusServed": "Served",
+  "itemStatusUnknown": "Unknown",
   "badgeStatusInQueue": "IN QUEUE",
   "badgeStatusCooking": "PREPARING",
   "badgeStatusReady": "READY TO SERVE",
@@ -252,5 +253,7 @@
   "dialogCancel": "Cancel",
   "dialogSave": "Save",
   "dialogEdit": "Edit",
-  "msgAttention": "Attention"
+  "msgAttention": "Attention",
+  "labelRemoveIngredients": "Remove Ingredients",
+  "subtitleRemoveIngredients": "Select ingredients to remove"
 }

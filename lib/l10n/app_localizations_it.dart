@@ -248,6 +248,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get itemStatusServed => 'Servito';
 
   @override
+  String get itemStatusUnknown => 'Sconosciuto';
+
+  @override
   String get badgeStatusInQueue => 'IN CODA';
 
   @override
@@ -458,4 +461,10 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get msgAttention => 'Attenzione';
+
+  @override
+  String get labelRemoveIngredients => 'Rimuovi Ingredienti';
+
+  @override
+  String get subtitleRemoveIngredients => 'Seleziona ingredienti da rimuovere';
 }

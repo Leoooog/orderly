@@ -524,6 +524,12 @@ abstract class AppLocalizations {
   /// **'Servito'**
   String get itemStatusServed;
 
+  /// No description provided for @itemStatusUnknown.
+  ///
+  /// In it, this message translates to:
+  /// **'Sconosciuto'**
+  String get itemStatusUnknown;
+
   /// No description provided for @badgeStatusInQueue.
   ///
   /// In it, this message translates to:
@@ -878,6 +884,18 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Attenzione'**
   String get msgAttention;
+
+  /// No description provided for @labelRemoveIngredients.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuovi Ingredienti'**
+  String get labelRemoveIngredients;
+
+  /// No description provided for @subtitleRemoveIngredients.
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona ingredienti da rimuovere'**
+  String get subtitleRemoveIngredients;
 }
 
 class _AppLocalizationsDelegate

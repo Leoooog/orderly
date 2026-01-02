@@ -1,6 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:orderly/logic/providers/session_provider.dart';
 
-import '../../data/models/config/restaurant.dart';
 import '../../data/models/session/order.dart';
 import '../../data/models/session/order_item.dart';
 import '../../data/models/session/table_session.dart';
@@ -16,18 +17,13 @@ extension SessionTotalCalculation on List<Order> {
 extension CurrencyFormatting on double {
   /// Formatta un double in valuta usando le impostazioni del ristorante.
   /// Esempio: 10.5.toCurrency(restaurant) -> "€ 10,50" (se locale it_IT)
-  String toCurrency(Restaurant? restaurant) {
-    if (restaurant == null) {
-      // Fallback di default
-      return '€ ${toStringAsFixed(2)}';
-    }
+  String toCurrency(WidgetRef ref) {
+    final restaurant = ref.read(sessionProvider).currentRestaurant!;
 
     final format = NumberFormat.currency(
       locale: restaurant.locale,
       symbol: restaurant.currencySymbol,
-      decimalDigits: 2,
     );
-
     return format.format(this);
   }
 }

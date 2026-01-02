@@ -14,7 +14,7 @@ class TableSession extends BaseModel {
   final DateTime? closedAt; // Date
   final String? notes;
 
-  // Relazioni
+  // da inizializzare nel repository
   final List<Order> orders;
   final List<Payment> payments;
   final List<VoidRecord> voids;
@@ -56,22 +56,8 @@ class TableSession extends BaseModel {
       guestsCount: (json['guests_count'] ?? 0).toInt(),
       status: TableSessionStatus.fromString(json['status'] ?? ''),
       openedAt: openedAt,
-      closedAt: json['closed_at'] != null && json['closed_at'] != ''
-          ? DateTime.tryParse(json['closed_at'].toString())
-          : null,
+      closedAt: BaseModel.parseDate(json['closed_at']),
       notes: json['notes'],
-      orders: (json['orders'] as List<dynamic>?)
-              ?.map((e) => Order.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      payments: (json['payments'] as List<dynamic>?)
-              ?.map((e) => Payment.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      voids: (json['voids'] as List<dynamic>?)
-              ?.map((e) => VoidRecord.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
     );
   }
 
@@ -85,13 +71,8 @@ class TableSession extends BaseModel {
       tableId: '',
       waiterId: '',
       guestsCount: 0,
-      status: TableSessionStatus.closed,
+      status: TableSessionStatus.unknown,
       openedAt: DateTime.now(),
-      closedAt: null,
-      notes: null,
-      orders: [],
-      payments: [],
-      voids: [],
     );
   }
 
@@ -132,4 +113,5 @@ class TableSession extends BaseModel {
       voids: voids ?? this.voids,
     );
   }
+
 }

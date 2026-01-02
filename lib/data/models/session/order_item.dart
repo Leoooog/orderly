@@ -9,9 +9,9 @@ class OrderItem extends BaseModel {
   final String orderId; // Relation
   final String menuItemId; // Relation
 
-  final double quantity;
+  final int quantity;
   final OrderItemStatus status; // TYPED
-
+  final String menuItemName; // Snapshot of name
   final String? notes;
   final DateTime? firedAt; // Date
   final double paidQuantity;
@@ -31,6 +31,7 @@ class OrderItem extends BaseModel {
     required this.menuItemId,
     required this.quantity,
     required this.status,
+    required this.menuItemName,
     this.selectedExtras = const [],
     this.removedIngredients = const [],
     required this.course,
@@ -48,13 +49,13 @@ class OrderItem extends BaseModel {
       collectionName: json['collectionName'] ?? '',
       orderId: json['order'] ?? '',
       menuItemId: json['menu_item'] ?? '',
-      course: Course.empty(), // Placeholder
+      course: Course.empty(),
+      // Placeholder
       quantity: (json['quantity'] ?? 0).toDouble(),
       status: OrderItemStatus.fromString(json['status'] ?? ''),
       notes: json['notes'],
-      firedAt: json['fired_at'] != null && json['fired_at'] != ''
-          ? DateTime.tryParse(json['fired_at'].toString())
-          : null,
+      firedAt: BaseModel.parseDateNullable(json['fired_at']),
+      menuItemName: json['menu_item_name'] ?? '',
       paidQuantity: (json['paid_quantity'] ?? 0).toDouble(),
     );
   }
@@ -66,11 +67,12 @@ class OrderItem extends BaseModel {
       updated: DateTime.now(),
       collectionId: '',
       collectionName: '',
+      menuItemName: '',
       orderId: '',
       menuItemId: '',
       course: Course.empty(),
-      quantity: 0.0,
-      status: OrderItemStatus.pending,
+      quantity: 0,
+      status: OrderItemStatus.unknown,
     );
   }
 
@@ -82,8 +84,9 @@ class OrderItem extends BaseModel {
     String? collectionName,
     String? orderId,
     String? menuItemId,
-    double? quantity,
+    int? quantity,
     OrderItemStatus? status,
+    String? menuItemName,
     List<Extra>? selectedExtras,
     List<Ingredient>? removedIngredients,
     Course? course,
@@ -101,6 +104,7 @@ class OrderItem extends BaseModel {
       menuItemId: menuItemId ?? this.menuItemId,
       quantity: quantity ?? this.quantity,
       status: status ?? this.status,
+      menuItemName: menuItemName ?? this.menuItemName,
       selectedExtras: selectedExtras ?? this.selectedExtras,
       removedIngredients: removedIngredients ?? this.removedIngredients,
       course: course ?? this.course,

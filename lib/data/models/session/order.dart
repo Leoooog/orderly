@@ -1,3 +1,4 @@
+import 'package:orderly/data/models/enums/order_item_status.dart';
 import 'package:orderly/data/models/menu/menu_item.dart';
 import 'package:orderly/data/models/session/order_item.dart';
 import 'package:orderly/data/models/session/void_record.dart';
@@ -34,6 +35,18 @@ class Order extends BaseModel {
       sessionId: json['session'] ?? '',
       waiterId: json['waiter'],
       totalAmount: (json['total_amount'] ?? 0).toDouble(),
+    );
+  }
+  factory Order.empty() {
+    return Order(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      sessionId: '',
+      waiterId: '',
+      totalAmount: 0.0,
     );
   }
 }

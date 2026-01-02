@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:orderly/data/models/local/cart_entry.dart';
-import 'package:orderly/data/models/local/table_model.dart';
-import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
+import 'package:orderly/core/utils/extensions.dart';
+import 'package:orderly/data/models/local/table_model.dart';
+import 'package:orderly/data/models/menu/ingredient.dart';
+import 'package:orderly/l10n/app_localizations.dart';
 
 import '../../../../data/models/config/void_reason.dart';
 import '../../../../data/models/enums/order_item_status.dart';
 import '../../../../data/models/menu/course.dart';
 import '../../../../data/models/menu/extra.dart';
+import '../../../../data/models/menu/menu_item.dart';
 import '../../../../data/models/session/order_item.dart';
-import '../../../../data/models/session/void_record.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/tables_provider.dart';
+import '../../providers/void_reasons_provider.dart';
 import 'item_edit_dialog.dart';
 
 class HistoryTab extends ConsumerWidget {
@@ -46,7 +48,8 @@ class HistoryTab extends ConsumerWidget {
           orderItemId: item.id,
           quantity: qty,
           reason: reasonId,
-          notes: notes, refund: refund,
+          notes: notes,
+          refund: refund,
         );
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -55,15 +58,23 @@ class HistoryTab extends ConsumerWidget {
     ));
   }
 
-  void _performUpdate(BuildContext context, WidgetRef ref, OrderItem item,
-      int qty, String note, Course course, List<Extra> extras) {
+  void _performUpdate(
+      BuildContext context,
+      WidgetRef ref,
+      OrderItem item,
+      int qty,
+      String note,
+      Course course,
+      List<Extra> extras,
+      List<Ingredient> removedIngredients) {
     if (table.sessionId == null) return;
-    ref.read(tablesControllerProvider.notifier).updateOrderItem(
+    ref.read(tablesControllerProvider.notifier).updateOrderItemDetails(
           orderItemId: item.id,
           newQty: qty,
-          newNote: note,
-          newCourseId: course.id,
-          newExtrasIds: extras.map((e) => e.id).toList(),
+          newNotes: note,
+          newCourse: course,
+          newExtras: extras,
+          newRemovedIngredients: removedIngredients,
         );
     Navigator.pop(context); // Chiudi dialog
     ScaffoldMessenger.of(context).showSnackBar(
@@ -86,9 +97,10 @@ class HistoryTab extends ConsumerWidget {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Necessario per gestire i constraints custom
-      backgroundColor:
-          Colors.transparent, // TRUCCO: Sfondo trasparente per evitare full screen colorato
+      isScrollControlled: true,
+      // Necessario per gestire i constraints custom
+      backgroundColor: Colors.transparent,
+      // TRUCCO: Sfondo trasparente per evitare full screen colorato
       builder: (ctx) => GestureDetector(
         onTap: () => Navigator.of(ctx).pop(),
         child: Container(
@@ -131,8 +143,7 @@ class HistoryTab extends ConsumerWidget {
                                 AppLocalizations.of(context)!
                                     .labelNoVoidedItems,
                                 style: TextStyle(
-                                    color: colors.textTertiary,
-                                    fontSize: 14))),
+                                    color: colors.textTertiary, fontSize: 14))),
                       )
                     else
                       Flexible(
@@ -144,24 +155,21 @@ class HistoryTab extends ConsumerWidget {
                           itemBuilder: (context, index) {
                             final v = allVoids[index];
                             return ListTile(
-                              title: Text(
-                                  "${v.quantity}x ${v.menuItemName ?? 'N/A'}",
+                              title: Text("${v.quantity}x ${v.menuItemName}",
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14)),
                               subtitle: Text(
                                 AppLocalizations.of(context)!.labelVoidReason(
-                                    v.reason?.reason ?? 'N/A',
+                                    v.reason.name,
                                     v.created.hour.toString(),
-                                    v.created.minute
-                                        .toString()
-                                        .padLeft(2, '0'),
+                                    v.created.minute.toString().padLeft(2, '0'),
                                     v.isRefunded.toString(),
-                                    v.expand.orderItem?.status ?? 'N/A'),
+                                    v.statusWhenVoided.toString()),
                               ),
                               trailing: Text(
                                   v.isRefunded
-                                      ? "-€${v.amount.toStringAsFixed(2)}"
+                                      ? "-€${v.amount.toCurrency(ref)}"
                                       : "",
                                   style: TextStyle(
                                       fontSize: 14,
@@ -223,7 +231,7 @@ class HistoryTab extends ConsumerWidget {
                       children: [
                         Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Text(item.expand.menuItem?.name ?? 'N/A',
+                            child: Text(item.menuItemName,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -267,16 +275,22 @@ class HistoryTab extends ConsumerWidget {
 
   void _showEditDialog(BuildContext context, WidgetRef ref, OrderItem item) {
     // The full MenuItem is already in the OrderItem's expand property
-    final menuItem = item.expand.menuItem;
-    if (menuItem == null) return; // Should not happen
+    final menuItem = ref.read(menuItemsProvider).firstWhere(
+        (mi) => mi.id == item.menuItemId,
+        orElse: () => MenuItem.empty());
 
     showDialog(
       context: context,
       builder: (ctx) => ItemEditDialog(
-        // We need to convert the OrderItem to a CartEntry for the dialog
-        cartEntry: CartEntry.fromOrderItem(item),
-        onSave: (qty, note, course, extras) {
-          _performUpdate(context, ref, item, qty, note, course, extras);
+        item: menuItem,
+        quantity: item.quantity,
+        notes: item.notes ?? '',
+        course: item.course,
+        selectedExtras: item.selectedExtras,
+        removedIngredients: item.removedIngredients,
+        onSave: (qty, note, course, extras, removedIngredients) {
+          _performUpdate(context, ref, item, qty, note, course, extras,
+              removedIngredients);
         },
       ),
     );
@@ -284,11 +298,9 @@ class HistoryTab extends ConsumerWidget {
 
   void _showVoidDialog(BuildContext context, WidgetRef ref, OrderItem item) {
     int qtyToVoid = 1;
-    String? selectedReasonId;
+    VoidReason? selectedReason;
     bool isRefunded = true;
     final TextEditingController pinController = TextEditingController();
-    final voidReasonsAsync =
-        ref.watch(menuDataProvider.select((data) => data.value?.voidReasons));
 
     showDialog(
       context: context,
@@ -309,7 +321,7 @@ class HistoryTab extends ConsumerWidget {
                   children: [
                     Text(
                         AppLocalizations.of(context)!
-                            .titleVoidItemDialog(item.expand.menuItem?.name ?? 'N/A'),
+                            .titleVoidItemDialog(item.menuItemName),
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 16),
@@ -378,31 +390,39 @@ class HistoryTab extends ConsumerWidget {
                             .labelVoidReasonPlaceholder,
                         style: TextStyle(
                             fontSize: 12, color: colors.textSecondary)),
-                    if (voidReasonsAsync != null)
-                      Wrap(
-                          spacing: 8,
-                          children: voidReasonsAsync
-                              .map((r) => ChoiceChip(
-                                    checkmarkColor: colors.textInverse,
-                                    label: Text(r.reason,
-                                        style: const TextStyle(fontSize: 12)),
-                                    selected: selectedReasonId == r.id,
-                                    onSelected: (v) => setStateDialog(
-                                        () => selectedReasonId = v ? r.id : null),
-                                    selectedColor: colors.danger,
-                                    labelStyle: TextStyle(
-                                        color: selectedReasonId == r.id
-                                            ? colors.textInverse
-                                            : colors.textPrimary,
-                                        fontSize: 12),
-                                    side: BorderSide.none,
-                                    backgroundColor: colors.background,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8)),
-                                  ))
-                              .toList())
-                    else
-                      const LinearProgressIndicator(),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final voidReasonsAsync = ref.watch(voidReasonsProvider);
+                        return voidReasonsAsync.when(
+                          data: (reasons) => Wrap(
+                            spacing: 8,
+                            children: reasons
+                                .map((r) => ChoiceChip(
+                                      checkmarkColor: colors.textInverse,
+                                      label: Text(r.name,
+                                          style: const TextStyle(fontSize: 12)),
+                                      selected: selectedReason?.id == r.id,
+                                      onSelected: (v) => setStateDialog(
+                                          () => selectedReason = v ? r : null),
+                                      selectedColor: colors.danger,
+                                      labelStyle: TextStyle(
+                                          color: selectedReason?.id == r.id
+                                              ? colors.textInverse
+                                              : colors.textPrimary,
+                                          fontSize: 12),
+                                      side: BorderSide.none,
+                                      backgroundColor: colors.background,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8)),
+                                    ))
+                                .toList(),
+                          ),
+                          loading: () => const LinearProgressIndicator(),
+                          error: (err, stack) => Text('Error: $err'),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: pinController,
@@ -428,11 +448,11 @@ class HistoryTab extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: colors.danger,
                     foregroundColor: colors.textInverse),
-                onPressed: (selectedReasonId != null &&
-                        pinController.text == "1234")
-                    ? () => _performVoid(
-                        context, ref, item, qtyToVoid, selectedReasonId!, null)
-                    : null,
+                onPressed:
+                    (selectedReason != null && pinController.text == "1234")
+                        ? () => _performVoid(context, ref, item, qtyToVoid,
+                            selectedReason!, isRefunded, null)
+                        : null,
                 child: Text(AppLocalizations.of(context)!.dialogConfirmVoid),
               )
             ],
@@ -452,10 +472,7 @@ class HistoryTab extends ConsumerWidget {
     final double maxWidth = isTablet ? 700 : double.infinity;
 
     final orders = table.activeSession?.orders ?? [];
-    final voids = table.activeSession?.orders
-            .expand((order) => order.items.expand((item) => item.voids))
-            .toList() ??
-        [];
+    final voids = table.activeSession?.voids ?? [];
 
     if (orders.isEmpty) {
       return Center(
@@ -482,7 +499,7 @@ class HistoryTab extends ConsumerWidget {
     for (var course in allCourses) {
       final items = orders
           .expand((o) => o.items)
-          .where((item) => item.expand.menuItem?.course?.id == course.id)
+          .where((item) => item.course.id == course.id)
           .toList();
       if (items.isNotEmpty) groupedOrders[course] = items;
     }
@@ -564,8 +581,8 @@ class HistoryTab extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: colors.primary,
                     foregroundColor: colors.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     textStyle: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 12)),
               )
@@ -683,6 +700,12 @@ class HistoryTab extends ConsumerWidget {
         statusLabel = AppLocalizations.of(context)!.itemStatusServed;
         opacity = 0.5;
         break;
+      case OrderItemStatus.unknown:
+        bgColor = colors.surface;
+        iconColor = colors.textTertiary;
+        icon = Icons.help_outline;
+        statusLabel = AppLocalizations.of(context)!.itemStatusUnknown;
+        break;
     }
 
     final borderRadius = BorderRadius.vertical(
@@ -734,15 +757,15 @@ class HistoryTab extends ConsumerWidget {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.expand.menuItem?.name ?? 'N/A',
+                        Text(item.menuItemName,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: colors.textPrimary)),
-                        if (item.expand.extras.isNotEmpty)
+                        if (item.selectedExtras.isNotEmpty)
                           Text(
-                              item.expand.extras
+                              item.selectedExtras
                                   .map((e) => "+ ${e.name}")
                                   .join(", "),
                               maxLines: 2,
@@ -794,4 +817,3 @@ class HistoryTab extends ConsumerWidget {
     );
   }
 }
-

@@ -10,6 +10,9 @@ import 'package:orderly/logic/providers/session_provider.dart';
 import '../../../data/models/config/table.dart';
 import '../../../data/models/enums/order_item_status.dart';
 import '../../../data/models/enums/table_status.dart';
+import '../../../data/models/menu/course.dart';
+import '../../../data/models/menu/extra.dart';
+import '../../../data/models/menu/ingredient.dart';
 import '../../../data/models/session/order.dart';
 import '../../../data/models/session/table_session.dart';
 import '../../../data/models/local/table_model.dart';
@@ -19,6 +22,7 @@ import '../../../data/repositories/i_orderly_repository.dart';
 final tablesListProvider = FutureProvider<List<Table>>((ref) async {
    return ref.watch(sessionProvider).repository!.getTables();
 });
+
 
 /// Stream delle sessioni APERTE.
 /// Il repository deve ritornare solo le sessioni con status != 'closed'.
@@ -217,8 +221,9 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     final itemsToFire = table.activeSession!.orders
         .expand((order) => order.items)
         .where((item) =>
-            item.courseId == courseId &&
-            item.status == OrderItemStatus.pending)
+            item.course.id == courseId &&
+            item.status == OrderItemStatus.pending &&
+            item.course.requiresFiring)
         .toList();
 
     for (final item in itemsToFire) {
@@ -231,19 +236,21 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
         orderItemId, OrderItemStatus.served);
   }
 
-  Future<void> updateOrderItem({
+  Future<void> updateOrderItemDetails({
     required String orderItemId,
     required int newQty,
-    required String newNote,
-    required String newCourseId,
-    required List<String> newExtrasIds,
+    required String newNotes,
+    required Course newCourse,
+    required List<Extra> newExtras,
+    required List<Ingredient> newRemovedIngredients,
   }) async {
     await _repository.updateOrderItem(
       orderItemId: orderItemId,
       newQty: newQty,
-      newNote: newNote,
-      newCourseId: newCourseId,
-      newExtrasIds: newExtrasIds,
+      newNotes: newNotes,
+      newCourse: newCourse,
+      newExtras: newExtras,
+      newRemovedIngredients: newRemovedIngredients,
     );
   }
 
@@ -257,6 +264,7 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     }
     return null;
   }
+
 
 
 }

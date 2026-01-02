@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:orderly/config/orderly_colors.dart';
 import 'package:orderly/data/models/local/table_model.dart';
 import 'package:orderly/l10n/app_localizations.dart';
-import 'package:orderly/config/orderly_colors.dart';
 import 'package:orderly/logic/providers/session_provider.dart';
 import 'package:vibration/vibration.dart';
 
@@ -11,7 +11,6 @@ import '../../../core/utils/extensions.dart';
 import '../../../data/models/enums/table_status.dart';
 import '../../../shared/widgets/payment_method_button.dart';
 import '../providers/tables_provider.dart';
-import 'bill_screen.dart';
 import 'widgets/table_card.dart';
 
 class TablesView extends ConsumerStatefulWidget {
@@ -172,7 +171,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                           Text(AppLocalizations.of(context)!.actionSplitDesc),
                       onTap: () {
                         Navigator.pop(ctx);
-                        _openSplitBillScreen(table);
+                        //_openSplitBillScreen(table);
                       },
                     ),
                     const Divider(),
@@ -197,43 +196,43 @@ class _TablesViewState extends ConsumerState<TablesView> {
 
   // --- DIALOGS ---
 
-  void _openSplitBillScreen(TableUiModel table) {
-    if (table.sessionId == null) return;
-    final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
-    final double maxWidth = isTablet ? 700 : double.infinity;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      useRootNavigator: true,
-      builder: (ctx) => Align(
-        alignment: Alignment.center,
-        child: Container(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          decoration: BoxDecoration(
-              color: context.colors.background,
-              borderRadius:
-                  isTablet ? const BorderRadius.vertical(top: Radius.circular(20)) : null),
-          height: MediaQuery.sizeOf(context).height * (isTablet ? 0.85 : 1.0),
-          child: ClipRRect(
-            borderRadius: isTablet
-                ? const BorderRadius.vertical(top: Radius.circular(20))
-                : BorderRadius.zero,
-            child: BillScreen(
-              table: table,
-              onConfirmPayment: (paidItemIds) {
-                ref
-                    .read(tablesControllerProvider.notifier)
-                    .processPayment(table.sessionId!, paidItemIds);
-                // The UI will update automatically via the stream
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // void _openSplitBillScreen(TableUiModel table) {
+  //   if (table.sessionId == null) return;
+  //   final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
+  //   final double maxWidth = isTablet ? 700 : double.infinity;
+  //
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: Colors.transparent,
+  //     useRootNavigator: true,
+  //     builder: (ctx) => Align(
+  //       alignment: Alignment.center,
+  //       child: Container(
+  //         constraints: BoxConstraints(maxWidth: maxWidth),
+  //         decoration: BoxDecoration(
+  //             color: context.colors.background,
+  //             borderRadius:
+  //                 isTablet ? const BorderRadius.vertical(top: Radius.circular(20)) : null),
+  //         height: MediaQuery.sizeOf(context).height * (isTablet ? 0.85 : 1.0),
+  //         child: ClipRRect(
+  //           borderRadius: isTablet
+  //               ? const BorderRadius.vertical(top: Radius.circular(20))
+  //               : BorderRadius.zero,
+  //           child: BillScreen(
+  //             table: table,
+  //             onConfirmPayment: (paidItemIds) {
+  //               ref
+  //                   .read(tablesControllerProvider.notifier)
+  //                   .processPayment(table.sessionId!, paidItemIds);
+  //               // The UI will update automatically via the stream
+  //             },
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   void _showConfirmCancelDialog(TableUiModel table) {
     final TextEditingController pinController = TextEditingController();
@@ -343,7 +342,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
                       fontWeight: FontWeight.bold,
                       color: context.colors.textPrimary)),
               const SizedBox(height: 8),
-              Text("€ ${table.activeSession?.totalAmount.toStringAsFixed(2) ?? '0.00'}",
+              Text((table.activeSession?.totalAmount ?? 0).toCurrency(ref),
                   style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.w900,
@@ -567,7 +566,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
           {};
 
       if (nextReadyIds.difference(prevReadyIds).isNotEmpty) {
-        if (await Vibration.hasVibrator() ?? false) {
+        if (await Vibration.hasVibrator()) {
           Vibration.vibrate(duration: 500);
         }
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:orderly/data/models/restaurant_settings.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
@@ -6,7 +7,10 @@ import 'package:orderly/shared/widgets/circle_button.dart';
 import 'package:orderly/shared/widgets/quantity_control_button.dart';
 import 'package:orderly/shared/widgets/payment_method_button.dart';
 
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/order_item.dart';
+import '../../../data/models/session/order_item.dart';
+import '../../../data/models/session/table_session.dart';
 import '../../../data/models/table_item.dart';
 
 class BillScreen extends StatefulWidget {
@@ -225,7 +229,7 @@ class _BillScreenState extends State<BillScreen>
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _buildByItemView(),
-                  _buildSplitEvenlyView(),
+                  _buildSplitEvenlyView(ref),
                 ],
               ),
             ),
@@ -444,7 +448,7 @@ class _BillScreenState extends State<BillScreen>
   }
 
   // --- VISTA 2: ALLA ROMANA ---
-  Widget _buildSplitEvenlyView() {
+  Widget _buildSplitEvenlyView(WidgetRef ref) {
     final colors = context.colors;
     final double totalAmount = widget.table.totalAmount;
     final double amountPerPerson =
@@ -593,7 +597,7 @@ class _BillScreenState extends State<BillScreen>
                         ),
                         const Spacer(),
                         Text(
-                          amountPerPerson.toCurrency(),
+                          amountPerPerson.toCurrency(ref),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,

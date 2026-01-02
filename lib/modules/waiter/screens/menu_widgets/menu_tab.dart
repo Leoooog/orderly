@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/core/utils/extensions.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import 'package:orderly/config/orderly_colors.dart';
 
@@ -71,7 +72,7 @@ class _MenuTabState extends ConsumerState<MenuTab>
     if (categoryId == 'ALL') {
       return allItems;
     }
-    return allItems.where((item) => item.category?.id == categoryId).toList();
+    return allItems.where((item) => item.category.id == categoryId).toList();
   }
 
   @override
@@ -233,6 +234,7 @@ class _MenuTabState extends ConsumerState<MenuTab>
                                   },
                                   onExpand: () =>
                                       _toggleProductExpansion(item.id),
+                                  ref: ref
                                 );
                               },
                             ),
@@ -288,6 +290,7 @@ class _ProductCard extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onAdd;
   final VoidCallback onExpand;
+  final WidgetRef ref;
 
   const _ProductCard({
     super.key,
@@ -296,6 +299,7 @@ class _ProductCard extends StatelessWidget {
     required this.isExpanded,
     required this.onAdd,
     required this.onExpand,
+    required this.ref
   });
 
   @override
@@ -366,7 +370,7 @@ class _ProductCard extends StatelessWidget {
                         fontSize: 16,
                         color: colors.textPrimary)),
                 const SizedBox(height: 4),
-                Text("€ ${item.price.toStringAsFixed(2)}",
+                Text(item.price.toCurrency(ref),
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: colors.primary,

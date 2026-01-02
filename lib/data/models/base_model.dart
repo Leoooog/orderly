@@ -18,4 +18,9 @@ abstract class BaseModel {
     if (dateStr == null || dateStr == '') return DateTime.now();
     return DateTime.tryParse(dateStr.toString()) ?? DateTime.now();
   }
+
+  static DateTime? parseDateNullable(dynamic dateStr) {
+    if (dateStr == null || dateStr == '') return null;
+    return DateTime.tryParse(dateStr.toString());
+  }
 }

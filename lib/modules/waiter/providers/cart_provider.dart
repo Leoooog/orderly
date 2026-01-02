@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:orderly/data/models/local/cart_entry.dart';
 import '../../../data/models/menu/course.dart';
 import '../../../data/models/menu/extra.dart';
+import '../../../data/models/menu/ingredient.dart';
 import '../../../data/models/menu/menu_item.dart';
 
 final cartProvider =
@@ -80,13 +81,14 @@ class CartNotifier extends Notifier<List<CartEntry>> {
 
   // --- Logica di modifica e unione per il carrello ---
   void updateItemConfig(CartEntry originalItem, int qtyToModify, String newNote,
-      Course newCourse, List<Extra> newExtras) {
+      Course newCourse, List<Extra> newExtras, List<Ingredient> removedIngredients) {
     if (qtyToModify <= 0 || qtyToModify > originalItem.quantity) return;
 
     // Se non è cambiato nulla, non fare niente
     if (originalItem.notes == newNote &&
         originalItem.course.id == newCourse.id &&
-        _areExtrasEqual(originalItem.selectedExtras, newExtras)) {
+        _areExtrasEqual(originalItem.selectedExtras, newExtras) &&
+        _areIngredientsEqual(originalItem.removedIngredients, removedIngredients)) {
       return;
     }
 
@@ -105,6 +107,7 @@ class CartNotifier extends Notifier<List<CartEntry>> {
         notes: newNote,
         course: newCourse,
         selectedExtras: newExtras,
+        removedIngredients: removedIngredients,
       );
       _mergeOrAdd(newState, newItem);
     } else {
@@ -114,6 +117,7 @@ class CartNotifier extends Notifier<List<CartEntry>> {
         notes: newNote,
         course: newCourse,
         selectedExtras: newExtras,
+        removedIngredients: removedIngredients,
       );
       _mergeOrAdd(newState, updatedItem, insertAt: index);
     }
@@ -126,8 +130,7 @@ class CartNotifier extends Notifier<List<CartEntry>> {
         o.notes == newItem.notes &&
         o.course.id == newItem.course.id &&
         _areExtrasEqual(o.selectedExtras, newItem.selectedExtras) &&
-        o.removedIngredients.isEmpty && // Semplificazione: non uniamo se ci sono ingredienti rimossi
-        newItem.removedIngredients.isEmpty);
+        _areIngredientsEqual(o.removedIngredients, newItem.removedIngredients));
 
     if (mergeTargetIndex != -1) {
       final target = items[mergeTargetIndex];
@@ -143,6 +146,13 @@ class CartNotifier extends Notifier<List<CartEntry>> {
   }
 
   bool _areExtrasEqual(List<Extra> a, List<Extra> b) {
+    if (a.length != b.length) return false;
+    final aIds = a.map((e) => e.id).toSet();
+    final bIds = b.map((e) => e.id).toSet();
+    return aIds.containsAll(bIds);
+  }
+
+  bool _areIngredientsEqual(List<Ingredient> a, List<Ingredient> b) {
     if (a.length != b.length) return false;
     final aIds = a.map((e) => e.id).toSet();
     final bIds = b.map((e) => e.id).toSet();

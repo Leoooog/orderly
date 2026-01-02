@@ -1,4 +1,5 @@
 import 'package:orderly/data/models/config/void_reason.dart';
+import 'package:orderly/data/models/enums/order_item_status.dart';
 import 'package:orderly/data/models/session/order_item.dart';
 
 import '../base_model.dart';
@@ -10,10 +11,12 @@ class VoidRecord extends BaseModel {
   final int quantity;
   final bool isRefunded;
   final String? notes;
-  final OrderItem? orderItem;
+  final OrderItemStatus statusWhenVoided;
+  final double amount;
 
   // Da inizializzare nel repository
   final VoidReason reason; // Relation
+  final OrderItem? orderItem;
 
   VoidRecord({
     required super.id,
@@ -24,6 +27,8 @@ class VoidRecord extends BaseModel {
     required this.reason,
     required this.quantity,
     required this.isRefunded,
+    required this.statusWhenVoided,
+    required this.amount,
     this.notes,
     this.orderItem,
     required this.sessionId,
@@ -44,6 +49,9 @@ class VoidRecord extends BaseModel {
       sessionId: json['session'] ?? '',
       menuItemId: json['menu_item'] ?? '',
       menuItemName: json['menu_item_name'] ?? '',
+      amount: (json['amount'] ?? 0).toDouble(),
+      statusWhenVoided:
+          OrderItemStatus.fromString(json['status_when_voided'] ?? ''),
       // Relational fields are initialized empty and populated by the repository
       reason: VoidReason.empty(),
       orderItem: OrderItem.empty(),
@@ -59,6 +67,8 @@ class VoidRecord extends BaseModel {
       collectionName: '',
       quantity: 0,
       isRefunded: false,
+      amount: 0.0,
+      statusWhenVoided: OrderItemStatus.unknown,
       sessionId: '',
       menuItemId: '',
       menuItemName: '',
@@ -75,6 +85,8 @@ class VoidRecord extends BaseModel {
     String? sessionId,
     String? menuItemId,
     String? menuItemName,
+    OrderItemStatus? statusWhenVoided,
+    double? amount,
     int? quantity,
     bool? isRefunded,
     String? notes,
@@ -92,6 +104,8 @@ class VoidRecord extends BaseModel {
       menuItemName: menuItemName ?? this.menuItemName,
       quantity: quantity ?? this.quantity,
       isRefunded: isRefunded ?? this.isRefunded,
+      amount: amount ?? this.amount,
+      statusWhenVoided: statusWhenVoided ?? this.statusWhenVoided,
       notes: notes ?? this.notes,
       orderItem: orderItem ?? this.orderItem,
       reason: reason ?? this.reason,

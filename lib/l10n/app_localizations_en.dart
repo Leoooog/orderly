@@ -248,6 +248,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemStatusServed => 'Served';
 
   @override
+  String get itemStatusUnknown => 'Unknown';
+
+  @override
   String get badgeStatusInQueue => 'IN QUEUE';
 
   @override
@@ -458,4 +461,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get msgAttention => 'Attention';
+
+  @override
+  String get labelRemoveIngredients => 'Remove Ingredients';
+
+  @override
+  String get subtitleRemoveIngredients => 'Select ingredients to remove';
 }

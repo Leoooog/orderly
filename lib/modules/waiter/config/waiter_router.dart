@@ -7,7 +7,6 @@ import 'package:orderly/logic/providers/session_provider.dart';
 import 'package:orderly/modules/waiter/screens/login_screen.dart';
 import 'package:orderly/shared/widgets/tenant_selection_screen.dart';
 
-import '../screens/bill_screen.dart';
 import '../screens/menu_view.dart';
 import '../screens/settings_screen.dart';
 import '../screens/success_view.dart';
@@ -20,6 +19,7 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
 
 final waiterRouterProvider = Provider<GoRouter>((ref) {
   final session = ref.watch(sessionProvider);
+
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -37,7 +37,8 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
       final isLoginScreen = location.startsWith('/login');
 
       // Se il tenant non è configurato, forza la schermata di selezione
-      if (appState == AppState.tenantSetup || appState == AppState.tenantError) {
+      if (appState == AppState.tenantSetup ||
+          appState == AppState.tenantError) {
         return isTenantScreen ? null : '/tenant-selection';
       }
 
@@ -56,6 +57,10 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/',
+        redirect: (_, __) => '/tables',
+      ),
       GoRoute(
         path: '/tenant-selection',
         builder: (context, state) => const TenantSelectionScreen(),
@@ -84,7 +89,10 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
             name: 'menu',
             pageBuilder: (context, state) {
               final tableId = state.pathParameters['tableId']!;
-              return NoTransitionPage(child: MenuView(tableId: tableId));
+              return NoTransitionPage(
+                  child: MenuView(
+                tableSessionId: tableId,
+              ));
             },
           ),
           GoRoute(
@@ -92,17 +100,16 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: SettingsScreen()),
           ),
-          GoRoute(
-            path: '/success/:tableName',
-            name: 'success',
-            parentNavigatorKey: _rootNavigatorKey,
-            builder: (context, state) {
-              final tableName = state.pathParameters['tableName']!;
-              return SuccessView(tableName: tableName);
-            }
-          ),
         ],
       ),
+      GoRoute(
+          path: '/success/:tableName',
+          name: 'success',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) {
+            final tableName = state.pathParameters['tableName']!;
+            return SuccessView(tableName: tableName);
+          }),
     ],
   );
 });

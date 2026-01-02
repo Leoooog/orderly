@@ -1,5 +1,6 @@
 import 'package:orderly/data/models/config/restaurant.dart';
 import 'package:orderly/data/models/config/void_reason.dart';
+import 'package:orderly/data/models/menu/ingredient.dart';
 import 'package:orderly/data/models/session/order.dart';
 import 'package:orderly/data/models/session/table_session.dart';
 import 'package:orderly/data/models/user.dart';
@@ -10,6 +11,7 @@ import '../models/enums/order_item_status.dart';
 import '../models/local/cart_entry.dart';
 import '../models/menu/category.dart';
 import '../models/menu/course.dart';
+import '../models/menu/extra.dart';
 import '../models/menu/menu_item.dart';
 
 /// Defines the contract for data operations within the Orderly app.
@@ -92,8 +94,9 @@ abstract class IOrderlyRepository {
   Future<void> updateOrderItem({
     required String orderItemId,
     required int newQty,
-    required String newNote,
-    required String newCourseId,
-    required List<String> newExtrasIds,
+    required String newNotes,
+    required Course newCourse,
+    required List<Extra> newExtras,
+    required List<Ingredient> newRemovedIngredients,
   });
 }

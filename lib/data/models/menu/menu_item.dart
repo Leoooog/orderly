@@ -55,6 +55,26 @@ class MenuItem extends BaseModel {
     );
   }
 
+  factory MenuItem.empty() {
+    return MenuItem(
+      id: '',
+      created: DateTime.now(),
+      updated: DateTime.now(),
+      collectionId: '',
+      collectionName: '',
+      name: '',
+      description: null,
+      price: 0.0,
+      category: Category.empty(),
+      isAvailable: true,
+      ingredients: [],
+      allergens: [],
+      allowedExtras: [],
+      producedBy: [],
+      image: null,
+    );
+  }
+
   MenuItem copyWith({
     String? id,
     DateTime? created,

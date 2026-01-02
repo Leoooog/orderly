@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:orderly/core/utils/extensions.dart';
 import 'package:orderly/data/models/local/cart_entry.dart';
 import 'package:orderly/data/models/menu/course.dart';
 import 'package:orderly/l10n/app_localizations.dart';
@@ -45,11 +46,16 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     showDialog(
       context: context,
       builder: (ctx) => ItemEditDialog(
-        cartEntry: entry,
-        onSave: (qty, note, course, extras) {
+        item: entry.item,
+        notes: entry.notes ?? '',
+        course: entry.course,
+        selectedExtras: entry.selectedExtras,
+        removedIngredients: entry.removedIngredients,
+        quantity: entry.quantity,
+        onSave: (qty, note, course, extras, removedIngredients) {
           ref
               .read(cartProvider.notifier)
-              .updateItemConfig(entry, qty, note, course, extras);
+              .updateItemConfig(entry, qty, note, course, extras, removedIngredients);
           Navigator.pop(ctx);
         },
       ),
@@ -165,7 +171,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                             Row(
                               children: [
                                 Text(
-                                    "€ ${cart.fold(0.0, (s, entry) => s + entry.totalItemPrice).toStringAsFixed(2)}",
+                                    cart.fold(0.0, (s, entry) => s + entry.totalItemPrice).toCurrency(ref),
                                     style: const TextStyle(
                                         fontFamily: 'RobotoMono',
                                         fontWeight: FontWeight.bold,
@@ -253,7 +259,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                       fontWeight: FontWeight.bold, fontSize: 14)),
             ),
             const SizedBox(width: 8),
-            Text("€ ${entry.totalItemPrice.toStringAsFixed(2)}",
+            Text(entry.totalItemPrice.toCurrency(ref),
                 style: TextStyle(fontSize: 12, color: colors.textSecondary)),
           ]),
           if (hasExtras)

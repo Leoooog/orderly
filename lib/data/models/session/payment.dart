@@ -54,7 +54,7 @@ class Payment extends BaseModel {
       collectionName: '',
       sessionId: '',
       amount: 0.0,
-      method: PaymentMethod.cash,
+      method: PaymentMethod.unknown,
       processedById: '',
     );
   }

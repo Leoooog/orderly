@@ -88,9 +88,8 @@ class PocketBaseRepository implements IOrderlyRepository {
 
   @override
   Future<List<MenuItem>> getMenuItems() async {
-    final records = await _pb
-        .collection('menu_items')
-        .getFullList(expand: 'category,allergens,extras,ingredients,produced_by');
+    final records = await _pb.collection('menu_items').getFullList(
+        expand: 'category,allergens,extras,ingredients,produced_by');
     return records.map((r) {
       MenuItem item = MenuItem.fromJson(r.toJson());
       Category? category =
@@ -109,13 +108,13 @@ class PocketBaseRepository implements IOrderlyRepository {
               ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [];
-      List<Department> producedBy =
-          (r.toJson()['expand']?['produced_by'] != null)
-              ? [
-                  Department.fromJson(
-                      r.toJson()['expand']!['produced_by'] as Map<String, dynamic>)
-                ]
-              : [];
+      List<Department> producedBy = (r.toJson()['expand']?['produced_by'] !=
+              null)
+          ? [
+              Department.fromJson(
+                  r.toJson()['expand']!['produced_by'] as Map<String, dynamic>)
+            ]
+          : [];
 
       return item.copyWith(
           category: category,
@@ -375,18 +374,19 @@ class PocketBaseRepository implements IOrderlyRepository {
   }
 
   @override
-  Future<void> updateOrderItem({
-    required String orderItemId,
-    required int newQty,
-    required String newNote,
-    required String newCourseId,
-    required List<String> newExtrasIds,
-  }) async {
+  Future<void> updateOrderItem(
+      {required String orderItemId,
+      required int newQty,
+      required String newNotes,
+      required Course newCourse,
+      required List<Extra> newExtras,
+      required List<Ingredient> newRemovedIngredients}) async {
     final body = {
       'quantity': newQty,
-      'notes': newNote,
-      'course': newCourseId,
-      'extras': newExtrasIds,
+      'notes': newNotes,
+      'selected_extras': newExtras.map((e) => e.id).toList(),
+      'removed_ingredients': newRemovedIngredients.map((e) => e.id).toList(),
+      'course': newCourse.id,
     };
     await _pb.collection('order_items').update(orderItemId, body: body);
   }

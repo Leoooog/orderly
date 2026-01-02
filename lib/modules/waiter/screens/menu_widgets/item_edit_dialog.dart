@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:orderly/data/models/local/cart_entry.dart';
+import 'package:orderly/core/utils/extensions.dart';
+import 'package:orderly/data/models/menu/ingredient.dart';
+import 'package:orderly/data/models/menu/menu_item.dart';
 import 'package:orderly/l10n/app_localizations.dart';
 import '../../../../config/orderly_colors.dart';
 import '../../../../data/models/menu/course.dart';
@@ -8,14 +10,26 @@ import '../../../../data/models/menu/extra.dart';
 import '../../providers/menu_provider.dart';
 
 class ItemEditDialog extends ConsumerStatefulWidget {
-  final CartEntry cartEntry;
+  final String notes;
+  final Course course;
+  final List<Extra> selectedExtras;
+  final List<Ingredient> removedIngredients;
+  final int quantity;
+  final MenuItem item;
+
   // Callback updated with qty
-  final Function(int qty, String note, Course course, List<Extra> extras) onSave;
+  final Function(int qty, String note, Course course, List<Extra> extras, List<Ingredient> removedIngredients)
+      onSave;
 
   const ItemEditDialog({
     super.key,
-    required this.cartEntry,
     required this.onSave,
+    required this.notes,
+    required this.course,
+    required this.selectedExtras,
+    required this.removedIngredients,
+    required this.quantity,
+    required this.item,
   });
 
   @override
@@ -26,14 +40,16 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
   late TextEditingController _noteController;
   late Course _selectedCourse;
   late List<Extra> _currentExtras;
+  late List<Ingredient> _currentRemovedIngredients;
   late int _qtyToModify;
 
   @override
   void initState() {
     super.initState();
-    _noteController = TextEditingController(text: widget.cartEntry.notes);
-    _selectedCourse = widget.cartEntry.course;
-    _currentExtras = List.from(widget.cartEntry.selectedExtras);
+    _noteController = TextEditingController(text: widget.notes);
+    _selectedCourse = widget.course;
+    _currentExtras = List.from(widget.selectedExtras);
+    _currentRemovedIngredients = List.from(widget.removedIngredients);
     // By default, if we are editing, we start by modifying 1 unit (for the split)
     // or the total quantity if it is 1.
     _qtyToModify = 1;
@@ -51,7 +67,7 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final allCourses = ref.watch(coursesProvider);
-    final int maxQty = widget.cartEntry.quantity;
+    final int maxQty = widget.quantity;
 
     return AlertDialog(
       backgroundColor: colors.surface,
@@ -76,7 +92,7 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
           children: [
             Text(
                 AppLocalizations.of(context)!
-                    .cartEditingItem(widget.cartEntry.item.name),
+                    .cartEditingItem(widget.item.name),
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13.0,
@@ -147,7 +163,8 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
                   label: Text(course.name,
                       style: TextStyle(
                           fontSize: 12.0,
-                          color: isSel ? colors.onPrimary : colors.textPrimary)),
+                          color:
+                              isSel ? colors.onPrimary : colors.textPrimary)),
                   selected: isSel,
                   selectedColor: colors.primary,
                   backgroundColor: colors.background,
@@ -158,7 +175,7 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
             ),
 
             // --- EXTRA SELECTION ---
-            if (widget.cartEntry.item.allowedExtras.isNotEmpty) ...[
+            if (widget.item.allowedExtras.isNotEmpty) ...[
               const SizedBox(height: 16.0),
               Text(AppLocalizations.of(context)!.labelExtras,
                   style: TextStyle(
@@ -169,12 +186,12 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
               Wrap(
                 spacing: 8.0,
                 runSpacing: 8.0,
-                children: widget.cartEntry.item.allowedExtras.map((extra) {
+                children: widget.item.allowedExtras.map((extra) {
                   final isSelected =
                       _currentExtras.any((e) => e.id == extra.id);
                   return FilterChip(
                     label: Text(
-                        "${extra.name} (+€${extra.price.toStringAsFixed(2)})",
+                        "${extra.name} (+${extra.price.toCurrency(ref)})",
                         style: const TextStyle(fontSize: 12.0)),
                     selected: isSelected,
                     onSelected: (selected) {
@@ -192,12 +209,54 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
                     labelStyle: TextStyle(
                         fontSize: 12.0,
                         color: isSelected ? colors.warning : colors.textPrimary,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal),
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal),
                     side: BorderSide(
-                        color:
-                            isSelected ? colors.warning : colors.divider),
+                        color: isSelected ? colors.warning : colors.divider),
+                  );
+                }).toList(),
+              ),
+            ],
+
+            // --- INGREDIENT REMOVAL ---
+            if (widget.item.ingredients.isNotEmpty) ...[
+              const SizedBox(height: 16.0),
+              Text(AppLocalizations.of(context)!.labelRemoveIngredients,
+                  style: TextStyle(
+                      fontSize: 12.0,
+                      color: colors.textSecondary,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8.0),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: widget.item.ingredients.map((ingredient) {
+                  final isRemoved = _currentRemovedIngredients
+                      .any((i) => i.id == ingredient.id);
+                  return FilterChip(
+                    label: Text(ingredient.name,
+                        style: const TextStyle(fontSize: 12.0)),
+                    selected: isRemoved,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _currentRemovedIngredients.add(ingredient);
+                        } else {
+                          _currentRemovedIngredients
+                              .removeWhere((i) => i.id == ingredient.id);
+                        }
+                      });
+                    },
+                    backgroundColor: colors.background,
+                    selectedColor: colors.dangerContainer,
+                    checkmarkColor: colors.danger,
+                    labelStyle: TextStyle(
+                        fontSize: 12.0,
+                        color: isRemoved ? colors.danger : colors.textPrimary,
+                        fontWeight:
+                            isRemoved ? FontWeight.bold : FontWeight.normal),
+                    side: BorderSide(
+                        color: isRemoved ? colors.danger : colors.divider),
                   );
                 }).toList(),
               ),
@@ -216,8 +275,7 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
               maxLines: 2,
               decoration: InputDecoration(
                   filled: true,
-                  hintText:
-                      AppLocalizations.of(context)!.fieldNotesPlaceholder,
+                  hintText: AppLocalizations.of(context)!.fieldNotesPlaceholder,
                   fillColor: colors.background),
             )
           ],
@@ -228,8 +286,8 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: colors.primary,
             foregroundColor: colors.onPrimary,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0)),
           ),
           onPressed: () {
             widget.onSave(
@@ -237,6 +295,7 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
               _noteController.text,
               _selectedCourse,
               _currentExtras,
+              _currentRemovedIngredients,
             );
           },
           child: Text(AppLocalizations.of(context)!.dialogSave,

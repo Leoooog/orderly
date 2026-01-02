@@ -1,12 +1,1 @@
-- Design login screen
-- Inserire logo
-- Backend
-- vibrazione quando un tavolo è pronto
-- Aggiungere check prima di fare il conto, il tavolo deve essere in stato "servito"
-- responsive sized box
-- Gestione errori per connessione assente
-- Azioni tavoli scrollabili
-- Configurazione Localizzazione da backend
-- Motivazioni storno da backend
-- Pagamento alla romana
-- Localizzazione widgets shared
+// possibiltà di rimuovere ingredienti da item dialog
