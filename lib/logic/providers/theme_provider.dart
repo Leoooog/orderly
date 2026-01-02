@@ -11,22 +11,36 @@ final themeModeProvider =
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
+    print("[ThemeModeNotifier] build");
     final box = Hive.box(HiveKeys.settingsBox);
-    final storedTheme =
-        box.get(HiveKeys.themeMode, defaultValue: 'system') as String;
-    return ThemeMode.values.firstWhere(
-      (mode) => mode.toString() == storedTheme,
-      orElse: () => ThemeMode.system,
-    );
+    final theme = box.get(HiveKeys.themeMode, defaultValue: 'system');
+    print("[ThemeModeNotifier] initial theme: $theme");
+    switch (theme) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
+    }
   }
 
-  void setTheme(ThemeMode mode) {
+  void setThemeMode(ThemeMode themeMode) {
+    print("[ThemeModeNotifier] setThemeMode: $themeMode");
     final box = Hive.box(HiveKeys.settingsBox);
-    box.put(HiveKeys.themeMode, mode.toString());
-    state = mode;
-  }
-
-  void setSystem() {
-    setTheme(ThemeMode.system);
+    String theme;
+    switch (themeMode) {
+      case ThemeMode.light:
+        theme = 'light';
+        break;
+      case ThemeMode.dark:
+        theme = 'dark';
+        break;
+      case ThemeMode.system:
+        theme = 'system';
+        break;
+    }
+    box.put(HiveKeys.themeMode, theme);
+    state = themeMode;
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:orderly/config/hive_keys.dart';
 import 'package:orderly/modules/waiter/config/waiter_router.dart';
 
 import 'l10n/app_localizations.dart';
@@ -12,6 +13,7 @@ void main() async {
   GoRouter.optionURLReflectsImperativeAPIs = true;
 
   await Hive.initFlutter();
+  await Hive.openBox(HiveKeys.settingsBox);
 
   runApp(const ProviderScope(
     child: WaiterAppEntry(),

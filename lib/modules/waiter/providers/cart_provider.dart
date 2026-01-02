@@ -11,10 +11,12 @@ final cartProvider =
 class CartNotifier extends Notifier<List<CartEntry>> {
   @override
   List<CartEntry> build() {
+    print("[CartNotifier] build");
     return [];
   }
 
   void addItem(MenuItem item, Course activeCourse) {
+    print("[CartNotifier] addItem: ${item.name}");
     // Cerca un articolo esistente che sia "semplice" (senza note, extra, ecc.)
     final existingIndex = state.indexWhere((c) =>
         c.item.id == item.id &&
@@ -46,6 +48,7 @@ class CartNotifier extends Notifier<List<CartEntry>> {
   }
 
   void incrementQty(int internalId) {
+    print("[CartNotifier] incrementQty: internalId=$internalId");
     state = [
       for (final entry in state)
         if (entry.internalId == internalId)
@@ -56,6 +59,7 @@ class CartNotifier extends Notifier<List<CartEntry>> {
   }
 
   void decrementQty(int internalId) {
+    print("[CartNotifier] decrementQty: internalId=$internalId");
     final target = state.firstWhere((e) => e.internalId == internalId);
     if (target.quantity > 1) {
       state = [
@@ -72,16 +76,20 @@ class CartNotifier extends Notifier<List<CartEntry>> {
   }
 
   void removeItem(int internalId) {
+    print("[CartNotifier] removeItem: internalId=$internalId");
     state = state.where((item) => item.internalId != internalId).toList();
   }
 
   void clear() {
+    print("[CartNotifier] clear");
     state = [];
   }
 
   // --- Logica di modifica e unione per il carrello ---
   void updateItemConfig(CartEntry originalItem, int qtyToModify, String newNote,
       Course newCourse, List<Extra> newExtras, List<Ingredient> removedIngredients) {
+    print(
+        "[CartNotifier] updateItemConfig: item=${originalItem.item.name}, qty=$qtyToModify");
     if (qtyToModify <= 0 || qtyToModify > originalItem.quantity) return;
 
     // Se non è cambiato nulla, non fare niente
@@ -125,6 +133,7 @@ class CartNotifier extends Notifier<List<CartEntry>> {
   }
 
   void _mergeOrAdd(List<CartEntry> items, CartEntry newItem, {int? insertAt}) {
+    print("[CartNotifier] _mergeOrAdd: trying to merge ${newItem.item.name}");
     final mergeTargetIndex = items.indexWhere((o) =>
         o.item.id == newItem.item.id &&
         o.notes == newItem.notes &&
@@ -136,12 +145,14 @@ class CartNotifier extends Notifier<List<CartEntry>> {
       final target = items[mergeTargetIndex];
       items[mergeTargetIndex] =
           target.copyWith(quantity: target.quantity + newItem.quantity);
+      print("[CartNotifier] _mergeOrAdd: merged with existing item");
     } else {
       if (insertAt != null && insertAt <= items.length) {
         items.insert(insertAt, newItem);
       } else {
         items.add(newItem);
       }
+      print("[CartNotifier] _mergeOrAdd: added as new item");
     }
   }
 

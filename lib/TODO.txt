@@ -1,1 +1,2 @@
-// possibiltà di rimuovere ingredienti da item dialog
+- possibiltà di rimuovere ingredienti da item dialog
+- controllo ruoli al login

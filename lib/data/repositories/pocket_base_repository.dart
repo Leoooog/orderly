@@ -148,56 +148,51 @@ class PocketBaseRepository implements IOrderlyRepository {
 
   @override
   Stream<List<TableSession>> watchActiveSessions() {
-    // Usiamo uno StreamController per convertire le callback di PB in Stream Dart
     final controller = StreamController<List<TableSession>>();
     List<TableSession> currentList = [];
 
-    // 1. Fetch Iniziale: Scarichiamo subito lo stato attuale
-    _pb
-        .collection('table_sessions')
-        .getFullList(
-          filter: 'status != "closed"', // Ci interessano solo quelle aperte
+    const activeStatusFilter =
+        "status != 'closed'";
+
+    // 1. Initial Fetch
+    _pb.collection('table_sessions').getFullList(
+          filter: activeStatusFilter,
           sort: '-created',
-        )
-        .then((records) {
+        ).then((records) {
       currentList =
           records.map((r) => TableSession.fromJson(r.toJson())).toList();
-      if (!controller.isClosed) controller.add(currentList);
+      if (!controller.isClosed) {
+        controller.add(List.from(currentList));
+      }
     }).catchError((e) {
-      if (!controller.isClosed) controller.addError(e);
+      if (!controller.isClosed) {
+        controller.addError(e);
+      }
     });
 
-    // 2. Sottoscrizione Realtime
-    // Nota: Sottoscriviamo a '*' (tutti gli eventi) per gestire correttamente
-    // il caso in cui una sessione venga chiusa (update status -> closed).
-    // Se filtrassimo lato server, potremmo non ricevere l'evento di chiusura.
-    _pb.collection('table_sessions').subscribe('*', (e) {
-      if (controller.isClosed) return;
+    // 2. Realtime Subscription
+    final subscription = _pb.collection('table_sessions').subscribe('*', (e) {
+      if (controller.isClosed || e.record == null) return;
 
-      final record = e.record;
-      if (record == null) return;
-
-      final item = TableSession.fromJson(record.toJson());
+      final item = TableSession.fromJson(e.record!.toJson());
       final isClosed = item.status == TableSessionStatus.closed;
 
+      // Remove if it's deleted or has become closed
       if (e.action == 'delete' || isClosed) {
-        // RIMUOVI: Se è stata cancellata o chiusa, via dalla lista
         currentList.removeWhere((i) => i.id == item.id);
       } else {
-        // AGGIUNGI/AGGIORNA:
+        // Add or update if it's an active session
         final index = currentList.indexWhere((i) => i.id == item.id);
         if (index != -1) {
-          currentList[index] = item; // Aggiorna esistente
+          currentList[index] = item; // Update existing
         } else {
-          currentList.add(item); // Nuova sessione aperta
+          currentList.add(item); // Add new
         }
       }
-
-      // Emetti la nuova lista aggiornata
-      controller.add(List.from(currentList));
+      controller.add(List.from(currentList)); // Yield the updated list
     });
 
-    // 3. Cleanup: Quando nessuno ascolta più, stacca la socket
+    // 3. Cleanup
     controller.onCancel = () {
       _pb.collection('table_sessions').unsubscribe('*');
     };
@@ -210,32 +205,30 @@ class PocketBaseRepository implements IOrderlyRepository {
     final controller = StreamController<List<Order>>();
     List<Order> currentList = [];
 
-    // Filtro: Solo ordini creati oggi (Active Service)
-    // '@todayStart' è una macro comodissima di PocketBase
     const filter = 'created >= "@todayStart"';
 
-    // 1. Fetch Iniziale
-    _pb
-        .collection('orders')
-        .getFullList(
+    // 1. Initial Fetch
+    _pb.collection('orders').getFullList(
           filter: filter,
           sort: '-created',
-        )
-        .then((records) {
+          expand: 'items', // Eager load items
+        ).then((records) {
       currentList = records.map((r) => Order.fromJson(r.toJson())).toList();
-      if (!controller.isClosed) controller.add(currentList);
+      if (!controller.isClosed) {
+        controller.add(List.from(currentList));
+      }
     }).catchError((e) {
-      if (!controller.isClosed) controller.addError(e);
+      if (!controller.isClosed) {
+        controller.addError(e);
+      }
     });
 
-    // 2. Realtime
+    // 2. Realtime Subscription
     _pb.collection('orders').subscribe('*', (e) {
-      if (controller.isClosed) return;
-      if (e.record == null) return;
+      if (controller.isClosed || e.record == null) return;
 
       final item = Order.fromJson(e.record!.toJson());
 
-      // Gestione CRUD locale
       if (e.action == 'delete') {
         currentList.removeWhere((i) => i.id == item.id);
       } else {
@@ -243,14 +236,13 @@ class PocketBaseRepository implements IOrderlyRepository {
         if (index != -1) {
           currentList[index] = item;
         } else {
-          // Aggiungiamo in cima (ordinamento temporale)
           currentList.insert(0, item);
         }
       }
-
       controller.add(List.from(currentList));
-    }, filter: filter); // Qui possiamo usare il filtro anche in sottoscrizione
+    }, filter: filter);
 
+    // 3. Cleanup
     controller.onCancel = () {
       _pb.collection('orders').unsubscribe('*');
     };

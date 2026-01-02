@@ -3,4 +3,5 @@ class HiveKeys {
   static const String themeMode = 'theme_mode';
   static const String backendType = 'backend_type';
   static const String tenantUrl = 'orderly_tenant_url';
+  static const String language = 'language';
 }

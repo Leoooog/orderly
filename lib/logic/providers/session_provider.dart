@@ -62,32 +62,37 @@ class SessionNotifier extends Notifier<SessionState> {
 
   @override
   SessionState build() {
-    _init();
+    // Schedule the async initialization to run after the build method completes.
+    Future.microtask(() => _init());
     return const SessionState();
   }
 
   Future<void> _init() async {
+    print("[Session] Initializing...");
     _repoFactory = RepositoryFactory();
 
     // Controlla se un backend è stato configurato per decidere lo stato iniziale.
     // Apriamo il box qui solo per questa verifica iniziale.
-    final settingsBox = await Hive.openBox(HiveKeys.settingsBox);
+    final settingsBox = Hive.box(HiveKeys.settingsBox);
     final backendType = settingsBox.get(HiveKeys.backendType);
     if (backendType == null) {
+      print("[Session] No backend configured. Moving to BackendSelection.");
       state = state.copyWith(
           appState: AppState.backendSelection, isLoading: false);
       return;
     }
-
+    print("[Session] Backend configured: $backendType. Loading repository...");
     await _loadRepository();
   }
 
   Future<void> _loadRepository() async {
+    print("[Session] Loading repository...");
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final repo = await _repoFactory.createRepository();
       final restaurant = await repo.getRestaurantInfo();
 
+      print("[Session] Repository loaded. Restaurant: ${restaurant.name}. Moving to LoginRequired.");
       state = state.copyWith(
         repository: repo,
         currentRestaurant: restaurant,
@@ -95,6 +100,7 @@ class SessionNotifier extends Notifier<SessionState> {
         isLoading: false,
       );
     } catch (e) {
+      print("[Session] Error loading repository: $e. Moving to TenantSetup.");
       // Se il repo non si crea (es. no URL), andiamo al setup del tenant
       state = state.copyWith(
         appState: AppState.tenantSetup,
@@ -106,11 +112,13 @@ class SessionNotifier extends Notifier<SessionState> {
   }
 
   Future<void> setBackend(String backendType) async {
+    print("[Session] Setting backend to: $backendType");
     await _repoFactory.setBackendType(backendType);
     await _loadRepository();
   }
 
   Future<void> setTenant(String code) async {
+    print("[Session] Setting tenant with code: $code");
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       // Il TenantService ora è usato internamente dal repo,
@@ -120,9 +128,11 @@ class SessionNotifier extends Notifier<SessionState> {
       final url = await tenantService.lookupTenant(code);
       await tenantService.saveTenantUrl(url);
 
+      print("[Session] Tenant URL saved: $url. Reloading repository.");
       // Ora che l'URL è salvato, ricarichiamo il repository
       await _loadRepository();
     } catch (e) {
+      print("[Session] Error setting tenant: $e");
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString(),
@@ -132,17 +142,23 @@ class SessionNotifier extends Notifier<SessionState> {
   }
 
   Future<void> login(String pin) async {
-    if (state.repository == null) return;
+    if (state.repository == null) {
+      print("[Session] Login attempt failed: repository is null.");
+      return;
+    }
+    print("[Session] Attempting login...");
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
       final user = await state.repository!.loginWithPin(pin);
+      print("[Session] Login successful for user: ${user.name}. Moving to Authenticated.");
       state = state.copyWith(
         isLoading: false,
         currentUser: user,
         appState: AppState.authenticated,
       );
     } catch (e) {
+      print("[Session] Login failed: $e");
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Login fallito: ${e.toString()}',
@@ -151,6 +167,7 @@ class SessionNotifier extends Notifier<SessionState> {
   }
 
   void logout() {
+    print("[Session] Logging out. Moving to LoginRequired.");
     state = state.copyWith(
       clearCurrentUser: true, // Resetta l'utente
       appState: AppState.loginRequired,
@@ -158,6 +175,7 @@ class SessionNotifier extends Notifier<SessionState> {
   }
 
   Future<void> clearTenant() async {
+    print("[Session] Clearing tenant. Moving to TenantSetup.");
     final tenantService = await TenantService.create();
     await tenantService.clearTenant();
     state = const SessionState(

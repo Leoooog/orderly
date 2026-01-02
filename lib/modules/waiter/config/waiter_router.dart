@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:orderly/logic/providers/session_provider.dart';
 import 'package:orderly/modules/waiter/screens/login_screen.dart';
+import 'package:orderly/shared/widgets/splash_screen.dart';
 import 'package:orderly/shared/widgets/tenant_selection_screen.dart';
 
+import '../../../config/hive_keys.dart';
 import '../screens/menu_view.dart';
 import '../screens/settings_screen.dart';
 import '../screens/success_view.dart';
@@ -18,19 +21,27 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 final waiterRouterProvider = Provider<GoRouter>((ref) {
-  final session = ref.watch(sessionProvider);
+  // Create a ValueNotifier to notify the router when the session state changes.
+  final refreshNotifier = ValueNotifier<int>(0);
+  ref.listen(sessionProvider, (_, __) {
+    // When the session state changes, update the notifier's value
+    // to trigger the router's refresh.
+    refreshNotifier.value++;
+  });
 
-
-  return GoRouter(
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/tables',
+    initialLocation: '/splash',
+    refreshListenable: refreshNotifier,
     redirect: (BuildContext context, GoRouterState state) {
-      final appState = session.appState;
+      // Read the latest session state directly from the provider.
+      final appState = ref.read(sessionProvider).appState;
       final location = state.uri.toString();
+      final isSplash = location == '/splash';
 
-      // Se stiamo inizializzando, non fare nulla, mostrerà una schermata vuota
+      // If the app is initializing, stay on the splash screen.
       if (appState == AppState.initializing) {
-        return null; // o una rotta di loading se preferisci
+        return isSplash ? null : '/splash';
       }
 
       final isTenantScreen = location.startsWith('/tenant-selection');
@@ -53,10 +64,20 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
         return '/tables';
       }
 
+      if (appState == AppState.backendSelection) {
+        // Salviamo "DEV" in Hive come backend selezionato
+        ref.read(sessionProvider.notifier).setBackend('pocketbase');
+        return '/splash';
+      }
+
       // In tutti gli altri casi, lascia che l'utente vada dove ha chiesto
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/',
         redirect: (_, __) => '/tables',
@@ -112,20 +133,11 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
           }),
     ],
   );
+
+  ref.onDispose(() {
+    router.dispose();
+    refreshNotifier.dispose();
+  });
+
+  return router;
 });
-
-// Helper per ascoltare i cambiamenti di stato e aggiornare il router
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
-  }
-
-  late final StreamSubscription<dynamic> _subscription;
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
-}

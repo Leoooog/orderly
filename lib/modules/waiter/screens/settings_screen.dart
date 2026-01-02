@@ -245,7 +245,7 @@ class SettingsScreen extends ConsumerWidget {
               leading: const Icon(Icons.wb_sunny_outlined, size: 20),
               title: const Text("Chiaro", style: TextStyle(fontSize: 14)),
               onTap: () {
-                ref.read(themeModeProvider.notifier).setTheme(ThemeMode.light);
+                ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.light);
                 Navigator.pop(ctx);
               },
             ),
@@ -253,7 +253,7 @@ class SettingsScreen extends ConsumerWidget {
               leading: const Icon(Icons.nights_stay_outlined, size: 20),
               title: const Text("Scuro", style: TextStyle(fontSize: 14)),
               onTap: () {
-                ref.read(themeModeProvider.notifier).setTheme(ThemeMode.dark);
+                ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.dark);
                 Navigator.pop(ctx);
               },
             ),
@@ -261,7 +261,7 @@ class SettingsScreen extends ConsumerWidget {
               leading: const Icon(Icons.brightness_auto_outlined, size: 20),
               title: const Text("Automatico", style: TextStyle(fontSize: 14)),
               onTap: () {
-                ref.read(themeModeProvider.notifier).setSystem();
+                ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.system);
                 Navigator.pop(ctx);
               },
             ),
