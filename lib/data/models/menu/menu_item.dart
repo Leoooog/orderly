@@ -55,6 +55,42 @@ class MenuItem extends BaseModel {
     );
   }
 
+  factory MenuItem.fromExpandedJson(Map<String, dynamic> json) {
+    MenuItem item = MenuItem.fromJson(json);
+    final expand = json['expand'] as Map<String, dynamic>? ?? {};
+
+    Category? category = expand['category'] != null
+        ? Category.fromJson(expand['category'] as Map<String, dynamic>)
+        : null;
+
+    List<Allergen> allergens = (expand['allergens'] as List<dynamic>?)
+            ?.map((e) => Allergen.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    List<Ingredient> ingredients = (expand['ingredients'] as List<dynamic>?)
+            ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    List<Extra> extras = (expand['allowed_extras'] as List<dynamic>?)
+            ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    List<Department> producedBy = (expand['produced_by'] as List<dynamic>?)
+            ?.map((e) => Department.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    return item.copyWith(
+        category: category,
+        allergens: allergens,
+        ingredients: ingredients,
+        allowedExtras: extras,
+        producedBy: producedBy);
+  }
+
   factory MenuItem.empty() {
     return MenuItem(
       id: '',
@@ -87,9 +123,8 @@ class MenuItem extends BaseModel {
     String? description,
     double? price,
     Category? category,
-    bool? isAvailable,
-    List<Ingredient>? ingredients,
     List<Allergen>? allergens,
+    List<Ingredient>? ingredients,
     List<Extra>? allowedExtras,
     List<Department>? producedBy,
     String? image,

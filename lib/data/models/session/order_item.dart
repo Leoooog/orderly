@@ -67,6 +67,32 @@ class OrderItem extends BaseModel {
     );
   }
 
+  factory OrderItem.fromExpandedJson(Map<String, dynamic> json) {
+    OrderItem item = OrderItem.fromJson(json);
+    final expand = json['expand'] as Map<String, dynamic>? ?? {};
+
+    Course? course = expand['course'] != null
+        ? Course.fromJson(expand['course'] as Map<String, dynamic>)
+        : null;
+
+    List<Extra> selectedExtras = (expand['selected_extras'] as List<dynamic>?)
+            ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    List<Ingredient> removedIngredients =
+        (expand['removed_ingredients'] as List<dynamic>?)
+                ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [];
+
+    return item.copyWith(
+      course: course,
+      selectedExtras: selectedExtras,
+      removedIngredients: removedIngredients,
+    );
+  }
+
   factory OrderItem.empty() {
     return OrderItem(
       id: '',

@@ -96,49 +96,9 @@ class PocketBaseRepository implements IOrderlyRepository {
         expand: 'category,allergens,allowed_extras,ingredients,produced_by');
     print(
         "[PocketBaseRepository] Fetched ${records.length} menu items from PocketBase.");
-    return records.map((r) {
-      final json = r.toJson();
-      MenuItem item = MenuItem.fromJson(json);
-      print("[PocketBaseRepository] MenuItem ${item.id} - name: ${item.name}");
-
-      final expand = json['expand'] as Map<String, dynamic>? ?? {};
-
-      Category? category = expand['category'] != null
-          ? Category.fromJson(expand['category'] as Map<String, dynamic>)
-          : null;
-
-      List<Allergen> allergens = (expand['allergens'] as List<dynamic>?)
-              ?.map((e) => Allergen.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [];
-
-      List<Ingredient> ingredients = (expand['ingredients'] as List<dynamic>?)
-              ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [];
-
-      List<Extra> extras = (expand['allowed_extras'] as List<dynamic>?)
-              ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [];
-
-      List<Department> producedBy = (expand['produced_by'] as List<dynamic>?)
-              ?.map((e) => Department.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [];
-
-      final populatedItem = item.copyWith(
-          category: category,
-          allergens: allergens,
-          ingredients: ingredients,
-          allowedExtras: extras,
-          producedBy: producedBy);
-
-      print(
-          "[PocketBaseRepository] Populated MenuItem: ${populatedItem.toString()}");
-
-      return populatedItem;
-    }).toList();
+    return records
+        .map((r) => MenuItem.fromExpandedJson(r.toJson()))
+        .toList();
   }
 
   @override
@@ -508,25 +468,7 @@ class PocketBaseRepository implements IOrderlyRepository {
 
   OrderItem _populateOrderItem(RecordModel r) {
     print("[PocketBaseRepository] Populating OrderItem from record ${r.id}");
-    OrderItem item = OrderItem.fromJson(r.toJson());
-    print(
-        "[PocketBaseRepository] Base OrderItem: ${item.toString()} from JSON: ${r.toJson().toString()}");
-    List<Extra> selectedExtras =
-        (r.toJson()['expand']?['extras'] as List<dynamic>?)
-                ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            [];
-    Course course = Course.fromJson(
-        r.toJson()['expand']?['course'] as Map<String, dynamic>? ?? {});
-    List<Ingredient> removedIngredients =
-        (r.toJson()['expand']?['removed_ingredients'] as List<dynamic>?)
-                ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            [];
-    return item.copyWith(
-        selectedExtras: selectedExtras,
-        course: course,
-        removedIngredients: removedIngredients);
+    return OrderItem.fromExpandedJson(r.toJson());
   }
 }
 
