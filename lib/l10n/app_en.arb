@@ -99,6 +99,7 @@
     }
   },
   "cartEditingItem": "Editing: {itemName}",
+  "msgMenuItemNotFound": "Menu item not found",
   "@cartEditingItem": {
     "placeholders": {
       "itemName": {

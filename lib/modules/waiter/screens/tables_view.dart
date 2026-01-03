@@ -10,7 +10,9 @@ import 'package:vibration/vibration.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../data/models/enums/table_status.dart';
 import '../../../shared/widgets/payment_method_button.dart';
+import '../providers/menu_provider.dart';
 import '../providers/tables_provider.dart';
+import '../providers/void_reasons_provider.dart';
 import 'widgets/table_card.dart';
 
 class TablesView extends ConsumerStatefulWidget {
@@ -637,6 +639,15 @@ class _TablesViewState extends ConsumerState<TablesView> {
             ),
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          print("--- INVALIDATING PROVIDERS ---");
+          ref.invalidate(tablesControllerProvider);
+          ref.invalidate(menuDataProvider);
+          ref.invalidate(voidReasonsProvider);
+        },
+        child: const Icon(Icons.refresh),
       ),
     );
   }

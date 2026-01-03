@@ -8,10 +8,14 @@ import 'package:orderly/data/models/local/table_model.dart';
 import 'package:orderly/data/models/menu/course.dart';
 import 'package:orderly/data/models/menu/extra.dart';
 import 'package:orderly/data/models/menu/ingredient.dart';
+import 'package:orderly/data/models/menu/menu_item.dart';
 import 'package:orderly/data/models/session/order.dart';
 import 'package:orderly/data/models/session/table_session.dart';
 import 'package:orderly/data/repositories/i_orderly_repository.dart';
 import 'package:orderly/logic/providers/session_provider.dart';
+
+import '../../../data/models/session/order_item.dart';
+import 'menu_provider.dart';
 
 // -----------------------------------------------------------------------------
 // PROVIDERS DI DATI GREZZI (OTTIMIZZATI)
@@ -45,6 +49,15 @@ final activeOrdersStreamProvider = StreamProvider<List<Order>>((ref) {
   return repository.watchActiveOrders();
 });
 
+/// Stream of ALL active order items for the current service/day.
+/// This is the single source of truth for item state changes.
+final activeOrderItemsStreamProvider = StreamProvider<List<OrderItem>>((ref) {
+  print("[activeOrderItemsStreamProvider] setting up stream...");
+  final repository = ref.watch(sessionProvider.select((s) => s.repository));
+  if (repository == null) return Stream.value([]);
+  return repository.watchAllActiveOrderItems();
+});
+
 // -----------------------------------------------------------------------------
 // CONTROLLER: Business Logic & Data Joining
 // -----------------------------------------------------------------------------
@@ -62,47 +75,75 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
   Future<List<TableUiModel>> build() async {
     // 1. Watch all data sources.
     final tables = await ref.watch(tablesListProvider.future);
-    // Per gli stream, osserviamo l'AsyncValue per gestire gli stati senza annidare callback infernali
     final sessionsValue = ref.watch(activeSessionsStreamProvider);
     final ordersValue = ref.watch(activeOrdersStreamProvider);
+    final allItemsValue = ref.watch(activeOrderItemsStreamProvider);
 
-    // Se stiamo caricando gli stream e non abbiamo dati precedenti, possiamo aspettare
-    // o ritornare una lista vuota. Qui manteniamo la logica di ritornare vuoto se non pronto.
-    if (sessionsValue.isLoading || ordersValue.isLoading) {
-      return [];
+    // Handle loading and error states gracefully
+    if (sessionsValue.isLoading || ordersValue.isLoading || allItemsValue.isLoading) {
+      print("[TablesController] One or more streams are loading...");
+      return []; // Or a specific loading state representation
     }
 
+    if (sessionsValue.hasError) {
+      print("[TablesController] Error in activeSessionsStreamProvider: ${sessionsValue.error}");
+      throw sessionsValue.error!;
+    }
+    if (ordersValue.hasError) {
+      print("[TablesController] Error in activeOrdersStreamProvider: ${ordersValue.error}");
+      throw ordersValue.error!;
+    }
+    if (allItemsValue.hasError) {
+      print("[TablesController] Error in activeOrderItemsStreamProvider: ${allItemsValue.error}");
+      throw allItemsValue.error!;
+    }
+
+    // At this point, we can safely access the values.
     final sessionList = sessionsValue.value!;
     final orderList = ordersValue.value!;
+    final allItems = allItemsValue.value!;
 
     print("[TablesController] Building UI models with "
         "${tables.length} tables, "
         "${sessionList.length} active sessions, "
-        "${orderList.length} active orders.");
+        "${orderList.length} active orders, "
+        "${allItems.length} active items.");
 
-    print("Orders: ");
-    for (var order in orderList) {
-      print(order);
+    // 1. Group all active items by their order ID for efficient lookup.
+    final Map<String, List<OrderItem>> itemsByOrderId = {};
+    for (final item in allItems) {
+      (itemsByOrderId[item.orderId] ??= []).add(item);
+      print("[TablesController] Item $item");
     }
 
-    // 2. Join the data sources into the UI model
+    // 2. Enrich orders with their fully updated items from the live stream.
+    final enrichedOrders = orderList.map((order) {
+      final liveItems = itemsByOrderId[order.id] ?? [];
+      return order.copyWith(items: liveItems);
+    }).toList();
+
+    // 3. Group the now-enriched orders by their session ID.
+    final Map<String, List<Order>> ordersBySessionId = {};
+    for (final order in enrichedOrders) {
+      (ordersBySessionId[order.sessionId] ??= []).add(order);
+    }
+
+    // 4. Join the data sources into the final UI model.
     final uiModels = tables.map((table) {
       final session = sessionList.firstWhere(
-            (s) => s.tableId == table.id,
+        (s) => s.tableId == table.id,
         orElse: () => TableSession.empty(),
       );
 
       if (session.isEmpty) {
-        return TableUiModel(
-            table: table, status: TableStatus.free);
+        return TableUiModel(table: table, status: TableStatus.free);
       }
 
-      // Enrich the session with its orders
-      final sessionOrders =
-      orderList.where((o) => o.sessionId == session.id).toList();
-      sessionOrders.sort((a, b) => b.created.compareTo(a.created));
+      // Enrich the session with its fully updated orders.
+      final liveOrders = ordersBySessionId[session.id] ?? [];
+      liveOrders.sort((a, b) => b.created.compareTo(a.created));
 
-      final enrichedSession = session.copyWith(orders: sessionOrders);
+      final enrichedSession = session.copyWith(orders: liveOrders);
 
       // Determine the detailed session status
       final sessionStatus = _calculateSessionStatus(enrichedSession);
@@ -149,6 +190,7 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
       if (_repository == null || _currentUserId == null) throw Exception("Utente non autenticato");
       await _repository!.openTable(tableId, guests, _currentUserId!);
     } catch (e, st) {
+      print(e);
       state = AsyncError(e, st);
     }
   }
@@ -159,6 +201,7 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
       if (_repository == null) throw Exception("Utente non autenticato");
       await _repository!.closeTableSession(sessionId);
     } catch (e, st) {
+      print(e);
       state = AsyncError(e, st);
     }
   }
@@ -175,13 +218,15 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
         items: items,
       );
     } catch (e, st) {
+      print(e);
       state = AsyncError(e, st);
       rethrow;
     }
   }
 
   Future<void> voidOrderItem(
-      {required String orderItemId,
+      {required OrderItem orderItem,
+        required String tableSessionId,
         required VoidReason reason,
         required bool refund,
         required int quantity,
@@ -190,15 +235,29 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
 
     try {
       if (_repository == null || _currentUserId == null) throw Exception("Utente non autenticato");
+
+      MenuItem menuItem = await ref.read(menuItemsProvider.notifier).getMenuItemById(orderItem.menuItemId);
+      double amount = orderItem.priceEach * quantity;
+      print("Voiding item ${orderItem.id}: "
+          "menuItem=${menuItem.name}, "
+          "amount=$amount, "
+          "quantity=$quantity, "
+          "refund=$refund");
       await _repository!.voidItem(
-        orderItemId: orderItemId,
+        orderItemId: orderItem.id,
         reason: reason,
-        refund: refund,
+        tableSessionId: tableSessionId,
+        menuItemId: orderItem.menuItemId,
+        menuItemName: menuItem.name,
+        amount: amount,
         quantity: quantity,
+        refund: refund,
         voidedBy: _currentUserId!,
+        statusWhenVoided: orderItem.status,
         notes: notes,
       );
     } catch (e, st) {
+      print(e);
       state = AsyncError(e, st);
       rethrow;
     }
@@ -211,6 +270,7 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
       if (_repository == null) throw Exception("Utente non autenticato");
       await _repository!.moveTable(sourceSessionId, targetTableId);
     } catch (e, st) {
+      print(e);
       state = AsyncError(e, st);
       rethrow;
     }
@@ -286,4 +346,5 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     }
     return null;
   }
+
 }

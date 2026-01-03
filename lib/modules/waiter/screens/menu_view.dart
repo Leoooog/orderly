@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:orderly/config/orderly_colors.dart';
+import 'package:orderly/core/utils/extensions.dart';
 import 'package:orderly/data/models/local/cart_entry.dart';
 import 'package:orderly/data/models/local/table_model.dart';
 
@@ -199,7 +200,7 @@ class _MenuViewState extends ConsumerState<MenuView>
                           Tab(text: AppLocalizations.of(context)!.navMenu),
                           Tab(
                               text:
-                                  "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.activeSession?.orders.length ?? 0})"),
+                                  "${AppLocalizations.of(context)!.navTableHistory} (${currentTable.activeSession?.orders.allItems.totalDishQuantity ?? 0})"),
                         ],
                       ),
                       // TAB CONTENT
@@ -301,10 +302,8 @@ class _MenuViewState extends ConsumerState<MenuView>
   void _goBack() {
     if (context.canPop()) {
       context.pop();
-    } else {
-      // Fallback if there's nothing to pop, go to the main screen
-      context.go('/tables');
     }
+    context.go('/tables');
     ref.read(cartProvider.notifier).clear();
   }
 }

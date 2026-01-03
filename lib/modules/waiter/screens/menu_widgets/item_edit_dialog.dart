@@ -68,6 +68,7 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
     final colors = context.colors;
     final allCourses = ref.watch(coursesProvider);
     final int maxQty = widget.quantity;
+    print(widget.item);
 
     return AlertDialog(
       backgroundColor: colors.surface,

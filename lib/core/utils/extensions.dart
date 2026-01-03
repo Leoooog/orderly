@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:orderly/logic/providers/session_provider.dart';
 
+import '../../data/models/local/cart_entry.dart';
 import '../../data/models/session/order.dart';
 import '../../data/models/session/order_item.dart';
 import '../../data/models/session/table_session.dart';
@@ -34,7 +35,22 @@ extension OrderItems on List<Order> {
     if (isEmpty) return [];
     return expand((order) => order.items).toList();
   }
+}
 
+extension CartEntries on List<CartEntry> {
+  double get totalAmount {
+    if (isEmpty) return 0.0;
+    return fold(0.0, (prev, entry) => prev + entry.totalItemPrice);
+  }
+}
+
+
+extension OrderItemsDishQuantity on List<OrderItem> {
+  /// Calcola il totale degli item
+  int get totalDishQuantity {
+    if (isEmpty) return 0;
+    return fold(0, (prev, item) => prev + item.quantity);
+  }
 }
 
 extension TableSessionUiHelpers on TableSession {

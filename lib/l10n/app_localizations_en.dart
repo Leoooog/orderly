@@ -182,6 +182,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get msgMenuItemNotFound => 'Menu item not found';
+
+  @override
   String get cartEditingQuantity => 'How many dishes do you want to edit?';
 
   @override

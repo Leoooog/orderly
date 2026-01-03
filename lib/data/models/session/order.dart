@@ -31,7 +31,7 @@ class Order extends BaseModel {
       collectionName: json['collectionName'] ?? '',
       sessionId: json['session'] ?? '',
       waiterId: json['waiter'],
-      totalAmount: (json['total_amount'] ?? 0).toDouble(),
+      totalAmount: (json['total_amount'] as num? ?? 0).toDouble(),
     );
   }
   factory Order.empty() {

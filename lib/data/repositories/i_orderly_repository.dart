@@ -13,6 +13,7 @@ import '../models/menu/category.dart';
 import '../models/menu/course.dart';
 import '../models/menu/extra.dart';
 import '../models/menu/menu_item.dart';
+import '../models/session/order_item.dart';
 
 /// Defines the contract for data operations within the Orderly app.
 /// This interface abstracts the data source, allowing for different implementations (e.g., PocketBase, Firebase, Mock).
@@ -53,6 +54,9 @@ abstract class IOrderlyRepository {
   /// Stream che emette la lista aggiornata di tutti gli ordini del turno corrente.
   Stream<List<Order>> watchActiveOrders();
 
+  /// Stream che emette la lista aggiornata di tutti gli order item attivi.
+  Stream<List<OrderItem>> watchAllActiveOrderItems();
+
   // --- Actions ---
 
   /// Apre un nuovo tavolo (crea una `TableSession`).
@@ -72,9 +76,14 @@ abstract class IOrderlyRepository {
   Future<void> voidItem(
       {required String orderItemId,
         required VoidReason reason,
+        required String tableSessionId,
+        required String menuItemId,
+        required String menuItemName,
+        required double amount,
         required int quantity,
         required bool refund,
         required String voidedBy,
+        required OrderItemStatus statusWhenVoided,
         String? notes});
 
   /// Sposta una sessione da un tavolo a un altro (libero).

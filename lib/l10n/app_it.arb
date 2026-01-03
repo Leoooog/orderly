@@ -106,6 +106,7 @@
       }
     }
   },
+  "msgMenuItemNotFound": "Prodotto non trovato",
   "cartEditingQuantity": "Quanti piatti vuoi modificare?",
   "dialogMoveToCourse": "Sposta in:",
   "labelExtras": "Aggiunte (Extra):",

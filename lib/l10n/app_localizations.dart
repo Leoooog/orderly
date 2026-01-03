@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Stai modificando: {itemName}'**
   String cartEditingItem(String itemName);
 
+  /// No description provided for @msgMenuItemNotFound.
+  ///
+  /// In it, this message translates to:
+  /// **'Prodotto non trovato'**
+  String get msgMenuItemNotFound;
+
   /// No description provided for @cartEditingQuantity.
   ///
   /// In it, this message translates to:

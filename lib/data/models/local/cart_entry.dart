@@ -28,6 +28,12 @@ class CartEntry {
     return (item.price + extrasPrice) * quantity;
   }
 
+  double get unitItemPrice {
+    final extrasPrice =
+        selectedExtras.fold(0.0, (sum, extra) => sum + extra.price);
+    return item.price + extrasPrice;
+  }
+
   CartEntry copyWith({
     int? internalId,
     MenuItem? item,

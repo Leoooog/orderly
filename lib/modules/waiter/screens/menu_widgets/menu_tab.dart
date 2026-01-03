@@ -81,126 +81,132 @@ class _MenuTabState extends ConsumerState<MenuTab>
     final colors = context.colors;
 
     // Watch all data from the new providers
-    final menuData = ref.watch(menuDataProvider);
-    final allItems = menuData.value?.menuItems ?? [];
-    final allCategories = menuData.value?.categories ?? [];
-    final allCourses = menuData.value?.courses ?? [];
-    final cart = ref.watch(cartProvider);
+    final menuDataAsync = ref.watch(menuDataProvider);
 
-    // Set default active course if not set
-    if (_activeCourse == null && allCourses.isNotEmpty) {
-      _activeCourse = allCourses.first;
-    }
+    return menuDataAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
+      data: (menuData) {
+        final allItems = menuData.menuItems;
+        final allCategories = menuData.categories;
+        final allCourses = menuData.courses;
+        final cart = ref.watch(cartProvider);
 
-    final filteredItems = _getFilteredItems(allItems, _activeCategoryId);
+        // Set default active course if not set
+        if (_activeCourse == null && allCourses.isNotEmpty) {
+          _activeCourse = allCourses.first;
+        }
 
-    final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
-    final double maxWidth = isTablet ? 800 : double.infinity;
+        final filteredItems = _getFilteredItems(allItems, _activeCategoryId);
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Column(
-          children: [
-            // SEARCH BAR
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.labelSearch,
-                  prefixIcon:
-                      Icon(Icons.search, color: colors.textTertiary, size: 20),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.close, size: 18),
-                          onPressed: () => _searchController.clear())
-                      : null,
-                  filled: true,
-                  fillColor: colors.background,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                ),
-              ),
-            ),
+        final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
+        final double maxWidth = isTablet ? 800 : double.infinity;
 
-            // COURSES BAR
-            Container(
-              height: 50,
-              decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: colors.divider))),
-              alignment: Alignment.center,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: allCourses.length,
-                itemBuilder: (ctx, idx) {
-                  final course = allCourses[idx];
-                  final isActive = _activeCourse?.id == course.id;
-                  return Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: ActionChip(
-                      label: Text(course.name,
-                          style: const TextStyle(fontSize: 12)),
-                      backgroundColor:
-                          isActive ? colors.primary : colors.background,
-                      labelStyle: TextStyle(
-                          color: isActive
-                              ? colors.onPrimary
-                              : colors.textSecondary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12),
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      onPressed: () => setState(() => _activeCourse = course),
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              children: [
+                // SEARCH BAR
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.labelSearch,
+                      prefixIcon: Icon(Icons.search,
+                          color: colors.textTertiary, size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () => _searchController.clear())
+                          : null,
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 16),
                     ),
-                  );
-                },
-              ),
-            ),
-
-            // CATEGORIES
-            if (_searchQuery.isEmpty)
-              ScrollConfiguration(
-                behavior: _MyCustomScrollBehavior(),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  scrollDirection: Axis.horizontal,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      _buildCategoryPill(
-                        id: 'ALL',
-                        name: AppLocalizations.of(context)!.labelAll,
-                        isActive: _activeCategoryId == 'ALL',
-                      ),
-                      ...allCategories.map((cat) {
-                        return _buildCategoryPill(
-                          id: cat.id,
-                          name: cat.name,
-                          isActive: _activeCategoryId == cat.id,
-                        );
-                      }),
-                    ],
                   ),
                 ),
-              ),
 
-            if (_searchQuery.isEmpty) Divider(color: colors.divider, height: 1),
+                // COURSES BAR
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                      border:
+                          Border(bottom: BorderSide(color: colors.divider))),
+                  alignment: Alignment.center,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: allCourses.length,
+                    itemBuilder: (ctx, idx) {
+                      final course = allCourses[idx];
+                      final isActive = _activeCourse?.id == course.id;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 8),
+                        child: ActionChip(
+                          label: Text(course.name,
+                              style: const TextStyle(fontSize: 12)),
+                          backgroundColor:
+                              isActive ? colors.primary : colors.background,
+                          labelStyle: TextStyle(
+                              color: isActive
+                                  ? colors.onPrimary
+                                  : colors.textSecondary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12),
+                          side: BorderSide.none,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20)),
+                          onPressed: () =>
+                              setState(() => _activeCourse = course),
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
-            // PRODUCTS LIST
-            Expanded(
-              child: Container(
-                color: colors.background,
-                child: menuData.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : filteredItems.isEmpty
+                // CATEGORIES
+                if (_searchQuery.isEmpty)
+                  ScrollConfiguration(
+                    behavior: _MyCustomScrollBehavior(),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          _buildCategoryPill(
+                            id: 'ALL',
+                            name: AppLocalizations.of(context)!.labelAll,
+                            isActive: _activeCategoryId == 'ALL',
+                          ),
+                          ...allCategories.map((cat) {
+                            return _buildCategoryPill(
+                              id: cat.id,
+                              name: cat.name,
+                              isActive: _activeCategoryId == cat.id,
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                if (_searchQuery.isEmpty)
+                  Divider(color: colors.divider, height: 1),
+
+                // PRODUCTS LIST
+                Expanded(
+                  child: Container(
+                    color: colors.background,
+                    child: filteredItems.isEmpty
                         ? Center(
                             child: Text(
                                 AppLocalizations.of(context)!.labelNoProducts,
@@ -220,30 +226,32 @@ class _MenuTabState extends ConsumerState<MenuTab>
                                 final totalQty = cart
                                     .where((c) => c.item.id == item.id)
                                     .fold(0, (sum, c) => sum + c.quantity);
-                                final isExpanded = _expandedItems.contains(item.id);
+                                final isExpanded =
+                                    _expandedItems.contains(item.id);
 
                                 return _ProductCard(
-                                  key: ValueKey(item.id),
-                                  item: item,
-                                  totalQty: totalQty,
-                                  isExpanded: isExpanded,
-                                  onAdd: () {
-                                    if (_activeCourse != null) {
-                                      _addToCart(item, _activeCourse!);
-                                    }
-                                  },
-                                  onExpand: () =>
-                                      _toggleProductExpansion(item.id),
-                                  ref: ref
-                                );
+                                    key: ValueKey(item.id),
+                                    item: item,
+                                    totalQty: totalQty,
+                                    isExpanded: isExpanded,
+                                    onAdd: () {
+                                      if (_activeCourse != null) {
+                                        _addToCart(item, _activeCourse!);
+                                      }
+                                    },
+                                    onExpand: () =>
+                                        _toggleProductExpansion(item.id),
+                                    ref: ref);
                               },
                             ),
                           ),
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

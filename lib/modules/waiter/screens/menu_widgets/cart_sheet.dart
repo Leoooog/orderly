@@ -235,117 +235,130 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     final colors = context.colors;
     bool hasExtras = entry.selectedExtras.isNotEmpty;
     bool hasNotes = entry.notes != null && entry.notes!.isNotEmpty;
+    bool hasRemovedIngredients = entry.removedIngredients.isNotEmpty;
 
-    Color cardColor =
-        (hasNotes || hasExtras) ? colors.warningContainer : colors.surface;
-    Color borderColor =
-        (hasNotes || hasExtras) ? colors.warningContainer : colors.divider;
+    Color cardColor = (hasNotes || hasExtras || hasRemovedIngredients)
+        ? colors.warningContainer
+        : colors.surface;
+    Color borderColor = (hasNotes || hasExtras || hasRemovedIngredients)
+        ? colors.warningContainer
+        : colors.divider;
 
-    return Material(
-      color: cardColor,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor),
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Expanded(
-              child: Text(entry.item.name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Expanded(
+            child: Text(entry.item.name,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          ),
+          const SizedBox(width: 8),
+          Text(entry.totalItemPrice.toCurrency(ref),
+              style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+        ]),
+        if (hasExtras)
+          Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: entry.selectedExtras
+                      .map((e) => Text("+${e.name}",
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: colors.warning,
+                              fontWeight: FontWeight.bold)))
+                      .toList())),
+        if (hasRemovedIngredients)
+          Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: entry.removedIngredients
+                      .map((e) => Text("Senza ${e.name}",
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: colors.danger,
+                              fontWeight: FontWeight.bold)))
+                      .toList())),
+        if (hasNotes)
+          Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(children: [
+                Icon(Icons.error_outline, size: 12, color: colors.warning),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(entry.notes!,
+                      style: TextStyle(fontSize: 12, color: colors.warning)),
+                )
+              ])),
+        const SizedBox(height: 8),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Container(
+              decoration: BoxDecoration(
+                  color: colors.background,
+                  borderRadius: BorderRadius.circular(8)),
+              child: Row(children: [
+                QuantityButton(
+                    icon: Icons.remove,
+                    onTap: () => _updateQty(entry.internalId, -1)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text("${entry.quantity}",
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+                QuantityButton(
+                    icon: Icons.add,
+                    onTap: () => _updateQty(entry.internalId, 1)),
+              ])),
+          Row(children: [
+            Material(
+              color: colors.background,
+              borderRadius: BorderRadius.circular(6),
+              child: InkWell(
+                onTap: () => _openEditDialog(entry),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    child: Row(children: [
+                      Icon(Icons.edit, size: 14, color: colors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text(AppLocalizations.of(context)!.btnEdit,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: colors.textSecondary))
+                    ])),
+              ),
             ),
             const SizedBox(width: 8),
-            Text(entry.totalItemPrice.toCurrency(ref),
-                style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-          ]),
-          if (hasExtras)
-            Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: entry.selectedExtras
-                        .map((e) => Text("+${e.name}",
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: colors.warning,
-                            fontWeight: FontWeight.bold)))
-                        .toList())),
-          if (hasNotes)
-            Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Row(children: [
-                  Icon(Icons.error_outline, size: 12, color: colors.warning),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(entry.notes!,
-                        style: TextStyle(fontSize: 12, color: colors.warning)),
-                  )
-                ])),
-          const SizedBox(height: 8),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Container(
-                decoration: BoxDecoration(
-                    color: colors.background,
-                    borderRadius: BorderRadius.circular(8)),
-                child: Row(children: [
-                  QuantityButton(
-                      icon: Icons.remove,
-                      onTap: () => _updateQty(entry.internalId, -1)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text("${entry.quantity}",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14)),
-                  ),
-                  QuantityButton(
-                      icon: Icons.add,
-                      onTap: () => _updateQty(entry.internalId, 1)),
-                ])),
-            Row(children: [
-              Material(
-                color: colors.background,
+            Material(
+              color: colors.dangerContainer,
+              borderRadius: BorderRadius.circular(6),
+              child: InkWell(
+                onTap: () => ref
+                    .read(cartProvider.notifier)
+                    .removeItem(entry.internalId),
                 borderRadius: BorderRadius.circular(6),
-                child: InkWell(
-                  onTap: () => _openEditDialog(entry),
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      child: Row(children: [
-                        Icon(Icons.edit, size: 14, color: colors.textSecondary),
-                        const SizedBox(width: 4),
-                        Text(AppLocalizations.of(context)!.btnEdit,
-                            style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: colors.textSecondary))
-                      ])),
-                ),
+                child: Container(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(Icons.delete_outline,
+                        size: 16, color: colors.danger)),
               ),
-              const SizedBox(width: 8),
-              Material(
-                color: colors.dangerContainer,
-                borderRadius: BorderRadius.circular(6),
-                child: InkWell(
-                  onTap: () => ref
-                      .read(cartProvider.notifier)
-                      .removeItem(entry.internalId),
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                      padding: const EdgeInsets.all(6),
-                      child: Icon(Icons.delete_outline,
-                          size: 16, color: colors.danger)),
-                ),
-              ),
-            ]),
+            ),
           ]),
         ]),
-      ),
+      ]),
     );
   }
 }

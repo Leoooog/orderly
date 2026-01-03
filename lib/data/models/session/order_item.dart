@@ -1,5 +1,6 @@
 import 'package:orderly/data/models/menu/extra.dart';
 import 'package:orderly/data/models/menu/ingredient.dart';
+import 'package:orderly/data/models/menu/menu_item.dart';
 
 import '../base_model.dart';
 import '../enums/order_item_status.dart';
@@ -15,11 +16,13 @@ class OrderItem extends BaseModel {
   final String? notes;
   final DateTime? firedAt; // Date
   final double paidQuantity;
+  final double priceEach;
 
   //Da inizializzare nel repository
   final List<Extra> selectedExtras; // Relation
   final List<Ingredient> removedIngredients; // Relation
   final Course course;
+  final MenuItem? menuItem;
 
   OrderItem({
     required super.id,
@@ -32,12 +35,14 @@ class OrderItem extends BaseModel {
     required this.quantity,
     required this.status,
     required this.menuItemName,
+    required this.priceEach,
     this.selectedExtras = const [],
     this.removedIngredients = const [],
     required this.course,
     this.notes,
     this.firedAt,
     this.paidQuantity = 0.0,
+    this.menuItem,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
@@ -50,13 +55,15 @@ class OrderItem extends BaseModel {
       orderId: json['order'] ?? '',
       menuItemId: json['menu_item'] ?? '',
       course: Course.empty(),
+      priceEach: (json['price_each'] as num? ?? 0).toDouble(),
       // Placeholder
-      quantity: (json['quantity'] ?? 0).toDouble(),
+      quantity: (json['quantity'] ?? 0),
       status: OrderItemStatus.fromString(json['status'] ?? ''),
       notes: json['notes'],
       firedAt: BaseModel.parseDateNullable(json['fired_at']),
       menuItemName: json['menu_item_name'] ?? '',
-      paidQuantity: (json['paid_quantity'] ?? 0).toDouble(),
+      paidQuantity: (json['paid_quantity'] as num? ?? 0).toDouble(),
+      menuItem: MenuItem.empty()
     );
   }
 
@@ -69,6 +76,7 @@ class OrderItem extends BaseModel {
       collectionName: '',
       menuItemName: '',
       orderId: '',
+      priceEach: 0.0,
       menuItemId: '',
       course: Course.empty(),
       quantity: 0,
@@ -87,12 +95,14 @@ class OrderItem extends BaseModel {
     int? quantity,
     OrderItemStatus? status,
     String? menuItemName,
+    double? priceEach,
     List<Extra>? selectedExtras,
     List<Ingredient>? removedIngredients,
     Course? course,
     String? notes,
     DateTime? firedAt,
     double? paidQuantity,
+    MenuItem? menuItem,
   }) {
     return OrderItem(
       id: id ?? this.id,
@@ -103,6 +113,7 @@ class OrderItem extends BaseModel {
       orderId: orderId ?? this.orderId,
       menuItemId: menuItemId ?? this.menuItemId,
       quantity: quantity ?? this.quantity,
+      priceEach: priceEach ?? this.priceEach,
       status: status ?? this.status,
       menuItemName: menuItemName ?? this.menuItemName,
       selectedExtras: selectedExtras ?? this.selectedExtras,
@@ -111,6 +122,7 @@ class OrderItem extends BaseModel {
       notes: notes ?? this.notes,
       firedAt: firedAt ?? this.firedAt,
       paidQuantity: paidQuantity ?? this.paidQuantity,
+      menuItem: menuItem ?? this.menuItem,
     );
   }
 

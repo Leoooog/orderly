@@ -16,6 +16,7 @@ import 'package:orderly/data/models/session/order_item.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../core/services/tenant_service.dart';
+import '../../core/utils/extensions.dart';
 import '../models/config/restaurant.dart';
 import '../models/enums/order_item_status.dart';
 import '../models/menu/extra.dart';
@@ -83,53 +84,69 @@ class PocketBaseRepository implements IOrderlyRepository {
   @override
   Future<List<Category>> getCategories() async {
     final records =
-        await _pb.collection('categories').getFullList(sort: 'display_order');
+        await _pb.collection('categories').getFullList(sort: 'sort_order');
+    print(
+        "[PocketBaseRepository] Fetched ${records.length} categories from PocketBase.");
     return records.map((r) => Category.fromJson(r.toJson())).toList();
   }
 
   @override
   Future<List<MenuItem>> getMenuItems() async {
     final records = await _pb.collection('menu_items').getFullList(
-        expand: 'category,allergens,extras,ingredients,produced_by');
+        expand: 'category,allergens,allowed_extras,ingredients,produced_by');
+    print(
+        "[PocketBaseRepository] Fetched ${records.length} menu items from PocketBase.");
     return records.map((r) {
-      MenuItem item = MenuItem.fromJson(r.toJson());
-      Category? category =
-          Category.fromJson(r.toJson()['expand']?['category'] ?? {});
-      List<Allergen> allergens =
-          (r.toJson()['expand']?['allergens'] as List<dynamic>?)
-                  ?.map((e) => Allergen.fromJson(e as Map<String, dynamic>))
-                  .toList() ??
-              [];
-      List<Ingredient> ingredients =
-          (r.toJson()['expand']?['ingredients'] as List<dynamic>?)
-                  ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
-                  .toList() ??
-              [];
-      List<Extra> extras = (r.toJson()['expand']?['extras'] as List<dynamic>?)
+      final json = r.toJson();
+      MenuItem item = MenuItem.fromJson(json);
+      print("[PocketBaseRepository] MenuItem ${item.id} - name: ${item.name}");
+
+      final expand = json['expand'] as Map<String, dynamic>? ?? {};
+
+      Category? category = expand['category'] != null
+          ? Category.fromJson(expand['category'] as Map<String, dynamic>)
+          : null;
+
+      List<Allergen> allergens = (expand['allergens'] as List<dynamic>?)
+              ?.map((e) => Allergen.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [];
+
+      List<Ingredient> ingredients = (expand['ingredients'] as List<dynamic>?)
+              ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [];
+
+      List<Extra> extras = (expand['allowed_extras'] as List<dynamic>?)
               ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [];
-      List<Department> producedBy = (r.toJson()['expand']?['produced_by'] !=
-              null)
-          ? [
-              Department.fromJson(
-                  r.toJson()['expand']!['produced_by'] as Map<String, dynamic>)
-            ]
-          : [];
 
-      return item.copyWith(
+      List<Department> producedBy = (expand['produced_by'] as List<dynamic>?)
+              ?.map((e) => Department.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [];
+
+      final populatedItem = item.copyWith(
           category: category,
           allergens: allergens,
           ingredients: ingredients,
           allowedExtras: extras,
           producedBy: producedBy);
+
+      print(
+          "[PocketBaseRepository] Populated MenuItem: ${populatedItem.toString()}");
+
+      return populatedItem;
     }).toList();
   }
 
   @override
   Future<List<Course>> getCourses() async {
     final records =
-        await _pb.collection('courses').getFullList(sort: 'display_order');
+        await _pb.collection('courses').getFullList(sort: 'sort_order');
+    print(
+        "[PocketBaseRepository] Fetched ${records.length} courses from PocketBase.");
     return records.map((r) => Course.fromJson(r.toJson())).toList();
   }
 
@@ -142,6 +159,8 @@ class PocketBaseRepository implements IOrderlyRepository {
   @override
   Future<List<VoidReason>> getVoidReasons() async {
     final records = await _pb.collection('void_reasons').getFullList();
+    print(
+        "[PocketBaseRepository] Fetched ${records.length} void reasons from PocketBase.");
     return records.map((r) => VoidReason.fromJson(r.toJson())).toList();
   }
 
@@ -152,11 +171,13 @@ class PocketBaseRepository implements IOrderlyRepository {
     final controller = StreamController<List<TableSession>>();
     List<TableSession> currentList = [];
 
-
     // 1. Initial Fetch
-    _pb.collection('table_sessions').getFullList(
+    _pb
+        .collection('table_sessions')
+        .getFullList(
           filter: "(status != 'closed')",
-        ).then((records) {
+        )
+        .then((records) {
       currentList =
           records.map((r) => TableSession.fromJson(r.toJson())).toList();
       if (!controller.isClosed) {
@@ -204,15 +225,29 @@ class PocketBaseRepository implements IOrderlyRepository {
     List<Order> currentList = [];
 
     // created less than 24 hours ago
-    const filter = "";
+    const filter =
+        ""; //TODO: aggiustare il filtro in base alla logica di "attivo"
 
     // 1. Initial Fetch
-    _pb.collection('orders').getFullList(
+    _pb
+        .collection('orders')
+        .getFullList(
           filter: filter,
           expand: 'items', // Eager load items
-        ).then((records) {
-      currentList = records.map((r) => Order.fromJson(r.toJson())).toList();
-      print("[PocketBaseRepository] Initial fetch of orders: ${currentList.length} orders loaded.");
+        )
+        .then((records) async {
+      currentList = await Future.wait(records.map((r) async {
+        Order item = Order.fromJson(r.toJson());
+        List<OrderItem> orderItems = await _getOrderItemsForOrder(item.id);
+        print(
+            "[PocketBaseRepository] Initial fetch - order ${item.id} has ${orderItems.length} items.");
+
+        return item.copyWith(items: orderItems);
+      }).toList());
+
+      print(
+          "[PocketBaseRepository] Initial fetch of orders: ${currentList.length} orders loaded.");
+
       if (!controller.isClosed) {
         controller.add(List.from(currentList));
       }
@@ -226,14 +261,13 @@ class PocketBaseRepository implements IOrderlyRepository {
     _pb.collection('orders').subscribe('*', (e) async {
       if (controller.isClosed || e.record == null) return;
 
-      var item = Order.fromJson(e.record!.toJson());
+      Order item = Order.fromJson(e.record!.toJson());
 
       List<OrderItem> orderItems = await _getOrderItemsForOrder(item.id);
-      item = item.copyWith(items: orderItems);
-      // populate order items
-      // Note: In a real implementation, you might want to fetch the items separately
-      // or ensure they are included in the record's expand field.
 
+      print(
+          "[PocketBaseRepository] Realtime update for order ${item.id}: fetched ${orderItems.length} items.");
+      item = item.copyWith(items: orderItems);
 
       if (e.action == 'delete') {
         currentList.removeWhere((i) => i.id == item.id);
@@ -256,29 +290,69 @@ class PocketBaseRepository implements IOrderlyRepository {
     return controller.stream;
   }
 
+  @override
+  Stream<List<OrderItem>> watchAllActiveOrderItems() {
+    final controller = StreamController<List<OrderItem>>();
+    List<OrderItem> currentList = [];
+
+    // We assume "active" means created today. Adjust if needed.
+    final filter =
+        "created >= @todayStart"; //TODO: aggiustare il filtro in base alla logica di "attivo"
+
+    // 1. Initial Fetch
+    _pb
+        .collection('order_items')
+        .getFullList(
+          filter: filter,
+          expand: 'course,extras,removed_ingredients',
+        )
+        .then((records) {
+      currentList = records.map((r) => _populateOrderItem(r)).toList();
+      if (!controller.isClosed) {
+        controller.add(List.from(currentList));
+      }
+    }).catchError((e) {
+      if (!controller.isClosed) {
+        controller.addError(e);
+      }
+    });
+
+    // 2. Realtime Subscription
+    _pb
+        .collection('order_items')
+        .subscribe('*', expand: 'course, extras, removed_ingredients', (e) {
+      if (controller.isClosed || e.record == null) return;
+
+      final item = _populateOrderItem(e.record!);
+
+      if (e.action == 'delete') {
+        currentList.removeWhere((i) => i.id == item.id);
+      } else {
+        final index = currentList.indexWhere((i) => i.id == item.id);
+        if (index != -1) {
+          currentList[index] = item; // Update
+        } else {
+          currentList.insert(0, item); // Add new
+        }
+      }
+      controller.add(List.from(currentList));
+    });
+
+    // 3. Cleanup
+    controller.onCancel = () {
+      _pb.collection('order_items').unsubscribe('*');
+    };
+
+    return controller.stream;
+  }
+
   Future<List<OrderItem>> _getOrderItemsForOrder(String orderId) async {
     final records = await _pb.collection('order_items').getFullList(
           filter: 'order = "$orderId"',
           expand: 'menu_item,extras,course,removed_ingredients',
         );
     var items = records.map((r) {
-      OrderItem item = OrderItem.fromJson(r.toJson());
-      List<Extra> selectedExtras =
-          (r.toJson()['expand']?['extras'] as List<dynamic>?)
-                  ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
-                  .toList() ??
-              [];
-      Course course = Course.fromJson(
-          r.toJson()['expand']?['course'] as Map<String, dynamic>? ?? {});
-      List<Ingredient> removedIngredients =
-          (r.toJson()['expand']?['removed_ingredients'] as List<dynamic>?)
-                  ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
-                  .toList() ??
-              [];
-      return item.copyWith(
-          selectedExtras: selectedExtras,
-          course: course,
-          removedIngredients: removedIngredients);
+      return _populateOrderItem(r);
     }).toList();
     return items;
   }
@@ -323,6 +397,7 @@ class PocketBaseRepository implements IOrderlyRepository {
       'session': sessionId,
       'waiter': waiterId,
       'status': 'pending', // Or based on logic
+      'total_amount': items.totalAmount,
     };
     final orderRecord = await _pb.collection('orders').create(body: orderBody);
 
@@ -331,10 +406,15 @@ class PocketBaseRepository implements IOrderlyRepository {
       final itemBody = {
         'order': orderRecord.id,
         'menu_item': entry.item.id,
+        'menu_item_name': entry.item.name,
+        'price_each': entry.unitItemPrice,
         'quantity': entry.quantity,
         'notes': entry.notes,
-        'status': 'pending',
-        'extras': entry.selectedExtras.map((e) => e.id).toList(),
+        'status': OrderItemStatus.pending,
+        'course': entry.course.id,
+        'removed_ingredients':
+            entry.removedIngredients,
+        'selected_extras': entry.selectedExtras
       };
       await _pb.collection('order_items').create(body: itemBody);
     }
@@ -342,20 +422,30 @@ class PocketBaseRepository implements IOrderlyRepository {
 
   @override
   Future<void> voidItem(
-      {required String orderItemId,
+      {required String? orderItemId,
       required VoidReason reason,
+      required String tableSessionId,
+      required String menuItemId,
+      required String menuItemName,
+      required double amount,
       required int quantity,
       required bool refund,
       required String voidedBy,
+      required OrderItemStatus statusWhenVoided,
       String? notes}) async {
     // Again, this should be a single backend transaction.
     final body = {
       'order_item': orderItemId,
+      'session': tableSessionId,
+      'menu_item': menuItemId,
+      'menu_item_name': menuItemName,
+      'amount': amount,
       'reason': reason.id,
       'quantity': quantity,
       'is_refunded': refund,
       'notes': notes,
       'voided_by': voidedBy,
+      'status_when_voided': statusWhenVoided,
     };
     await _pb.collection('voids').create(body: body);
     // The backend should have a trigger to update the original order_item's quantity or status.
@@ -415,4 +505,28 @@ class PocketBaseRepository implements IOrderlyRepository {
     };
     await _pb.collection('order_items').update(orderItemId, body: body);
   }
+
+  OrderItem _populateOrderItem(RecordModel r) {
+    print("[PocketBaseRepository] Populating OrderItem from record ${r.id}");
+    OrderItem item = OrderItem.fromJson(r.toJson());
+    print(
+        "[PocketBaseRepository] Base OrderItem: ${item.toString()} from JSON: ${r.toJson().toString()}");
+    List<Extra> selectedExtras =
+        (r.toJson()['expand']?['extras'] as List<dynamic>?)
+                ?.map((e) => Extra.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [];
+    Course course = Course.fromJson(
+        r.toJson()['expand']?['course'] as Map<String, dynamic>? ?? {});
+    List<Ingredient> removedIngredients =
+        (r.toJson()['expand']?['removed_ingredients'] as List<dynamic>?)
+                ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [];
+    return item.copyWith(
+        selectedExtras: selectedExtras,
+        course: course,
+        removedIngredients: removedIngredients);
+  }
 }
+

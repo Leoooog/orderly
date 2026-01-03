@@ -10,7 +10,6 @@ import '../../../../data/models/config/void_reason.dart';
 import '../../../../data/models/enums/order_item_status.dart';
 import '../../../../data/models/menu/course.dart';
 import '../../../../data/models/menu/extra.dart';
-import '../../../../data/models/menu/menu_item.dart';
 import '../../../../data/models/session/order_item.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/tables_provider.dart';
@@ -45,7 +44,8 @@ class HistoryTab extends ConsumerWidget {
       int qty, VoidReason reasonId, bool refund, String? notes) {
     if (table.sessionId == null) return;
     ref.read(tablesControllerProvider.notifier).voidOrderItem(
-          orderItemId: item.id,
+          orderItem: item,
+          tableSessionId: table.sessionId!,
           quantity: qty,
           reason: reasonId,
           notes: notes,
@@ -273,11 +273,23 @@ class HistoryTab extends ConsumerWidget {
     );
   }
 
-  void _showEditDialog(BuildContext context, WidgetRef ref, OrderItem item) {
-    // The full MenuItem is already in the OrderItem's expand property
-    final menuItem = ref.read(menuItemsProvider).firstWhere(
-        (mi) => mi.id == item.menuItemId,
-        orElse: () => MenuItem.empty());
+  void _showEditDialog(
+      BuildContext context, WidgetRef ref, OrderItem item) async {
+    // The menuItem must be fetched asynchronously
+    final menuItem = await ref
+        .read(menuItemsProvider.notifier)
+        .getMenuItemById(item.menuItemId);
+
+    // Because of the await, we must check if the widget is still in the tree.
+    if (!context.mounted) return;
+
+    if (menuItem.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppLocalizations.of(context)!.msgMenuItemNotFound),
+        backgroundColor: context.colors.danger,
+      ));
+      return;
+    }
 
     showDialog(
       context: context,
@@ -468,78 +480,103 @@ class HistoryTab extends ConsumerWidget {
     final allCourses =
         ref.watch(menuDataProvider.select((data) => data.value?.courses)) ?? [];
 
-    final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
-    final double maxWidth = isTablet ? 700 : double.infinity;
+    // Watch the provider to get the live state of all tables
+    final tablesAsync = ref.watch(tablesControllerProvider);
 
-    final orders = table.activeSession?.orders ?? [];
-    final voids = table.activeSession?.voids ?? [];
+    print("[HistoryTab] Building HistoryTab for table ${table.name}");
 
-    if (orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.receipt_long, size: 64, color: colors.divider),
-            const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.labelNoOrders,
-                style: TextStyle(
-                    color: colors.textTertiary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14)),
-            if (voids.isNotEmpty)
-              TextButton(
-                  onPressed: () => _showVoidsHistory(context, ref),
-                  child: Text(AppLocalizations.of(context)!.labelViewVoided)),
-          ],
-        ),
-      );
-    }
+    return tablesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text("Error: $err")),
+      data: (tables) {
+        print("[HistoryTab] Fetched ${tables.length} tables from provider");
+        // Find the specific table for this view from the live list
+        final currentTable = tables.firstWhere(
+            (t) => t.id == table.id,
+            orElse: () => table,
+          );
 
-    final Map<Course, List<OrderItem>> groupedOrders = {};
-    for (var course in allCourses) {
-      final items = orders
-          .expand((o) => o.items)
-          .where((item) => item.course.id == course.id)
-          .toList();
-      if (items.isNotEmpty) groupedOrders[course] = items;
-    }
+        // If, for some reason, we have no data for this table, show a loading indicator.
+        // This can happen during a state transition.
+        if (currentTable.sessionId == null || currentTable.sessionId!.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16, top: 8),
-                child: TextButton.icon(
-                  onPressed: () => _showVoidsHistory(context, ref),
-                  icon: Icon(Icons.history, size: 16, color: colors.danger),
-                  label: Text(AppLocalizations.of(context)!.labelViewVoided,
-                      style: TextStyle(
-                          color: colors.danger,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14)),
+        final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
+        final double maxWidth = isTablet ? 700 : double.infinity;
+
+        final orders = currentTable.activeSession?.orders ?? [];
+        final voids = currentTable.activeSession?.voids ?? [];
+
+        if (orders.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.receipt_long, size: 64, color: colors.divider),
+                const SizedBox(height: 16),
+                Text(AppLocalizations.of(context)!.labelNoOrders,
+                    style: TextStyle(
+                        color: colors.textTertiary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14)),
+                if (voids.isNotEmpty)
+                  TextButton(
+                      onPressed: () => _showVoidsHistory(context, ref),
+                      child:
+                          Text(AppLocalizations.of(context)!.labelViewVoided)),
+              ],
+            ),
+          );
+        }
+
+        final Map<Course, List<OrderItem>> groupedOrders = {};
+        for (var course in allCourses) {
+          final items = orders
+              .expand((o) => o.items)
+              .where((item) => item.course.id == course.id)
+              .toList();
+          if (items.isNotEmpty) groupedOrders[course] = items;
+        }
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16, top: 8),
+                    child: TextButton.icon(
+                      onPressed: () => _showVoidsHistory(context, ref),
+                      icon: Icon(Icons.history, size: 16, color: colors.danger),
+                      label: Text(AppLocalizations.of(context)!.labelViewVoided,
+                          style: TextStyle(
+                              color: colors.danger,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14)),
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      for (var course in groupedOrders.keys) ...[
+                        _buildCourseSection(
+                            context, ref, course, groupedOrders[course]!),
+                        const SizedBox(height: 24),
+                      ],
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  for (var course in groupedOrders.keys) ...[
-                    _buildCourseSection(
-                        context, ref, course, groupedOrders[course]!),
-                    const SizedBox(height: 24),
-                  ],
-                  const SizedBox(height: 80),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -620,6 +657,8 @@ class HistoryTab extends ConsumerWidget {
               border: Border.all(color: colors.divider)),
           child: Column(
             children: items.asMap().entries.map((entry) {
+              print(
+                  "[HistoryTab] Building history item for ${entry.value.menuItemName} in course ${course.name}");
               return _buildHistoryItemRow(context, ref, entry.value,
                   isLast: entry.key == items.length - 1,
                   isFirst: entry.key == 0);
@@ -666,6 +705,9 @@ class HistoryTab extends ConsumerWidget {
     String statusLabel = "";
     bool isInteractive = false;
     double opacity = 1.0;
+
+    print(
+        "[HistoryTab] Building item row for ${item.menuItemName} with status ${item.status}");
 
     switch (item.status) {
       case OrderItemStatus.pending:

@@ -75,6 +75,8 @@ class MenuItem extends BaseModel {
     );
   }
 
+  bool get isEmpty => id.isEmpty;
+
   MenuItem copyWith({
     String? id,
     DateTime? created,
