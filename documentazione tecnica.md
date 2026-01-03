@@ -35,32 +35,8 @@ Il progetto è strutturato come un **Monorepo Flutter** che condivide la logica 
 | **Target Client** | Ristoranti con fibra, catene | Locali in zone remote, bunker, sagre |
 | **Endpoint**      | `https://api.orderly.cloud`  | `http://192.168.10.100`              |
 | **Aggiornamenti** | Automatici (Web)             | Manuali (USB) o Pull (Notturni)      |
-|                   |                              |                                      |
 
-```mermaid
-graph TD
-    subgraph "Frontend Layer (Flutter Monorepo)"
-        A[App Waiter<br>(Mobile)] -->|HTTP/SSE| API
-        B[App KDS<br>(Tablet)] -->|HTTP/SSE| API
-        C[App POS<br>(Windows/Android)] -->|HTTP/SSE| API
-        C -->|USB/LAN| Printer[Stampanti Termiche]
-        D[Web Admin<br>(Browser)] -->|HTTP| API
-    end
 
-    subgraph "Backend Layer (Intercambiabile)"
-        API[Interfaccia IOrderlyRepository]
-        
-        API -.->|Scenario A: SaaS| Cloud[VPS / Cloud<br>PocketBase + S3]
-        API -.->|Scenario B: On-Premise| Local[Raspberry Pi 4/5<br>PocketBase Locale]
-    end
-
-    subgraph "Local Persistence Layer"
-        Hive[(Hive CE NoSQL)]
-        A <--> Hive
-        B <--> Hive
-        C <--> Hive
-    end
-```
 ### 2.2 Stack Tecnologico
 
 * **Frontend (App):**
