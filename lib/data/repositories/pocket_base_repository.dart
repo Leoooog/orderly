@@ -15,7 +15,6 @@ import 'package:orderly/data/models/session/order_item.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../core/services/tenant_service.dart';
-import '../../core/utils/extensions.dart';
 import '../models/config/restaurant.dart';
 import '../models/enums/order_item_status.dart';
 import '../models/menu/extra.dart';
@@ -30,7 +29,7 @@ class PocketBaseRepository implements IOrderlyRepository {
   // --- CONSTANTS ---
   // Espansione profonda per avere anche il tavolo dentro l'item (utile per cucina/bar)
   static const String _orderItemExpand =
-      'menu_item,extras,course,removed_ingredients,order.session.table';
+      'menu_item,selected_extras,course,removed_ingredients,order.session.table';
   static const String _menuItemExpand =
       'category,allergens,allowed_extras,ingredients,produced_by';
 
@@ -294,7 +293,8 @@ class PocketBaseRepository implements IOrderlyRepository {
 
   // --- ACTIONS ---
   @override
-  Future<TableSession> openTable(String tableId, int guests, String waiterId) async {
+  Future<TableSession> openTable(
+      String tableId, int guests, String waiterId) async {
     final sessionRecord = await _pb.collection('table_sessions').create(body: {
       'table': tableId,
       'guests_count': guests,
@@ -330,7 +330,8 @@ class PocketBaseRepository implements IOrderlyRepository {
           'notes': entry.notes,
           'course': entry.course.id,
           // Mappiamo le liste di oggetti in liste di ID
-          'removed_ingredients': entry.removedIngredients.map((e) => e.id).toList(),
+          'removed_ingredients':
+              entry.removedIngredients.map((e) => e.id).toList(),
           'selected_extras': entry.selectedExtras.map((e) => e.id).toList(),
         };
       }).toList(),
@@ -351,7 +352,6 @@ class PocketBaseRepository implements IOrderlyRepository {
       // bisogna gestirla nell'hook o fare una fetch successiva.
       // Per il return di base, questo è sufficiente.
       return Order.fromJson(response as Map<String, dynamic>);
-
     } catch (e) {
       // Gestione errori più pulita
       print("Errore invio ordine: $e");

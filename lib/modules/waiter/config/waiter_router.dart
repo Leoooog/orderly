@@ -14,11 +14,8 @@ import '../screens/tables_view.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
 GlobalKey<NavigatorState>(debugLabel: 'root');
-final GlobalKey<NavigatorState> _shellNavigatorKey =
-GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 final waiterRouterProvider = Provider<GoRouter>((ref) {
-  // Notifier per forzare il refresh quando cambia lo stato della sessione
   final refreshNotifier = ValueNotifier<int>(0);
 
   ref.listen(sessionProvider, (_, next) {
@@ -29,70 +26,48 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: refreshNotifier,
+
+    // --- LOGICA DI REDIRECT (Invariata, è perfetta) ---
     redirect: (BuildContext context, GoRouterState state) {
       final sessionAsync = ref.read(sessionProvider);
       final location = state.uri.toString();
 
-      // ---------------------------------------------------------
-      // 1. STATO DI CARICAMENTO
-      // ---------------------------------------------------------
       if (sessionAsync.isLoading) {
-        // Se stiamo andando verso splash, lasciamo fare, altrimenti forziamo splash
-        print("[Router] Session is loading, redirecting to /splash");
         return location == '/splash' ? null : '/splash';
-
       }
 
-      // ---------------------------------------------------------
-      // 2. GESTIONE ERRORI / MANCANZA CONFIGURAZIONE
-      // ---------------------------------------------------------
-      // Verifica A: Il provider ha lanciato un errore specifico
       final hasConfigError = sessionAsync.hasError &&
           (sessionAsync.error.toString().contains('TENANT_NOT_CONFIGURED') ||
               sessionAsync.error.toString().contains('BACKEND_NOT_CONFIGURED'));
-
-      // Verifica B: Il provider ha restituito uno stato valido ma senza Ristorante (Il fix che abbiamo discusso prima)
       final isUnconfiguredState = sessionAsync.value != null &&
           sessionAsync.value!.currentRestaurant == null;
 
-      // Se manca la configurazione (per errore o per stato vuoto), vai a Tenant Selection
       if (hasConfigError || isUnconfiguredState) {
-        print("[Router] Tenant not configured, redirecting to /tenant-selection");
         return location == '/tenant-selection' ? null : '/tenant-selection';
       }
 
-      // Se c'è un errore generico diverso (es. crash server), rimaniamo qui o su splash
       if (sessionAsync.hasError) return null;
 
-      // ---------------------------------------------------------
-      // 3. STATO DATI PRONTI (Abbiamo un Ristorante)
-      // ---------------------------------------------------------
       final session = sessionAsync.value;
-      if (session == null) return '/splash'; // Safety fallback
-
-      print("[Router] Session ready, user authenticated: ${session.currentUser != null}");
+      if (session == null) return '/splash';
 
       final isAuthenticated = session.currentUser != null;
       final isLoginScreen = location == '/login';
       final isTenantScreen = location == '/tenant-selection';
       final isSplashScreen = location == '/splash';
 
-      // CASO A: Non autenticato -> Login
-      // Nota: Arriviamo qui solo se il Ristorante ESISTE (step 2 passato), quindi è sicuro forzare il login.
       if (!isAuthenticated) {
         return isLoginScreen ? null : '/login';
       }
 
-      // CASO B: Autenticato -> Home (Tables)
-      // Se l'utente è loggato ma prova ad andare su pagine di "servizio" (login, splash, tenant),
-      // lo riportiamo alla home.
       if (isLoginScreen || isTenantScreen || isSplashScreen) {
         return '/tables';
       }
 
-      // In tutti gli altri casi (navigazione interna consentita), null.
       return null;
     },
+
+    // --- ROUTE PIATTE (Senza Shell) ---
     routes: [
       GoRoute(
         path: '/splash',
@@ -110,39 +85,31 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
         path: '/login',
         builder: (context, state) => LoginScreen(),
       ),
-      ShellRoute(
-        navigatorKey: _shellNavigatorKey,
-        builder: (context, state, child) {
-          return Scaffold(body: child);
-        },
-        routes: [
-          GoRoute(
-            path: '/tables',
-            pageBuilder: (context, state) =>
-            const NoTransitionPage(child: TablesView()),
-          ),
-          GoRoute(
-            path: '/menu/:tableId',
-            name: 'menu',
-            pageBuilder: (context, state) {
-              final tableId = state.pathParameters['tableId']!;
-              return NoTransitionPage(
-                  child: MenuView(
-                    tableSessionId: tableId,
-                  ));
-            },
-          ),
-          GoRoute(
-            path: '/settings',
-            pageBuilder: (context, state) =>
-            const NoTransitionPage(child: SettingsScreen()),
-          ),
-        ],
+
+      // Ho spostato queste route fuori dalla ShellRoute, ora sono al livello principale
+      GoRoute(
+        path: '/tables',
+        // Uso pageBuilder con NoTransitionPage se vuoi mantenere l'effetto "fermo"
+        // o builder normale se vuoi l'animazione di slide nativa.
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: TablesView()),
       ),
+      GoRoute(
+        path: '/menu/:tableId',
+        name: 'menu',
+        builder: (context, state) {
+          final tableId = state.pathParameters['tableId']!;
+          return MenuView(tableSessionId: tableId);
+        },
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+
       GoRoute(
           path: '/success/:tableName',
           name: 'success',
-          parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) {
             final tableName = state.pathParameters['tableName']!;
             return SuccessView(tableName: tableName);

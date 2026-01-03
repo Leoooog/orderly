@@ -1,70 +1,94 @@
 // pb_hooks/orders.pb.js
 
 routerAdd("POST", "/api/custom/create-order", (c) => {
-    // 1. Leggi i dati inviati dal client (Flutter)
-    const data = $apis.requestInfo(c).data;
+    // -----------------------------------------------------------
+    // 1. LETTURA DATI (c.bind è il metodo sicuro di Echo/PB)
+    // -----------------------------------------------------------
+    const data = new DynamicModel(
+        {
+            "session": "",
+            "waiter": "",
+            "items": []
+        }
+    );
+    c.bindBody(data); // Popola l'oggetto 'data' con il JSON ricevuto
 
-    if (!data.session || !data.items || data.items.length === 0) {
+    // Debug
+    // console.log("Dati ricevuti:", JSON.stringify(data));
+
+    if (!data.session || !data.items || !data.items.length) {
         throw new BadRequestError("Dati mancanti: sessione o items vuoti.");
     }
 
-    const dao = $app.dao();
-
     let createdOrderRecord;
 
-    // 2. Esegui tutto in una transazione
-    dao.runInTransaction((txDao) => {
-        const orderCollection = dao.findCollectionByNameOrId("orders");
-        const orderItemCollection = dao.findCollectionByNameOrId("order_items");
+    try {
+        // -----------------------------------------------------------
+        // 2. TRANSAZIONE (Niente più DAO!)
+        // -----------------------------------------------------------
+        // Si usa $app.runInTransaction.
+        // 'txApp' è l'istanza dell'app confinata nella transazione.
+        $app.runInTransaction((txApp) => {
 
-        // A. Calcola il totale lato server per sicurezza (o usa quello inviato)
-        let totalAmount = 0.0;
-        data.items.forEach((item) => {
-            // Assicuriamoci che price_each e quantity siano numeri
-            const price = parseFloat(item.price_each) || 0;
-            const qty = parseInt(item.quantity) || 1;
-            totalAmount += (price * qty);
+            // Cerca le collezioni usando txApp
+            const orderCollection = txApp.findCollectionByNameOrId("orders");
+            const orderItemCollection = txApp.findCollectionByNameOrId("order_items");
+
+            // A. Calcolo Totale
+            let totalAmount = 0.0;
+            const items = data.items;
+
+            items.forEach((item) => {
+                const price = parseFloat(item.price_each) || 0;
+                const qty = parseInt(item.quantity) || 1;
+                totalAmount += (price * qty);
+            });
+
+            // B. Creazione Record Ordine
+            // Nota: Record è globale
+            const order = new Record(orderCollection);
+
+            // I metodi .set() sono uguali a prima
+            order.set("session", data.session);
+            if (data.waiter) order.set("waiter", data.waiter);
+            order.set("status", "pending");
+            order.set("total_amount", totalAmount);
+
+            // SALVATAGGIO: Ora si usa txApp.save(record) invece di saveRecord
+            txApp.save(order);
+
+            createdOrderRecord = order;
+
+            // C. Creazione Record Items
+            items.forEach((itemData) => {
+                const item = new Record(orderItemCollection);
+
+                item.set("order", order.id);
+                item.set("menu_item", itemData.menu_item);
+                item.set("menu_item_name", itemData.menu_item_name);
+                item.set("price_each", itemData.price_each);
+                item.set("quantity", itemData.quantity);
+                item.set("notes", itemData.notes);
+                item.set("status", "pending");
+                item.set("course", itemData.course);
+
+                if (itemData.removed_ingredients) {
+                    item.set("removed_ingredients", itemData.removed_ingredients);
+                }
+                if (itemData.selected_extras) {
+                    item.set("selected_extras", itemData.selected_extras);
+                }
+
+                // Salvataggio item
+                txApp.save(item);
+            });
         });
 
-        // B. Crea il record "Order"
-        const order = new Record(orderCollection);
-        order.set("session", data.session);
-        order.set("waiter", data.waiter);
-        order.set("status", "pending");
-        order.set("total_amount", totalAmount);
+        // Ritorna il record creato
+        return c.json(200, createdOrderRecord);
 
-        // Salva l'ordine usando il DAO della transazione (txDao)
-        txDao.saveRecord(order);
-        createdOrderRecord = order;
-
-        // C. Crea i record "OrderItem"
-        data.items.forEach((itemData) => {
-            const item = new Record(orderItemCollection);
-
-            // Collega l'item all'ordine appena creato
-            item.set("order", order.id);
-
-            // Mappa i campi
-            item.set("menu_item", itemData.menu_item);
-            item.set("menu_item_name", itemData.menu_item_name);
-            item.set("price_each", itemData.price_each);
-            item.set("quantity", itemData.quantity);
-            item.set("notes", itemData.notes);
-            item.set("status", "pending"); // Default status
-            item.set("course", itemData.course);
-
-            // Gestione array di relazioni (assicurati che siano array nel JSON)
-            if (itemData.removed_ingredients) {
-                item.set("removed_ingredients", itemData.removed_ingredients);
-            }
-            if (itemData.selected_extras) {
-                item.set("selected_extras", itemData.selected_extras);
-            }
-
-            txDao.saveRecord(item);
-        });
-    });
-
-    // 3. Ritorna l'ordine creato (espandi se necessario)
-    return c.json(200, createdOrderRecord);
+    } catch (err) {
+        console.error("Errore creazione ordine:", err);
+        throw new BadRequestError("Impossibile creare l'ordine: " + err.message);
+    }
 });
