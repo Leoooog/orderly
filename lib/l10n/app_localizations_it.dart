@@ -403,6 +403,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get dialogConfirmVoid => 'CONFERMA STORNO';
 
   @override
+  String get msgErrorOpeningTable => 'Errore nell\'apertura del tavolo';
+
+  @override
+  String get msgConfirmLogout => 'Sei sicuro di voler uscire?';
+
+  @override
   String get labelRefundOption => 'Rimborsare l\'importo?';
 
   @override

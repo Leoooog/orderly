@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
+import 'package:orderly/config/hive_keys.dart';
 
 class TenantService {
   static const String _storageKey = 'orderly_tenant_url';
@@ -15,7 +16,8 @@ class TenantService {
 
   // Factory method per la creazione asincrona
   static Future<TenantService> create() async {
-    final box = await Hive.openBox('app_settings');
+    final box = await Hive.openBox(HiveKeys.settingsBox);
+    print("[TenantService] Hive box 'app_settings' opened.");
     return TenantService._(box);
   }
 

@@ -1,31 +1,27 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive_ce/hive_ce.dart';
-import 'package:orderly/logic/providers/session_provider.dart';
+import 'package:orderly/logic/providers/session_provider.dart'; // Assicurati che il path sia giusto
 import 'package:orderly/modules/waiter/screens/login_screen.dart';
 import 'package:orderly/shared/widgets/splash_screen.dart';
 import 'package:orderly/shared/widgets/tenant_selection_screen.dart';
 
-import '../../../config/hive_keys.dart';
+// Importa le tue schermate
 import '../screens/menu_view.dart';
 import '../screens/settings_screen.dart';
 import '../screens/success_view.dart';
 import '../screens/tables_view.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
+GlobalKey<NavigatorState>(debugLabel: 'root');
 final GlobalKey<NavigatorState> _shellNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'shell');
+GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 final waiterRouterProvider = Provider<GoRouter>((ref) {
-  // Create a ValueNotifier to notify the router when the session state changes.
+  // Notifier per forzare il refresh quando cambia lo stato della sessione
   final refreshNotifier = ValueNotifier<int>(0);
-  ref.listen(sessionProvider, (_, __) {
-    // When the session state changes, update the notifier's value
-    // to trigger the router's refresh.
+
+  ref.listen(sessionProvider, (_, next) {
     refreshNotifier.value++;
   });
 
@@ -34,43 +30,67 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     refreshListenable: refreshNotifier,
     redirect: (BuildContext context, GoRouterState state) {
-      // Read the latest session state directly from the provider.
-      final appState = ref.read(sessionProvider).appState;
+      final sessionAsync = ref.read(sessionProvider);
       final location = state.uri.toString();
-      final isSplash = location == '/splash';
 
-      // If the app is initializing, stay on the splash screen.
-      if (appState == AppState.initializing) {
-        return isSplash ? null : '/splash';
+      // ---------------------------------------------------------
+      // 1. STATO DI CARICAMENTO
+      // ---------------------------------------------------------
+      if (sessionAsync.isLoading) {
+        // Se stiamo andando verso splash, lasciamo fare, altrimenti forziamo splash
+        print("[Router] Session is loading, redirecting to /splash");
+        return location == '/splash' ? null : '/splash';
+
       }
 
-      final isTenantScreen = location.startsWith('/tenant-selection');
-      final isLoginScreen = location.startsWith('/login');
+      // ---------------------------------------------------------
+      // 2. GESTIONE ERRORI / MANCANZA CONFIGURAZIONE
+      // ---------------------------------------------------------
+      // Verifica A: Il provider ha lanciato un errore specifico
+      final hasConfigError = sessionAsync.hasError &&
+          (sessionAsync.error.toString().contains('TENANT_NOT_CONFIGURED') ||
+              sessionAsync.error.toString().contains('BACKEND_NOT_CONFIGURED'));
 
-      // Se il tenant non è configurato, forza la schermata di selezione
-      if (appState == AppState.tenantSetup ||
-          appState == AppState.tenantError) {
-        return isTenantScreen ? null : '/tenant-selection';
+      // Verifica B: Il provider ha restituito uno stato valido ma senza Ristorante (Il fix che abbiamo discusso prima)
+      final isUnconfiguredState = sessionAsync.value != null &&
+          sessionAsync.value!.currentRestaurant == null;
+
+      // Se manca la configurazione (per errore o per stato vuoto), vai a Tenant Selection
+      if (hasConfigError || isUnconfiguredState) {
+        print("[Router] Tenant not configured, redirecting to /tenant-selection");
+        return location == '/tenant-selection' ? null : '/tenant-selection';
       }
 
-      // Se il repo è pronto ma non siamo loggati, forza la schermata di login
-      if (appState == AppState.loginRequired) {
+      // Se c'è un errore generico diverso (es. crash server), rimaniamo qui o su splash
+      if (sessionAsync.hasError) return null;
+
+      // ---------------------------------------------------------
+      // 3. STATO DATI PRONTI (Abbiamo un Ristorante)
+      // ---------------------------------------------------------
+      final session = sessionAsync.value;
+      if (session == null) return '/splash'; // Safety fallback
+
+      print("[Router] Session ready, user authenticated: ${session.currentUser != null}");
+
+      final isAuthenticated = session.currentUser != null;
+      final isLoginScreen = location == '/login';
+      final isTenantScreen = location == '/tenant-selection';
+      final isSplashScreen = location == '/splash';
+
+      // CASO A: Non autenticato -> Login
+      // Nota: Arriviamo qui solo se il Ristorante ESISTE (step 2 passato), quindi è sicuro forzare il login.
+      if (!isAuthenticated) {
         return isLoginScreen ? null : '/login';
       }
 
-      // Se siamo autenticati e ci troviamo su login o tenant, vai alla home
-      if (appState == AppState.authenticated &&
-          (isLoginScreen || isTenantScreen)) {
+      // CASO B: Autenticato -> Home (Tables)
+      // Se l'utente è loggato ma prova ad andare su pagine di "servizio" (login, splash, tenant),
+      // lo riportiamo alla home.
+      if (isLoginScreen || isTenantScreen || isSplashScreen) {
         return '/tables';
       }
 
-      if (appState == AppState.backendSelection) {
-        // Salviamo "DEV" in Hive come backend selezionato
-        ref.read(sessionProvider.notifier).setBackend('pocketbase');
-        return '/splash';
-      }
-
-      // In tutti gli altri casi, lascia che l'utente vada dove ha chiesto
+      // In tutti gli altri casi (navigazione interna consentita), null.
       return null;
     },
     routes: [
@@ -88,22 +108,18 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => LoginScreen(
-          onLoginSuccess: () {
-            // Il redirect farà il suo lavoro, non serve forzare la navigazione qui
-          },
-        ),
+        builder: (context, state) => LoginScreen(),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) {
-          return Scaffold(body: child); // Un semplice Scaffold per ora
+          return Scaffold(body: child);
         },
         routes: [
           GoRoute(
             path: '/tables',
             pageBuilder: (context, state) =>
-                const NoTransitionPage(child: TablesView()),
+            const NoTransitionPage(child: TablesView()),
           ),
           GoRoute(
             path: '/menu/:tableId',
@@ -112,14 +128,14 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
               final tableId = state.pathParameters['tableId']!;
               return NoTransitionPage(
                   child: MenuView(
-                tableSessionId: tableId,
-              ));
+                    tableSessionId: tableId,
+                  ));
             },
           ),
           GoRoute(
             path: '/settings',
             pageBuilder: (context, state) =>
-                const NoTransitionPage(child: SettingsScreen()),
+            const NoTransitionPage(child: SettingsScreen()),
           ),
         ],
       ),

@@ -22,27 +22,32 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
   }
 
   void _connect() {
-    if (_tenantCodeController.text.isNotEmpty) {
-      ref
-          .read(sessionProvider.notifier)
-          .setTenant(_tenantCodeController.text.trim());
-    }
+    final code = _tenantCodeController.text.trim();
+    if (code.isEmpty) return;
+
+    // Chiama il metodo setTenant nel notifier (vedi implementazione sotto)
+    ref.read(sessionProvider.notifier).setTenant(code);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colors = context.colors;
-    final session = ref.watch(sessionProvider);
-    final isLoading = session.isLoading;
 
-    // Mostra un errore se presente
-    ref.listen<SessionState>(sessionProvider, (previous, next) {
-      if (next.errorMessage != null &&
-          next.appState == AppState.tenantSetup) {
+    // Osserviamo lo stato asincrono della sessione
+    final sessionAsync = ref.watch(sessionProvider);
+    final isLoading = sessionAsync.isLoading;
+
+    // Listener per gestire gli errori (es. "Tenant non trovato")
+    ref.listen(sessionProvider, (previous, next) {
+      if (next.hasError && !next.isLoading) {
+        // Pulisce l'errore per visualizzazione (rimuove "Exception: ")
+        final errorMsg = next.error.toString().replaceAll('Exception: ', '');
+
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(next.errorMessage!),
+          content: Text(errorMsg),
           backgroundColor: colors.danger,
+          behavior: SnackBarBehavior.floating,
         ));
       }
     });
@@ -78,11 +83,13 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
                   TextField(
                     controller: _tenantCodeController,
                     autocorrect: false,
+                    enabled: !isLoading, // Disabilita input durante il loading
                     textCapitalization: TextCapitalization.characters,
                     decoration: InputDecoration(
                       labelText: l10n.fieldTenantPlaceholder,
                       border: const OutlineInputBorder(),
                       floatingLabelBehavior: FloatingLabelBehavior.auto,
+                      prefixIcon: const Icon(Icons.qr_code),
                     ),
                     onSubmitted: (_) => _connect(),
                   ),
@@ -90,21 +97,27 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
                   Text(
                     l10n.tenantSelectionDevHelper,
                     style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: isLoading ? null : _connect,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.onPrimary,
                       textStyle: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     child: isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 3),
-                          )
+                        ? SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: colors.onPrimary,
+                      ),
+                    )
                         : Text(l10n.btnTenantSelection),
                   ),
                 ],
@@ -116,4 +129,3 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
     );
   }
 }
-

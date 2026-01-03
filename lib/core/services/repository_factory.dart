@@ -13,11 +13,7 @@ class RepositoryFactory {
     return await Hive.openBox(HiveKeys.settingsBox);
   }
 
-  Future<IOrderlyRepository> createRepository() async {
-    final settingsBox = await _getSettingsBox();
-    final backendType =
-        settingsBox.get(HiveKeys.backendType, defaultValue: 'pocketbase');
-
+  Future<IOrderlyRepository> createRepository(String backendType) async {
     switch (backendType) {
       case 'pocketbase':
         // PocketBaseRepository si inizializzerà usando il TenantService

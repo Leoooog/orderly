@@ -1,186 +1,145 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_ce/hive.dart';
-import 'package:orderly/data/repositories/i_orderly_repository.dart';
+import 'package:orderly/data/models/user.dart';
+import 'package:orderly/data/models/config/restaurant.dart';
 
-import '../../config/hive_keys.dart';
-import '../../core/services/repository_factory.dart';
 import '../../core/services/tenant_service.dart';
-import '../../data/models/config/restaurant.dart';
-import '../../data/models/user.dart';
+import 'repository_provider.dart';
+// Importa il repositoryProvider creato sopra
 
-enum AppState {
-  initializing, // Caricamento iniziale del repository
-  backendSelection, // Scelta del backend (se non configurato)
-  tenantSetup, // Inserimento codice/URL del tenant
-  tenantError, // Errore di connessione al tenant
-  loginRequired, // Repository pronto, serve PIN
-  authenticated, // Utente loggato
-}
-
+// Stato snello: contiene solo i dati di dominio
 class SessionState {
-  final AppState appState;
-  final bool isLoading;
-  final String? errorMessage;
-  final Restaurant? currentRestaurant;
   final User? currentUser;
-  final IOrderlyRepository? repository;
+  final Restaurant? currentRestaurant;
 
-  const SessionState({
-    this.appState = AppState.initializing,
-    this.isLoading = true,
-    this.errorMessage,
-    this.currentRestaurant,
-    this.currentUser,
-    this.repository,
-  });
+  // Helper per sapere se sono loggato
+  bool get isAuthenticated => currentUser != null;
 
-  SessionState copyWith({
-    AppState? appState,
-    bool? isLoading,
-    String? errorMessage,
-    Restaurant? currentRestaurant,
-    User? currentUser,
-    IOrderlyRepository? repository,
-    bool clearCurrentUser = false,
-  }) {
+  const SessionState({this.currentUser, this.currentRestaurant});
+
+  SessionState copyWith({User? currentUser, Restaurant? currentRestaurant}) {
     return SessionState(
-      appState: appState ?? this.appState,
-      isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      currentUser: currentUser,
       currentRestaurant: currentRestaurant ?? this.currentRestaurant,
-      currentUser: clearCurrentUser ? null : currentUser ?? this.currentUser,
-      repository: repository ?? this.repository,
     );
   }
 }
 
-final sessionProvider =
-    NotifierProvider<SessionNotifier, SessionState>(SessionNotifier.new);
-
-class SessionNotifier extends Notifier<SessionState> {
-  late final RepositoryFactory _repoFactory;
+// Usiamo AsyncNotifier per gestire nativamente loading e error
+class SessionNotifier extends AsyncNotifier<SessionState> {
 
   @override
-  SessionState build() {
-    // Schedule the async initialization to run after the build method completes.
-    Future.microtask(() => _init());
-    return const SessionState();
-  }
+  Future<SessionState> build() async {
+    print("[SessionNotifier] Building initial session state...");
 
-  Future<void> _init() async {
-    print("[Session] Initializing...");
-    _repoFactory = RepositoryFactory();
+    // 1. Leggiamo il repository (che ora può essere null)
+    final repository = await ref.watch(repositoryProvider.future);
 
-    // Controlla se un backend è stato configurato per decidere lo stato iniziale.
-    // Apriamo il box qui solo per questa verifica iniziale.
-    final settingsBox = Hive.box(HiveKeys.settingsBox);
-    final backendType = settingsBox.get(HiveKeys.backendType);
-    if (backendType == null) {
-      print("[Session] No backend configured. Moving to BackendSelection.");
-      state = state.copyWith(
-          appState: AppState.backendSelection, isLoading: false);
-      return;
+    // 2. CONTROLLO IMMEDIATO
+    // Se il repository è null, significa che manca la configurazione (Tenant).
+    // Ritorniamo subito uno stato valido ma vuoto.
+    // Questo imposterà isLoading = false e value = SessionState(vuoto).
+    if (repository == null) {
+      print("[SessionNotifier] Repository nullo -> Richiede Tenant Selection");
+      return const SessionState(currentUser: null, currentRestaurant: null);
     }
-    print("[Session] Backend configured: $backendType. Loading repository...");
-    await _loadRepository();
-  }
 
-  Future<void> _loadRepository() async {
-    print("[Session] Loading repository...");
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    print("[SessionNotifier] Repository ok, scarico info ristorante...");
+
+    // 3. Se il repository c'è, procediamo normalmente
     try {
-      final repo = await _repoFactory.createRepository();
-      final restaurant = await repo.getRestaurantInfo();
-
-      print("[Session] Repository loaded. Restaurant: ${restaurant.name}. Moving to LoginRequired.");
-      state = state.copyWith(
-        repository: repo,
-        currentRestaurant: restaurant,
-        appState: AppState.loginRequired,
-        isLoading: false,
-      );
+      final restaurant = await repository.getRestaurantInfo();
+      return SessionState(currentRestaurant: restaurant, currentUser: null);
     } catch (e) {
-      print("[Session] Error loading repository: $e. Moving to TenantSetup.");
-      // Se il repo non si crea (es. no URL), andiamo al setup del tenant
-      state = state.copyWith(
-        appState: AppState.tenantSetup,
-        isLoading: false,
-        errorMessage:
-            "Configurazione del ristorante richiesta. ${e.toString()}",
-      );
+      print("[SessionNotifier] Errore fetch ristorante: $e");
+      // Se fallisce la chiamata di rete, rilanciamo l'errore (qui il retry ha senso)
+      rethrow;
     }
   }
 
-  Future<void> setBackend(String backendType) async {
-    print("[Session] Setting backend to: $backendType");
-    await _repoFactory.setBackendType(backendType);
-    await _loadRepository();
-  }
-
-  Future<void> setTenant(String code) async {
-    print("[Session] Setting tenant with code: $code");
-    state = state.copyWith(isLoading: true, errorMessage: null);
-    try {
-      // Il TenantService ora è usato internamente dal repo,
-      // ma per impostare un NUOVO tenant, abbiamo bisogno di un modo.
-      // Soluzione: usiamo un TenantService temporaneo qui solo per questo scopo.
-      final tenantService = await TenantService.create();
-      final url = await tenantService.lookupTenant(code);
-      await tenantService.saveTenantUrl(url);
-
-      print("[Session] Tenant URL saved: $url. Reloading repository.");
-      // Ora che l'URL è salvato, ricarichiamo il repository
-      await _loadRepository();
-    } catch (e) {
-      print("[Session] Error setting tenant: $e");
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-        appState: AppState.tenantSetup,
-      );
-    }
-  }
-
+  /// Esegue il login
   Future<void> login(String pin) async {
-    if (state.repository == null) {
-      print("[Session] Login attempt failed: repository is null.");
-      return;
-    }
-    print("[Session] Attempting login...");
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    // Imposta lo stato su "Loading" senza perdere i dati precedenti
+    state = const AsyncLoading();
 
-    try {
-      final user = await state.repository!.loginWithPin(pin);
-      print("[Session] Login successful for user: ${user.name}. Moving to Authenticated.");
-      state = state.copyWith(
-        isLoading: false,
-        currentUser: user,
-        appState: AppState.authenticated,
+    // AsyncValue.guard gestisce try/catch automaticamente
+    state = await AsyncValue.guard(() async {
+      // Recupera il repo (siccome siamo nel metodo, usiamo read o watch future)
+      final repository = await ref.read(repositoryProvider.future);
+
+      final user = await repository?.loginWithPin(pin);
+
+      // Manteniamo il ristorante che avevamo già caricato nel build()
+      // Nota: state.value potrebbe essere null se il build ha fallito,
+      // ma qui assumiamo sia andato a buon fine.
+      final currentRestaurant = state.value?.currentRestaurant;
+
+      return SessionState(
+          currentUser: user,
+          currentRestaurant: currentRestaurant
       );
-    } catch (e) {
-      print("[Session] Login failed: $e");
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Login fallito: ${e.toString()}',
-      );
-    }
+    });
   }
 
   void logout() {
-    print("[Session] Logging out. Moving to LoginRequired.");
-    state = state.copyWith(
-      clearCurrentUser: true, // Resetta l'utente
-      appState: AppState.loginRequired,
-    );
+    if (state.value != null) {
+      // Resettiamo solo l'utente, manteniamo il ristorante
+      state = AsyncData(state.value!.copyWith(currentUser: null));
+      // Nota: costringiamo currentUser a null passando null esplicitamente nel copyWith (va adattato il copyWith)
+      // Oppure ricreiamo lo stato:
+      // state = AsyncData(SessionState(currentRestaurant: state.value!.currentRestaurant));
+    }
   }
 
+  /// Configura il tenant (Ristorante) usando il TenantService esistente.
+  Future<void> setTenant(String input) async {
+    // 1. Mettiamo lo stato in loading per mostrare lo spinner nella UI
+    state = const AsyncLoading();
+
+    // 2. Usiamo AsyncValue.guard per gestire automaticamente try/catch degli errori
+    state = await AsyncValue.guard(() async {
+
+      // A. Istanziamo il tuo servizio
+      final tenantService = await TenantService.create();
+
+      // B. Risolviamo l'input (es. "DEV" -> localhost, "CODICE" -> API Cloud)
+      // Se fallisce, lancerà un'eccezione che finirà nello stato (AsyncError)
+      final resolvedUrl = await tenantService.lookupTenant(input);
+
+      // C. Salviamo l'URL risolto su Hive
+      await tenantService.saveTenantUrl(resolvedUrl);
+
+      // D. STEP FONDAMENTALE: Invalidiamo il repositoryProvider.
+      // Questo costringe Riverpod a buttare via la vecchia istanza (che non aveva l'URL)
+      // e a crearne una nuova. La nuova istanza leggerà l'URL appena salvato su Hive.
+      ref.invalidate(repositoryProvider);
+
+      // E. Attendiamo che il nuovo repository sia pronto e connesso
+      final newRepository = await ref.read(repositoryProvider.future);
+
+      // F. Scarichiamo le info aggiornate del ristorante
+      final restaurant = await newRepository?.getRestaurantInfo();
+
+      // G. Ritorniamo il nuovo stato: Tenant configurato, ma nessun utente loggato.
+      return SessionState(
+          currentUser: null,
+          currentRestaurant: restaurant
+      );
+    });
+  }
+
+  /// Metodo opzionale per disconnettersi dal ristorante (es. cambio locale)
   Future<void> clearTenant() async {
-    print("[Session] Clearing tenant. Moving to TenantSetup.");
+    state = const AsyncLoading();
     final tenantService = await TenantService.create();
     await tenantService.clearTenant();
-    state = const SessionState(
-      appState: AppState.tenantSetup,
-      isLoading: false,
-    );
+
+    // Ricaricando il repositoryProvider ora, fallirà (perché non c'è URL),
+    // portando l'app allo stato di errore che il Router reindirizzerà a /tenant-selection
+    ref.invalidate(repositoryProvider);
+
+    // Forziamo un ricaricamento dello stato
+    ref.invalidateSelf();
   }
 }
+
+final sessionProvider = AsyncNotifierProvider<SessionNotifier, SessionState>(SessionNotifier.new);

@@ -220,6 +220,8 @@
   "labelVoidQuantity": "Quantità da stornare:",
   "labelVoidReasonPlaceholder": "Motivazione:",
   "dialogConfirmVoid": "CONFERMA STORNO",
+  "msgErrorOpeningTable": "Errore nell'apertura del tavolo",
+  "msgConfirmLogout": "Sei sicuro di voler uscire?",
   "labelRefundOption": "Rimborsare l'importo?",
   "labelViewVoided": "Vedi storni",
   "labelNoVoidedItems": "Nessuno storno registrato",

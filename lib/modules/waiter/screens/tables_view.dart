@@ -47,10 +47,10 @@ class _TablesViewState extends ConsumerState<TablesView> {
   }
 
   void _performCancel(TableUiModel table) {
-    if (table.sessionId == null) return;
-    ref.read(tablesControllerProvider.notifier).closeTable(table.sessionId!);
     Navigator.pop(context); // Chiude dialog
     Navigator.pop(context); // Chiude bottom sheet azioni
+    if (table.sessionId == null) return;
+    ref.read(tablesControllerProvider.notifier).closeTable(table.sessionId!);
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       backgroundColor: context.colors.danger,
@@ -76,10 +76,24 @@ class _TablesViewState extends ConsumerState<TablesView> {
     ));
   }
 
-  void _performOccupy(TableUiModel table, int guests) {
-    ref.read(tablesControllerProvider.notifier).openTable(table.table.id, guests);
-    Navigator.pop(context);
-    // No need to push route, UI will update when session is created
+  Future<void> _performOccupy(TableUiModel table, int guests) async {
+    Navigator.pop(context); // Chiude dialog
+    final session = await ref.read(tablesControllerProvider.notifier).openTable(table.table.id, guests);
+    if(session != null) {
+      if (mounted) {
+        context.push('/menu/${session.id}');
+      }else {
+        print("TablesView disposed before navigation could occur.");
+      }
+    }else {
+      print("Failed to open table ${table.table.name}");
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: context.colors.danger,
+        content: Text(AppLocalizations.of(context)!.msgErrorOpeningTable),
+        duration: const Duration(seconds: 2),
+      ));
+    }
   }
 
   void _performLogout() {
@@ -538,7 +552,9 @@ class _TablesViewState extends ConsumerState<TablesView> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: () => _performOccupy(table, guests),
+                onPressed: () async{
+                  _performOccupy(table, guests);
+                },
                 child: Text(AppLocalizations.of(context)!.btnOpen,
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)),
@@ -603,7 +619,7 @@ class _TablesViewState extends ConsumerState<TablesView> {
               }),
           IconButton(
             icon: Icon(Icons.logout, color: context.colors.danger, size: 20),
-            onPressed: _performLogout,
+            onPressed: _showConfirmLogoutDialog,
           ),
           const SizedBox(width: 16),
         ],
@@ -644,10 +660,54 @@ class _TablesViewState extends ConsumerState<TablesView> {
         onPressed: () {
           print("--- INVALIDATING PROVIDERS ---");
           ref.invalidate(tablesControllerProvider);
+          ref.invalidate(activeOrderItemsStreamProvider);
+          ref.invalidate(activeOrdersStreamProvider);
+          ref.invalidate(activeSessionsStreamProvider);
           ref.invalidate(menuDataProvider);
           ref.invalidate(voidReasonsProvider);
         },
         child: const Icon(Icons.refresh),
+      ),
+    );
+  }
+
+  void _showConfirmLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.colors.surface,
+        surfaceTintColor: context.colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Text(
+            AppLocalizations.of(context)!.msgConfirmLogout,
+            style:
+                TextStyle(color: context.colors.textSecondary, fontSize: 14),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context)!.dialogCancel,
+                style: TextStyle(
+                    color: context.colors.textSecondary, fontSize: 14)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.danger,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _performLogout();
+            },
+            child: Text(
+              AppLocalizations.of(context)!.dialogConfirm,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }

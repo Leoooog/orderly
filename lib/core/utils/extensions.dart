@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:orderly/logic/providers/config_provider.dart';
 import 'package:orderly/logic/providers/session_provider.dart';
 
 import '../../data/models/local/cart_entry.dart';
@@ -19,7 +20,8 @@ extension CurrencyFormatting on double {
   /// Formatta un double in valuta usando le impostazioni del ristorante.
   /// Esempio: 10.5.toCurrency(restaurant) -> "€ 10,50" (se locale it_IT)
   String toCurrency(WidgetRef ref) {
-    final restaurant = ref.read(sessionProvider).currentRestaurant!;
+    final restaurant = ref.read(restaurantProvider).value;
+    if (restaurant == null) return "€ ${toStringAsFixed(2)}";
 
     final format = NumberFormat.currency(
       locale: restaurant.locale,

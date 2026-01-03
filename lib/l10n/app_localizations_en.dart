@@ -403,6 +403,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dialogConfirmVoid => 'CONFIRM VOID';
 
   @override
+  String get msgErrorOpeningTable => 'Error opening table';
+
+  @override
+  String get msgConfirmLogout => 'Are you sure you want to log out?';
+
+  @override
   String get labelRefundOption => 'Refund the amount?';
 
   @override

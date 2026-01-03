@@ -812,6 +812,18 @@ abstract class AppLocalizations {
   /// **'CONFERMA STORNO'**
   String get dialogConfirmVoid;
 
+  /// No description provided for @msgErrorOpeningTable.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore nell\'apertura del tavolo'**
+  String get msgErrorOpeningTable;
+
+  /// No description provided for @msgConfirmLogout.
+  ///
+  /// In it, this message translates to:
+  /// **'Sei sicuro di voler uscire?'**
+  String get msgConfirmLogout;
+
   /// No description provided for @labelRefundOption.
   ///
   /// In it, this message translates to:
