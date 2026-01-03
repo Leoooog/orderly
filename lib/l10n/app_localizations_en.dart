@@ -159,6 +159,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelIngredients => 'INGREDIENTS';
 
   @override
+  String get symbolFrozen => '*';
+
+  @override
   String get labelAllergens => 'ALLERGENS';
 
   @override
@@ -213,6 +216,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get msgOrderSent => 'Order sent!';
+
+  @override
+  String errorSendingOrder(String error) {
+    return 'Error sending order: $error';
+  }
 
   @override
   String get msgChangesSaved => 'Changes saved';
@@ -358,17 +366,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get titleTenantSelection => 'Inserisci il tuo codice locale';
+  String get titleTenantSelection => 'Select Tenant';
 
   @override
-  String get fieldTenantPlaceholder => 'Es. ristorante-123 o 192.168.1.100';
+  String get fieldTenantPlaceholder => 'Es. pizzeria-mario or 192.168.1.100';
 
   @override
   String get tenantSelectionDevHelper =>
-      'Inserisci l\'indirizzo IP del server locale';
+      'Select a tenant to connect to the backend service.';
 
   @override
-  String get btnTenantSelection => 'SELEZIONA LOCALE';
+  String get btnTenantSelection => 'CONNECT';
 
   @override
   String get btnPay => 'PAY';

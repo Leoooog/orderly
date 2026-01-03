@@ -159,6 +159,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get labelIngredients => 'INGREDIENTI';
 
   @override
+  String get symbolFrozen => '*';
+
+  @override
   String get labelAllergens => 'ALLERGENI';
 
   @override
@@ -213,6 +216,11 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get msgOrderSent => 'Comanda inviata!';
+
+  @override
+  String errorSendingOrder(String error) {
+    return 'Errore nell\'invio della comanda: $error';
+  }
 
   @override
   String get msgChangesSaved => 'Modifiche salvate';

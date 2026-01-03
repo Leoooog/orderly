@@ -16,7 +16,8 @@ class OrderItem extends BaseModel {
   final String? notes;
   final DateTime? firedAt; // Date
   final double paidQuantity;
-  final double priceEach;
+  final double priceEach; // snapshot of price
+  final bool requiresFiring; // snapshot derived from MenuItem
 
   //Da inizializzare nel repository
   final List<Extra> selectedExtras; // Relation
@@ -36,6 +37,7 @@ class OrderItem extends BaseModel {
     required this.status,
     required this.menuItemName,
     required this.priceEach,
+    required this.requiresFiring,
     this.selectedExtras = const [],
     this.removedIngredients = const [],
     required this.course,
@@ -55,6 +57,7 @@ class OrderItem extends BaseModel {
       orderId: json['order'] ?? '',
       menuItemId: json['menu_item'] ?? '',
       course: Course.empty(),
+      requiresFiring: json['requires_firing'] ?? false,
       priceEach: (json['price_each'] as num? ?? 0).toDouble(),
       // Placeholder
       quantity: (json['quantity'] ?? 0),
@@ -63,7 +66,6 @@ class OrderItem extends BaseModel {
       firedAt: BaseModel.parseDateNullable(json['fired_at']),
       menuItemName: json['menu_item_name'] ?? '',
       paidQuantity: (json['paid_quantity'] as num? ?? 0).toDouble(),
-      menuItem: MenuItem.empty()
     );
   }
 
@@ -85,9 +87,14 @@ class OrderItem extends BaseModel {
                 ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [];
+    MenuItem? menuItem = expand['menu_item'] != null
+        ? MenuItem.fromExpandedJson(
+            expand['menu_item'] as Map<String, dynamic>)
+        : null;
 
     return item.copyWith(
       course: course,
+      menuItem: menuItem,
       selectedExtras: selectedExtras,
       removedIngredients: removedIngredients,
     );
@@ -100,11 +107,13 @@ class OrderItem extends BaseModel {
       updated: DateTime.now(),
       collectionId: '',
       collectionName: '',
+      menuItemId: '',
       menuItemName: '',
       orderId: '',
+      requiresFiring: false,
       priceEach: 0.0,
-      menuItemId: '',
       course: Course.empty(),
+      menuItem: MenuItem.empty(),
       quantity: 0,
       status: OrderItemStatus.unknown,
     );
@@ -124,6 +133,7 @@ class OrderItem extends BaseModel {
     double? priceEach,
     List<Extra>? selectedExtras,
     List<Ingredient>? removedIngredients,
+    bool? requiresFiring,
     Course? course,
     String? notes,
     DateTime? firedAt,
@@ -136,12 +146,13 @@ class OrderItem extends BaseModel {
       updated: updated ?? this.updated,
       collectionId: collectionId ?? this.collectionId,
       collectionName: collectionName ?? this.collectionName,
-      orderId: orderId ?? this.orderId,
       menuItemId: menuItemId ?? this.menuItemId,
+      orderId: orderId ?? this.orderId,
       quantity: quantity ?? this.quantity,
       priceEach: priceEach ?? this.priceEach,
       status: status ?? this.status,
       menuItemName: menuItemName ?? this.menuItemName,
+      requiresFiring: requiresFiring ?? this.requiresFiring,
       selectedExtras: selectedExtras ?? this.selectedExtras,
       removedIngredients: removedIngredients ?? this.removedIngredients,
       course: course ?? this.course,
@@ -154,6 +165,6 @@ class OrderItem extends BaseModel {
 
   @override
   String toString() {
-    return 'OrderItem{orderId: $orderId, menuItemId: $menuItemId, quantity: $quantity, status: $status, menuItemName: $menuItemName, notes: $notes, firedAt: $firedAt, paidQuantity: $paidQuantity, selectedExtras: $selectedExtras, removedIngredients: $removedIngredients, course: $course}';
+    return 'OrderItem{orderId: $orderId, menuItemId: $menuItemId, quantity: $quantity, status: $status, menuItemName: $menuItemName, notes: $notes, firedAt: $firedAt, paidQuantity: $paidQuantity, priceEach: $priceEach, requiresFiring: $requiresFiring, selectedExtras: $selectedExtras, removedIngredients: $removedIngredients, course: $course, menuItem: $menuItem}';
   }
 }

@@ -1,5 +1,28 @@
-- possibiltà di rimuovere ingredienti da item dialog
 - controllo ruoli al login
-- visualizzare ingredienti congelati
 - invalidare providers dopo logout
 - fix voids
+- aggiungere logo
+- splittare gli order items quando vengono modificati e non sono più uguali all'originale
+- gestire menu items non disponibili
+- implementare immagini per i menu items
+- aggiornare menu view dopo un nuovo ordine (al tavolo)
+- gestire errori di rete
+- aggiungere test
+- documentare il codice
+- aggiustare billscreen per ordini con coperti e serviceFeePercent
+- inserire nome ristorante nella schermata di login e nella app bar
+- migliorare UI/UX
+- velocizzare caricamento dati
+- togliere lag
+- togliere debug prints
+- autenticazione repository
+- testare su dispositivi reali
+- qualità del codice
+- handling errori in tutti i repository
+- pulsante servi tutto
+- vibrazione al nuovo ordine
+- logout automatico dopo un periodo di inattività
+- annullare tavoli
+- pin per operazioni sensibili
+- offline first
+- caricamento menu all'avvio

@@ -112,11 +112,21 @@ abstract class IOrderlyRepository {
   Future<void> processPayment(String tableSessionId, List<String> orderItemIds);
 
   /// Aggiorna lo stato operativo di un singolo OrderItem (es. In Attesa -> In Preparazione).
-  Future<void> updateOrderItemStatus(String orderItemId, OrderItemStatus status);
+  Future<void> updateOrderItemStatus(List<String> orderItemIds, OrderItemStatus status);
 
   /// Aggiorna la configurazione di un OrderItem esistente (es. cambio note, extra o quantità).
   Future<void> updateOrderItem({
     required String orderItemId,
+    required int newQty,
+    required String newNotes,
+    required Course newCourse,
+    required List<Extra> newExtras,
+    required List<Ingredient> newRemovedIngredients,
+  });
+
+
+  Future<OrderItem> createOrderItemFromExisting({
+    required OrderItem existingItem,
     required int newQty,
     required String newNotes,
     required Course newCourse,

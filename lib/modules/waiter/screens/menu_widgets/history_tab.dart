@@ -68,14 +68,27 @@ class HistoryTab extends ConsumerWidget {
       List<Extra> extras,
       List<Ingredient> removedIngredients) {
     if (table.sessionId == null) return;
-    ref.read(tablesControllerProvider.notifier).updateOrderItemDetails(
-          orderItemId: item.id,
-          newQty: qty,
-          newNotes: note,
-          newCourse: course,
-          newExtras: extras,
-          newRemovedIngredients: removedIngredients,
-        );
+
+    // Check if the item should be split
+    if (qty < item.quantity) {
+      ref.read(tablesControllerProvider.notifier).splitAndUpdateOrderItem(
+            originalItem: item,
+            qtyToUpdate: qty,
+            newNotes: note,
+            newCourse: course,
+            newExtras: extras,
+            newRemovedIngredients: removedIngredients,
+          );
+    } else {
+      ref.read(tablesControllerProvider.notifier).updateOrderItemDetails(
+            orderItemId: item.id,
+            newQty: qty,
+            newNotes: note,
+            newCourse: course,
+            newExtras: extras,
+            newRemovedIngredients: removedIngredients,
+          );
+    }
     Navigator.pop(context); // Chiudi dialog
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.msgChangesSaved)));

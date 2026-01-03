@@ -55,6 +55,8 @@ class MenuItem extends BaseModel {
     );
   }
 
+  bool get requiresFiring => producedBy.isNotEmpty;
+
   factory MenuItem.fromExpandedJson(Map<String, dynamic> json) {
     MenuItem item = MenuItem.fromJson(json);
     final expand = json['expand'] as Map<String, dynamic>? ?? {};
@@ -120,6 +122,7 @@ class MenuItem extends BaseModel {
     String? collectionId,
     String? collectionName,
     String? name,
+    bool? isAvailable,
     String? description,
     double? price,
     Category? category,

@@ -89,6 +89,7 @@
   "labelSearch": "Search product...",
   "labelNoProducts": "No products found",
   "labelIngredients": "INGREDIENTS",
+  "symbolFrozen": "*",
   "labelAllergens": "ALLERGENS",
   "cartSheetTitle": "Order",
   "cartSheetItemsCountLabel": "{count, plural, =0{No items} =1{1 item} other{{count} items}}",
@@ -99,6 +100,10 @@
       }
     }
   },
+  "titleTenantSelection" : "Select Tenant",
+  "fieldTenantPlaceholder"  : "Es. pizzeria-mario or 192.168.1.100",
+  "tenantSelectionDevHelper" : "Select a tenant to connect to the backend service.",
+  "btnTenantSelection": "CONNECT",
   "cartEditingItem": "Editing: {itemName}",
   "msgMenuItemNotFound": "Menu item not found",
   "@cartEditingItem": {
@@ -118,6 +123,14 @@
   "subtitleEditItemAction": "Change notes or variants",
   "btnSendKitchen": "SEND ORDER",
   "msgOrderSent": "Order sent!",
+  "errorSendingOrder": "Error sending order: {error}",
+    "@errorSendingOrder": {
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
   "msgChangesSaved": "Changes saved",
   "msgChangesNotSaved": "Changes not saved",
   "msgExitWithoutSaving": "Do you want to exit without sending the order? \nAll changes will be lost.",

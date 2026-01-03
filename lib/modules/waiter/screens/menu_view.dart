@@ -77,12 +77,28 @@ class _MenuViewState extends ConsumerState<MenuView>
     }
   }
 
-  void _handleSendOrder() {
+  void _handleSendOrder() async {
     final currentCart = ref.read(cartProvider);
-    ref
-        .read(tablesControllerProvider.notifier)
-        .sendOrder(widget.tableSessionId, currentCart);
-    ref.read(cartProvider.notifier).clear();
+    try {
+      await ref
+          .read(tablesControllerProvider.notifier)
+          .sendOrder(widget.tableSessionId, currentCart);
+    } catch (e) {
+      print("[MenuView] Error sending order: $e");
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppLocalizations.of(context)!.errorSendingOrder(e.toString())),
+        backgroundColor: context.colors.danger,
+      ));
+      return;
+    }
+      ref.read(cartProvider.notifier).clear();
+      final tableName = ref
+          .read(tablesControllerProvider.notifier)
+          .getTableBySessionId(widget.tableSessionId)
+          ?.name;
+      if(!mounted) return;
+      context.push('/success/${Uri.encodeComponent(tableName ?? '')}');
   }
 
   @override

@@ -88,6 +88,7 @@
   "labelSearch": "Cerca prodotto...",
   "labelNoProducts": "Nessun prodotto trovato",
   "labelIngredients": "INGREDIENTI",
+  "symbolFrozen": "*",
   "labelAllergens": "ALLERGENI",
   "cartSheetTitle": "Comanda",
   "cartSheetItemsCountLabel": "{count, plural, =0{Nessun articolo} =1{1 articolo} other{{count} articoli}}",
@@ -117,6 +118,14 @@
   "subtitleEditItemAction": "Cambia note o varianti",
   "btnSendKitchen": "INVIA COMANDA",
   "msgOrderSent": "Comanda inviata!",
+  "errorSendingOrder": "Errore nell'invio della comanda: {error}",
+  "@errorSendingOrder": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "msgChangesSaved": "Modifiche salvate",
   "msgChangesNotSaved": "Modifiche non salvate",
   "msgExitWithoutSaving": "Vuoi uscire senza inviare la comanda? \nLe modifiche andranno perse.",

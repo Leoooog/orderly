@@ -113,7 +113,9 @@ final waiterRouterProvider = Provider<GoRouter>((ref) {
           builder: (context, state) {
             final tableName = state.pathParameters['tableName']!;
             return SuccessView(tableName: tableName);
-          }),
+          },
+
+      ),
     ],
   );
 

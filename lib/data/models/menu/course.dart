@@ -3,7 +3,6 @@ import '../base_model.dart';
 class Course extends BaseModel {
   final String name;
   final int sortOrder;
-  final bool requiresFiring;
 
   Course({
     required super.id,
@@ -13,7 +12,6 @@ class Course extends BaseModel {
     required super.collectionName,
     required this.name,
     this.sortOrder = 0,
-    this.requiresFiring = false,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -25,7 +23,6 @@ class Course extends BaseModel {
       collectionName: json['collectionName'] ?? '',
       name: json['name'] ?? '',
       sortOrder: (json['sort_order'] ?? 0).toInt(),
-      requiresFiring: json['requires_firing'] ?? false,
     );
   }
 
@@ -38,12 +35,11 @@ class Course extends BaseModel {
       collectionName: '',
       name: '',
       sortOrder: 0,
-      requiresFiring: false,
     );
   }
 
   @override
   String toString() {
-    return 'Course{name: $name, sortOrder: $sortOrder, requiresFiring: $requiresFiring}';
+    return 'Course{name: $name, sortOrder: $sortOrder}';
   }
 }

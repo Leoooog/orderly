@@ -374,6 +374,12 @@ abstract class AppLocalizations {
   /// **'INGREDIENTI'**
   String get labelIngredients;
 
+  /// No description provided for @symbolFrozen.
+  ///
+  /// In it, this message translates to:
+  /// **'*'**
+  String get symbolFrozen;
+
   /// No description provided for @labelAllergens.
   ///
   /// In it, this message translates to:
@@ -463,6 +469,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Comanda inviata!'**
   String get msgOrderSent;
+
+  /// No description provided for @errorSendingOrder.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore nell\'invio della comanda: {error}'**
+  String errorSendingOrder(String error);
 
   /// No description provided for @msgChangesSaved.
   ///

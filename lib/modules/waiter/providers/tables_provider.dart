@@ -221,6 +221,7 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
       );
     } catch (e, st) {
       state = AsyncError(e, st);
+      print("[TablesController][sendOrder] Error: $e");
       rethrow; // Rilancia per la UI (Snackbar, Dialogs)
     }
   }
@@ -290,18 +291,22 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
         .where((item) =>
             item.course.id == courseId &&
             item.status == OrderItemStatus.pending &&
-            item.course.requiresFiring)
+            item.requiresFiring)
         .toList();
 
-    // Nota: Sarebbe meglio un endpoint batch del backend "fireItems([ids])"
-    for (final item in itemsToFire) {
-      await _repository.updateOrderItemStatus(item.id, OrderItemStatus.fired);
-    }
+    print("[fireCourse] Firing ${itemsToFire.length} items for course $courseId in session $sessionId");
+
+    final ids = itemsToFire.map((item) => item.id).toList();
+    print("[fireCourse] Item IDs to fire: $ids");
+
+    if(itemsToFire.isEmpty) return;
+
+     await _repository.updateOrderItemStatus(ids, OrderItemStatus.fired);
   }
 
   Future<void> markAsServed(String orderItemId) async {
     await _repository.updateOrderItemStatus(
-        orderItemId, OrderItemStatus.served);
+        [orderItemId], OrderItemStatus.served);
   }
 
   Future<void> updateOrderItemDetails({
@@ -315,6 +320,59 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     await _repository.updateOrderItem(
       orderItemId: orderItemId,
       newQty: newQty,
+      newNotes: newNotes,
+      newCourse: newCourse,
+      newExtras: newExtras,
+      newRemovedIngredients: newRemovedIngredients,
+    );
+  }
+
+  Future<void> splitAndUpdateOrderItem({
+    required OrderItem originalItem,
+    required int qtyToUpdate, // The quantity of the new/modified item
+    required String newNotes,
+    required Course newCourse,
+    required List<Extra> newExtras,
+    required List<Ingredient> newRemovedIngredients,
+  }) async {
+    if (qtyToUpdate <= 0 || qtyToUpdate > originalItem.quantity) {
+      throw Exception("Invalid quantity for splitting.");
+    }
+
+    final int remainingQty = originalItem.quantity - qtyToUpdate;
+
+    // 1. Update the original item's quantity if there's any remainder
+    if (remainingQty > 0) {
+      await _repository.updateOrderItem(
+        orderItemId: originalItem.id,
+        newQty: remainingQty,
+        newNotes: originalItem.notes ?? '',
+        newCourse: originalItem.course,
+        newExtras: originalItem.selectedExtras,
+        newRemovedIngredients: originalItem.removedIngredients,
+      );
+    } else {
+      // If we are "splitting" the whole quantity, it's just an update.
+      // But the logic is to create a new one and delete the old one if it was not sent to kitchen.
+      // For simplicity now, we just update. If the original is fully modified, we just update it.
+      // A better approach might be to delete the old one and create a new one if status is 'pending'.
+      // Let's stick to the split logic: if remaining is 0, we are essentially moving the item.
+      // So we can just update the whole thing.
+      await _repository.updateOrderItem(
+        orderItemId: originalItem.id,
+        newQty: qtyToUpdate,
+        newNotes: newNotes,
+        newCourse: newCourse,
+        newExtras: newExtras,
+        newRemovedIngredients: newRemovedIngredients,
+      );
+      return; // Job done, no creation needed.
+    }
+
+    // 2. Create a new OrderItem with the specified quantity and new details
+    await _repository.createOrderItemFromExisting(
+      existingItem: originalItem,
+      newQty: qtyToUpdate,
       newNotes: newNotes,
       newCourse: newCourse,
       newExtras: newExtras,

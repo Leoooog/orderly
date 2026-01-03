@@ -1,16 +1,35 @@
-import 'package:flutter/material.dart';
-import 'package:orderly/l10n/app_localizations.dart';
-import 'package:orderly/config/orderly_colors.dart';
+import 'dart:async';
 
-class SuccessView extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:orderly/config/orderly_colors.dart';
+import 'package:orderly/l10n/app_localizations.dart';
+
+class SuccessView extends StatefulWidget {
   final String tableName;
 
   const SuccessView({super.key, required this.tableName});
 
   @override
+  State<SuccessView> createState() => _SuccessViewState();
+}
+
+class _SuccessViewState extends State<SuccessView> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        // Torna alla schermata precedente (MenuView)
+        context.pop();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final size = MediaQuery.sizeOf(context);
+    final size = MediaQuery.of(context).size;
 
     // Logica semplice per determinare le dimensioni in base al dispositivo
     final isTablet = size.shortestSide > 600;
@@ -31,14 +50,17 @@ class SuccessView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight, // Occupa almeno tutta l'altezza
+                  minHeight:
+                      constraints.maxHeight, // Occupa almeno tutta l'altezza
                 ),
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600), // Limite larghezza per Tablet/Desktop
+                    constraints: const BoxConstraints(
+                        maxWidth: 600), // Limite larghezza per Tablet/Desktop
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min, // Importante per il scroll view
+                      mainAxisSize: MainAxisSize
+                          .min, // Importante per il scroll view
                       children: [
                         // Icona
                         Container(
@@ -81,16 +103,18 @@ class SuccessView extends StatelessWidget {
 
                         // Sottotitolo (Table Name)
                         Flexible(
-                            child: Text(
-                              AppLocalizations.of(context)!.tableName(tableName),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: subTitleSize,
-                                color: colors.successContainer, // O un colore che contrasta bene su sfondo verde
-                                fontWeight: FontWeight.w500,
-                              ),
+                          child: Text(
+                            AppLocalizations.of(context)!
+                                .tableName(widget.tableName),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: subTitleSize,
+                              color: colors
+                                  .successContainer, // O un colore che contrasta bene su sfondo verde
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
+                        ),
                       ],
                     ),
                   ),

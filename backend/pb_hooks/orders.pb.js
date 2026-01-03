@@ -14,7 +14,7 @@ routerAdd("POST", "/api/custom/create-order", (c) => {
     c.bindBody(data); // Popola l'oggetto 'data' con il JSON ricevuto
 
     // Debug
-    // console.log("Dati ricevuti:", JSON.stringify(data));
+    console.log("Dati ricevuti:", JSON.stringify(data));
 
     if (!data.session || !data.items || !data.items.length) {
         throw new BadRequestError("Dati mancanti: sessione o items vuoti.");
@@ -51,7 +51,6 @@ routerAdd("POST", "/api/custom/create-order", (c) => {
             // I metodi .set() sono uguali a prima
             order.set("session", data.session);
             if (data.waiter) order.set("waiter", data.waiter);
-            order.set("status", "pending");
             order.set("total_amount", totalAmount);
 
             // SALVATAGGIO: Ora si usa txApp.save(record) invece di saveRecord
@@ -62,14 +61,17 @@ routerAdd("POST", "/api/custom/create-order", (c) => {
             // C. Creazione Record Items
             items.forEach((itemData) => {
                 const item = new Record(orderItemCollection);
+                const menu_item = txApp.findRecordById("menu_items", itemData.menu_item);
 
                 item.set("order", order.id);
                 item.set("menu_item", itemData.menu_item);
-                item.set("menu_item_name", itemData.menu_item_name);
+                item.set("menu_item_name", menu_item.get("name"));
                 item.set("price_each", itemData.price_each);
                 item.set("quantity", itemData.quantity);
                 item.set("notes", itemData.notes);
-                item.set("status", "pending");
+                let requiresFiring = menu_item.get("produced_by").length > 0;
+                item.set("requires_firing", requiresFiring);
+                item.set("status", requiresFiring ? "pending" : "ready");
                 item.set("course", itemData.course);
 
                 if (itemData.removed_ingredients) {
