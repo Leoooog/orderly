@@ -5,6 +5,13 @@ import '../../../data/models/menu/extra.dart';
 import '../../../data/models/menu/ingredient.dart';
 import '../../../data/models/menu/menu_item.dart';
 
+
+final cartIsEmptyProvider = Provider<bool>((ref) {
+  final cartItems = ref.watch(cartProvider);
+  return cartItems.isEmpty;
+});
+
+
 final cartProvider =
     NotifierProvider<CartNotifier, List<CartEntry>>(CartNotifier.new);
 

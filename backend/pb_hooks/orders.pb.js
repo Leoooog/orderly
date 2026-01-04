@@ -14,7 +14,6 @@ routerAdd("POST", "/api/custom/create-order", (c) => {
     c.bindBody(data); // Popola l'oggetto 'data' con il JSON ricevuto
 
     // Debug
-    console.log("Dati ricevuti:", JSON.stringify(data));
 
     if (!data.session || !data.items || !data.items.length) {
         throw new BadRequestError("Dati mancanti: sessione o items vuoti.");
@@ -82,7 +81,12 @@ routerAdd("POST", "/api/custom/create-order", (c) => {
                 }
 
                 // Salvataggio item
-                txApp.save(item);
+                const utils = require(`${__hooks}/utils.js`);
+                const merged = utils.mergeItemIfPossible(item, txApp);
+                if (!merged) {
+                    // Item unico, non unito
+                    txApp.save(item);
+                }
             });
         });
 

@@ -14,14 +14,25 @@ import '../../../../data/models/session/order_item.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/tables_provider.dart';
 import '../../providers/void_reasons_provider.dart';
+import '../widgets/order_item_card.dart';
 import 'item_edit_dialog.dart';
 
-class HistoryTab extends ConsumerWidget {
+class HistoryTab extends ConsumerStatefulWidget {
   final TableUiModel table;
 
   const HistoryTab({super.key, required this.table});
 
-  // --- LOGIC ---
+  @override
+  _HistoryTabState createState() => _HistoryTabState();
+// --- LOGIC ---
+}
+
+class _HistoryTabState extends ConsumerState<HistoryTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  TableUiModel get table => widget.table;
 
   void _fireCourse(BuildContext context, WidgetRef ref, Course course) {
     if (table.sessionId == null) return;
@@ -69,26 +80,14 @@ class HistoryTab extends ConsumerWidget {
       List<Ingredient> removedIngredients) {
     if (table.sessionId == null) return;
 
-    // Check if the item should be split
-    if (qty < item.quantity) {
-      ref.read(tablesControllerProvider.notifier).splitAndUpdateOrderItem(
-            originalItem: item,
-            qtyToUpdate: qty,
-            newNotes: note,
-            newCourse: course,
-            newExtras: extras,
-            newRemovedIngredients: removedIngredients,
-          );
-    } else {
-      ref.read(tablesControllerProvider.notifier).updateOrderItemDetails(
-            orderItemId: item.id,
-            newQty: qty,
-            newNotes: note,
-            newCourse: course,
-            newExtras: extras,
-            newRemovedIngredients: removedIngredients,
-          );
-    }
+    ref.read(tablesControllerProvider.notifier).updateOrderItemDetails(
+          orderItemId: item.id,
+          newQty: qty,
+          newNotes: note,
+          newCourse: course,
+          newExtras: extras,
+          newRemovedIngredients: removedIngredients,
+        );
     Navigator.pop(context); // Chiudi dialog
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.msgChangesSaved)));
@@ -488,16 +487,16 @@ class HistoryTab extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    super.build(context);
     final colors = context.colors;
-    final allCourses =
-        ref.watch(menuDataProvider.select((data) => data.value?.courses)) ?? [];
-
-    // Watch the provider to get the live state of all tables
-    final tablesAsync = ref.watch(tablesControllerProvider);
 
     print("[HistoryTab] Building HistoryTab for table ${table.name}");
 
+    final allCourses =
+        ref.watch(menuDataProvider.select((data) => data.value?.courses)) ?? [];
+    // Watch the provider to get the live state of all tables
+    final tablesAsync = ref.watch(tablesControllerProvider);
     return tablesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text("Error: $err")),
@@ -505,9 +504,9 @@ class HistoryTab extends ConsumerWidget {
         print("[HistoryTab] Fetched ${tables.length} tables from provider");
         // Find the specific table for this view from the live list
         final currentTable = tables.firstWhere(
-            (t) => t.id == table.id,
-            orElse: () => table,
-          );
+          (t) => t.id == table.id,
+          orElse: () => table,
+        );
 
         // If, for some reason, we have no data for this table, show a loading indicator.
         // This can happen during a state transition.
@@ -670,11 +669,20 @@ class HistoryTab extends ConsumerWidget {
               border: Border.all(color: colors.divider)),
           child: Column(
             children: items.asMap().entries.map((entry) {
-              print(
-                  "[HistoryTab] Building history item for ${entry.value.menuItemName} in course ${course.name}");
-              return _buildHistoryItemRow(context, ref, entry.value,
-                  isLast: entry.key == items.length - 1,
-                  isFirst: entry.key == 0);
+              final item = entry.value;
+              final index = entry.key;
+
+              // UTILIZZO DEL NUOVO WIDGET
+              return OrderItemCard(
+                item: item,
+                isFirst: index == 0,
+                isLast: index == items.length - 1,
+                // Logica TAP: se è 'ready', il tap serve. Altrimenti null (non cliccabile se non per options)
+                onTap: item.status == OrderItemStatus.ready
+                    ? () => _markServed(ref, item)
+                    : null,
+                onLongPress: () => _showItemOptions(context, ref, item),
+              );
             }).toList(),
           ),
         ),
@@ -703,170 +711,6 @@ class HistoryTab extends ConsumerWidget {
                       color: textColor)),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHistoryItemRow(
-      BuildContext context, WidgetRef ref, OrderItem item,
-      {bool isLast = false, bool isFirst = false}) {
-    final colors = context.colors;
-    Color bgColor = colors.surface;
-    Color iconColor = colors.textTertiary;
-    IconData icon = Icons.circle_outlined;
-    String statusLabel = "";
-    bool isInteractive = false;
-    double opacity = 1.0;
-
-    print(
-        "[HistoryTab] Building item row for ${item.menuItemName} with status ${item.status}");
-
-    switch (item.status) {
-      case OrderItemStatus.pending:
-        bgColor = colors.warningContainer;
-        iconColor = colors.warning;
-        icon = Icons.schedule;
-        statusLabel = AppLocalizations.of(context)!.itemStatusPending;
-        break;
-      case OrderItemStatus.fired:
-        bgColor = colors.infoSurfaceFaint;
-        iconColor = colors.primary;
-        icon = Icons.hourglass_top;
-        statusLabel = AppLocalizations.of(context)!.itemStatusFired;
-        break;
-      case OrderItemStatus.cooking:
-        bgColor = colors.infoSurfaceWeak;
-        iconColor = colors.primary;
-        icon = Icons.local_fire_department;
-        statusLabel = AppLocalizations.of(context)!.itemStatusCooking;
-        break;
-      case OrderItemStatus.ready:
-        bgColor = colors.successContainer;
-        iconColor = colors.success;
-        icon = Icons.room_service;
-        statusLabel = AppLocalizations.of(context)!.itemStatusReady;
-        isInteractive = true;
-        break;
-      case OrderItemStatus.served:
-        bgColor = colors.surface;
-        iconColor = colors.textTertiary;
-        icon = Icons.check;
-        statusLabel = AppLocalizations.of(context)!.itemStatusServed;
-        opacity = 0.5;
-        break;
-      case OrderItemStatus.unknown:
-        bgColor = colors.surface;
-        iconColor = colors.textTertiary;
-        icon = Icons.help_outline;
-        statusLabel = AppLocalizations.of(context)!.itemStatusUnknown;
-        break;
-    }
-
-    final borderRadius = BorderRadius.vertical(
-      top: isFirst ? const Radius.circular(12) : Radius.zero,
-      bottom: isLast ? const Radius.circular(12) : Radius.zero,
-    );
-
-    return Opacity(
-      opacity: opacity,
-      child: Material(
-        color: bgColor,
-        borderRadius: borderRadius,
-        child: InkWell(
-          onTap: isInteractive ? () => _markServed(ref, item) : null,
-          onLongPress: () => _showItemOptions(context, ref, item),
-          hoverColor: colors.hover,
-          borderRadius: borderRadius,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: borderRadius,
-              border: Border(
-                bottom: (item.status == OrderItemStatus.fired ||
-                            item.status == OrderItemStatus.served) &&
-                        !isLast
-                    ? BorderSide(color: colors.divider)
-                    : BorderSide.none,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border:
-                          Border.all(color: iconColor.withValues(alpha: 0.3))),
-                  child: Text("${item.quantity}x",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: iconColor,
-                          fontSize: 12)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.menuItemName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: colors.textPrimary)),
-                        if (item.selectedExtras.isNotEmpty)
-                          Text(
-                              item.selectedExtras
-                                  .map((e) => "+ ${e.name}")
-                                  .join(", "),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 11, color: colors.textSecondary)),
-                        if (item.notes != null && item.notes!.isNotEmpty)
-                          Text(item.notes!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colors.warning,
-                                  fontStyle: FontStyle.italic)),
-                      ]),
-                ),
-                const SizedBox(width: 8),
-                if (item.status == OrderItemStatus.ready)
-                  Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                          color: colors.success,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text(AppLocalizations.of(context)!.btnMarkServed,
-                          style: TextStyle(
-                              color: colors.textInverse,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
-                              letterSpacing: 0.5)))
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Icon(icon, size: 18, color: iconColor),
-                      const SizedBox(height: 2),
-                      Text(statusLabel,
-                          style: TextStyle(
-                              fontSize: 8,
-                              color: iconColor,
-                              fontWeight: FontWeight.bold)),
-                    ],
-                  )
-              ],
-            ),
-          ),
         ),
       ),
     );

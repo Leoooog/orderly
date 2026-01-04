@@ -2,8 +2,12 @@
 - invalidare providers dopo logout
 - fix voids
 - aggiungere logo
-- splittare gli order items quando vengono modificati e non sono più uguali all'originale
+- merge ordini quando si uniscono tavoli
+- merge order items quando si uniscono tavoli
+- merge order items quando si aggiungono ordini esistenti a un tavolo
+- merge order items quando si modificano ordini esistenti
 - gestire menu items non disponibili
+- richiamare un item una volta mandato in cucina se non è in cottura
 - implementare immagini per i menu items
 - aggiornare menu view dopo un nuovo ordine (al tavolo)
 - gestire errori di rete

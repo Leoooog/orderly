@@ -124,13 +124,4 @@ abstract class IOrderlyRepository {
     required List<Ingredient> newRemovedIngredients,
   });
 
-
-  Future<OrderItem> createOrderItemFromExisting({
-    required OrderItem existingItem,
-    required int newQty,
-    required String newNotes,
-    required Course newCourse,
-    required List<Extra> newExtras,
-    required List<Ingredient> newRemovedIngredients,
-  });
 }

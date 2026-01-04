@@ -68,7 +68,7 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
     final colors = context.colors;
     final allCourses = ref.watch(coursesProvider);
     final int maxQty = widget.quantity;
-    print(widget.item);
+
 
     return AlertDialog(
       backgroundColor: colors.surface,
@@ -105,11 +105,13 @@ class _ItemEditDialogState extends ConsumerState<ItemEditDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(AppLocalizations.of(context)!.cartEditingQuantity,
-                      style: TextStyle(
-                          fontSize: 12.0,
-                          color: colors.textSecondary,
-                          fontWeight: FontWeight.bold)),
+                  Expanded(
+                    child: Text(AppLocalizations.of(context)!.cartEditingQuantity,
+                        style: TextStyle(
+                            fontSize: 12.0,
+                            color: colors.textSecondary,
+                            fontWeight: FontWeight.bold)),
+                  ),
                   Row(
                     children: [
                       IconButton(

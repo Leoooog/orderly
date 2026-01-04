@@ -264,8 +264,11 @@ class PocketBaseRepository implements IOrderlyRepository {
       // Usiamo fromExpandedJson direttamente
       final item = OrderItem.fromExpandedJson(e.record!.toJson());
 
+      print('[Stream] Received ${e.action} for OrderItem ${item.id}');
+
       if (e.action == 'delete') {
         currentList.removeWhere((i) => i.id == item.id);
+        print('[Stream] Removed OrderItem ${item.id}');
       } else {
         final index = currentList.indexWhere((i) => i.id == item.id);
         if (index != -1) {
@@ -427,39 +430,17 @@ class PocketBaseRepository implements IOrderlyRepository {
     required List<Extra> newExtras,
     required List<Ingredient> newRemovedIngredients,
   }) async {
-    await _pb.collection('order_items').update(orderItemId, body: {
-      'quantity': newQty,
-      'notes': newNotes,
-      'selected_extras': newExtras.map((e) => e.id).toList(),
-      'removed_ingredients': newRemovedIngredients.map((e) => e.id).toList(),
-      'course': newCourse.id,
+
+    await _pb.send('/api/custom/edit-order-item', method: 'POST', body: {
+      'item_id': orderItemId,
+      'edited_quantity': newQty,
+      'new_notes': newNotes,
+      'new_course': newCourse.id,
+      'new_selected_extras': newExtras.map((e) => e.id).toList(),
+      'new_removed_ingredients':
+          newRemovedIngredients.map((i) => i.id).toList(),
     });
   }
 
-  @override
-  Future<OrderItem> createOrderItemFromExisting({
-    required OrderItem existingItem,
-    required int newQty,
-    required String newNotes,
-    required Course newCourse,
-    required List<Extra> newExtras,
-    required List<Ingredient> newRemovedIngredients,
-  }) async {
-    final record = await _pb.collection('order_items').create(body: {
-      'order': existingItem.orderId,
-      'menu_item': existingItem.menuItemId,
-      'menu_item_name': existingItem.menuItemName,
-      'quantity': newQty,
-      'price_each': existingItem.priceEach,
-      'status': existingItem.status.name,
-      'notes': newNotes,
-      'course': newCourse.id,
-      'selected_extras': newExtras.map((e) => e.id).toList(),
-      'removed_ingredients': newRemovedIngredients.map((e) => e.id).toList(),
-      'requires_firing': existingItem.requiresFiring,
-    });
-    // After creation, we need to fetch it again with expand to get all nested objects
-    final newRecord = await _pb.collection('order_items').getOne(record.id, expand: _orderItemExpand);
-    return OrderItem.fromExpandedJson(newRecord.toJson());
-  }
+
 }

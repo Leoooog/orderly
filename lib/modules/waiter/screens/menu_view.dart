@@ -48,8 +48,8 @@ class _MenuViewState extends ConsumerState<MenuView>
   }
 
   void _handleBack() {
-    final currentCart = ref.read(cartProvider);
-    if (currentCart.isNotEmpty) {
+    final cartIsEmpty = ref.read(cartIsEmptyProvider);
+    if (!cartIsEmpty) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -85,20 +85,21 @@ class _MenuViewState extends ConsumerState<MenuView>
           .sendOrder(widget.tableSessionId, currentCart);
     } catch (e) {
       print("[MenuView] Error sending order: $e");
-      if(!mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(AppLocalizations.of(context)!.errorSendingOrder(e.toString())),
+        content:
+            Text(AppLocalizations.of(context)!.errorSendingOrder(e.toString())),
         backgroundColor: context.colors.danger,
       ));
       return;
     }
-      ref.read(cartProvider.notifier).clear();
-      final tableName = ref
-          .read(tablesControllerProvider.notifier)
-          .getTableBySessionId(widget.tableSessionId)
-          ?.name;
-      if(!mounted) return;
-      context.push('/success/${Uri.encodeComponent(tableName ?? '')}');
+    ref.read(cartProvider.notifier).clear();
+    final tableName = ref
+        .read(tablesControllerProvider.notifier)
+        .getTableBySessionId(widget.tableSessionId)
+        ?.name;
+    if (!mounted) return;
+    context.push('/success/${Uri.encodeComponent(tableName ?? '')}');
   }
 
   @override
@@ -113,17 +114,20 @@ class _MenuViewState extends ConsumerState<MenuView>
     final double maxContentWidth =
         isTablet || isLandscape ? 600.0 : double.infinity;
 
-    final cart = ref.watch(cartProvider);
     final TableUiModel? currentTable = ref
         .watch(tablesControllerProvider.notifier)
         .getTableBySessionId(widget.tableSessionId);
 
-    ref.listen<List<CartEntry>>(cartProvider, (previous, next) {
-      if (next.isEmpty && _isExpanded) {
-        _controller.animateTo(0, curve: Curves.easeOutQuint);
-        setState(() => _isExpanded = false);
-      }
-    });
+    // ref.listen<bool>(cartIsEmptyProvider, (previous, next) {
+    //   if (next && _isExpanded) {
+    //     _controller.animateTo(0, curve: Curves.easeOutQuint);
+    //     setState(() => _isExpanded = false);
+    //     print("[MenuView] Cart is empty, collapsing CartSheet");
+    //   }
+    // });
+
+    print(
+        "[MenuView] Building MenuView for table session ID: ${widget.tableSessionId}");
 
     if (currentTable == null) {
       // This can happen if the session is closed while the user is on this screen.
@@ -232,30 +236,40 @@ class _MenuViewState extends ConsumerState<MenuView>
                   ),
                 ),
               ),
-
               // --- BACKDROP ---
-              if (cart.isNotEmpty) _buildBackdrop(),
+              Consumer(builder: (context, ref, child) {
+                // WATCH LOCALE: Solo questo builder verrà rieseguito quando il carrello cambia
+                final cartIsEmpty = ref.watch(cartIsEmptyProvider);
 
-              // --- CART SHEET ---
-              if (cart.isNotEmpty)
-                CartSheet(
-                  controller: _controller,
-                  minHeight: _minHeight,
-                  maxHeight: _maxHeight,
-                  isExpanded: _isExpanded,
-                  onExpandChange: (val) => setState(() => _isExpanded = val),
-                  onSendOrder: _handleSendOrder,
-                ),
+                if (cartIsEmpty) return const SizedBox.shrink();
 
-              // --- SEND BUTTON ---
-              if (cart.isNotEmpty)
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: maxContentWidth),
-                    child: _buildSendButton(),
-                  ),
-                ),
+                return Stack(
+                  children: [
+                    // BACKDROP
+                    _buildBackdrop(),
+
+                    // CART SHEET
+                    CartSheet(
+                      controller: _controller,
+                      minHeight: _minHeight,
+                      maxHeight: _maxHeight,
+                      isExpanded: _isExpanded,
+                      onExpandChange: (val) =>
+                          setState(() => _isExpanded = val),
+                      onSendOrder: _handleSendOrder,
+                    ),
+
+                    // SEND BUTTON
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxContentWidth),
+                        child: _buildSendButton(),
+                      ),
+                    ),
+                  ],
+                );
+              })
             ],
           ),
         ),

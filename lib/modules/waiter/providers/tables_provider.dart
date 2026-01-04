@@ -84,11 +84,13 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
   // Helper per ottenere l'ID utente corrente dallo stato della sessione
   String get _currentUserId {
     final sessionState = ref.read(sessionProvider).value;
-    if (sessionState == null)
+    if (sessionState == null) {
       throw Exception("Sessione non inizializzata in tablesController.");
+    }
     final user = sessionState.currentUser;
-    if (user == null)
+    if (user == null) {
       throw Exception("Utente non autenticato in tablesController.");
+    }
     return user.id;
   }
 
@@ -309,6 +311,11 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
         [orderItemId], OrderItemStatus.served);
   }
 
+  Future<void> recallOrderItem(String orderItemId) async {
+    await _repository.updateOrderItemStatus(
+        [orderItemId], OrderItemStatus.pending);
+  }
+
   Future<void> updateOrderItemDetails({
     required String orderItemId,
     required int newQty,
@@ -320,59 +327,6 @@ class TablesController extends AsyncNotifier<List<TableUiModel>> {
     await _repository.updateOrderItem(
       orderItemId: orderItemId,
       newQty: newQty,
-      newNotes: newNotes,
-      newCourse: newCourse,
-      newExtras: newExtras,
-      newRemovedIngredients: newRemovedIngredients,
-    );
-  }
-
-  Future<void> splitAndUpdateOrderItem({
-    required OrderItem originalItem,
-    required int qtyToUpdate, // The quantity of the new/modified item
-    required String newNotes,
-    required Course newCourse,
-    required List<Extra> newExtras,
-    required List<Ingredient> newRemovedIngredients,
-  }) async {
-    if (qtyToUpdate <= 0 || qtyToUpdate > originalItem.quantity) {
-      throw Exception("Invalid quantity for splitting.");
-    }
-
-    final int remainingQty = originalItem.quantity - qtyToUpdate;
-
-    // 1. Update the original item's quantity if there's any remainder
-    if (remainingQty > 0) {
-      await _repository.updateOrderItem(
-        orderItemId: originalItem.id,
-        newQty: remainingQty,
-        newNotes: originalItem.notes ?? '',
-        newCourse: originalItem.course,
-        newExtras: originalItem.selectedExtras,
-        newRemovedIngredients: originalItem.removedIngredients,
-      );
-    } else {
-      // If we are "splitting" the whole quantity, it's just an update.
-      // But the logic is to create a new one and delete the old one if it was not sent to kitchen.
-      // For simplicity now, we just update. If the original is fully modified, we just update it.
-      // A better approach might be to delete the old one and create a new one if status is 'pending'.
-      // Let's stick to the split logic: if remaining is 0, we are essentially moving the item.
-      // So we can just update the whole thing.
-      await _repository.updateOrderItem(
-        orderItemId: originalItem.id,
-        newQty: qtyToUpdate,
-        newNotes: newNotes,
-        newCourse: newCourse,
-        newExtras: newExtras,
-        newRemovedIngredients: newRemovedIngredients,
-      );
-      return; // Job done, no creation needed.
-    }
-
-    // 2. Create a new OrderItem with the specified quantity and new details
-    await _repository.createOrderItemFromExisting(
-      existingItem: originalItem,
-      newQty: qtyToUpdate,
       newNotes: newNotes,
       newCourse: newCourse,
       newExtras: newExtras,
