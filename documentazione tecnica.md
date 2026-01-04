@@ -35,7 +35,7 @@ Il progetto è strutturato come un **Monorepo Flutter** che condivide la logica 
 | **Target Client** | Ristoranti con fibra, catene | Locali in zone remote, bunker, sagre |
 | **Endpoint**      | `https://api.orderly.cloud`  | `http://192.168.10.100`              |
 | **Aggiornamenti** | Automatici (Web)             | Manuali (USB) o Pull (Notturni)      |
-|                   |                              |                                      |
+
 
 ### 2.2 Stack Tecnologico
 
