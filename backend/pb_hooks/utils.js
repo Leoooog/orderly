@@ -57,7 +57,7 @@ function mergeItemIfPossible(targetItem, txApp) {
             const areCoursesSame = existingItem.get("course") === targetItem.get("course");
             const areExtrasSame = compareIdArrays(existingItem.get("selected_extras"), targetItem.get("selected_extras"));
             const areRemovalsSame = compareIdArrays(existingItem.get("removed_ingredients"), targetItem.get("removed_ingredients"));
-
+            console.log(targetItem.get("id"), "vs", existingItem.id);
             if (areNotesSame && areCoursesSame && areExtrasSame && areRemovalsSame) {
                 console.log(`[MERGE] Unisco Item Corrente (${targetItem.get("id")}) dentro Esistente (${existingItem.id})`);
 
@@ -68,8 +68,8 @@ function mergeItemIfPossible(targetItem, txApp) {
                 existingItem.set("quantity", newQuantity);
                 // txApp.delete(targetItem);
                 txApp.save(existingItem);
-
                 // Cancello l'item corrente duplicato
+                txApp.delete(targetItem);
 
                 return true; // Stop dopo la prima unione
             }

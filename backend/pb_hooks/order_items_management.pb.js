@@ -35,6 +35,7 @@ routerAdd("POST", "/api/custom/update-order-item-status", (c) => {
 });
 
 routerAdd("POST", "/api/custom/edit-order-item", (c) => {
+    const utils = require(`${__hooks}/utils.js`);
     const data = new DynamicModel({
         "item_id": "",
         "edited_quantity": 0,
@@ -68,7 +69,9 @@ routerAdd("POST", "/api/custom/edit-order-item", (c) => {
                 originalItem.set("selected_extras", data.new_selected_extras);
                 originalItem.set("removed_ingredients", data.new_removed_ingredients);
 
-                txApp.save(originalItem);
+                if(!utils.mergeItemIfPossible(originalItem, txApp)) {
+                    txApp.save(originalItem);
+                }
 
             }
             // CASO 2: Split (Divisione)
@@ -78,7 +81,10 @@ routerAdd("POST", "/api/custom/edit-order-item", (c) => {
 
                 // Riduciamo vecchio
                 originalItem.set("quantity", remainingQuantity);
-                txApp.save(originalItem);
+                if(!utils.mergeItemIfPossible(originalItem, txApp)) {
+                    txApp.save(originalItem);
+                }
+
 
                 // Creiamo nuovo
                 const collection = txApp.findCollectionByNameOrId("order_items");
@@ -98,11 +104,8 @@ routerAdd("POST", "/api/custom/edit-order-item", (c) => {
                 newRecord.set("removed_ingredients", data.new_removed_ingredients);
 
                 // controlliamo se il nuovo può essere unito a esistenti
-                const utils = require(`${__hooks}/utils.js`);
-                const merged = utils.mergeItemIfPossible(newRecord, txApp);
-                if (!merged) {
-                    txApp.save(newRecord);
-                }
+                txApp.save(newRecord);
+                utils.mergeItemIfPossible(newRecord, txApp);
             }
         });
 
@@ -124,18 +127,18 @@ routerAdd("POST", "/api/custom/edit-order-item", (c) => {
 /**
  * HOOK: onRecordUpdate
  */
-onRecordAfterUpdateSuccess((e) => {
-    e.next(); // Esegui update standard prima
-
-    console.log(">> Hook UPDATE order_items:", e.record.id);
-    const utils = require(`${__hooks}/utils.js`);
-    try {
-        $app.runInTransaction((txApp) => {
-            const currentRecord = txApp.findRecordById("order_items", e.record.id);
-            utils.mergeItemIfPossible(currentRecord, txApp);
-        });
-    } catch (ex) {
-        console.warn(`[MERGE UPDATE ERROR] Impossibile processare item ${e.record.id}:`, ex);
-    }
-
-}, "order_items");
+// onRecordAfterUpdateSuccess((e) => {
+//     e.next(); // Esegui update standard prima
+//
+//     console.log(">> Hook UPDATE order_items:", e.record.id);
+//     const utils = require(`${__hooks}/utils.js`);
+//     try {
+//         $app.runInTransaction((txApp) => {
+//             const currentRecord = txApp.findRecordById("order_items", e.record.id);
+//             utils.mergeItemIfPossible(currentRecord, txApp);
+//         });
+//     } catch (ex) {
+//         console.warn(`[MERGE UPDATE ERROR] Impossibile processare item ${e.record.id}:`, ex);
+//     }
+//
+// }, "order_items");
