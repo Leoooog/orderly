@@ -57,3 +57,5 @@ app.*.map.json
 /backend/pb_data/data.db-shm
 /backend/pb_data/data.db
 /backend/pb_data/auxiliary.db
+/web/sqlite3.wasm
+/web/drift_worker.dart.js

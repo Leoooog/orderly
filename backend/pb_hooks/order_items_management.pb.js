@@ -81,7 +81,7 @@ routerAdd("POST", "/api/custom/edit-order-item", (c) => {
                 txApp.save(originalItem);
 
                 // Creiamo nuovo
-                const collection = txApp.dao().findCollectionByNameOrId("order_items");
+                const collection = txApp.findCollectionByNameOrId("order_items");
                 const newRecord = new Record(collection);
 
                 newRecord.set("order", originalItem.get("order"));
@@ -119,34 +119,6 @@ routerAdd("POST", "/api/custom/edit-order-item", (c) => {
 // ==================================================================
 // DATABASE HOOKS
 // ==================================================================
-
-// /**
-//  * HOOK: onRecordCreate
-//  * Usa questo hook standard. Se la funzione mergeItemIfPossible è definita
-//  * nello stesso file, sarà visibile qui.
-//  */
-// onRecordAfterCreateSuccess((e) => {
-//     // next() esegue il salvataggio effettivo.
-//     // Possiamo eseguire la logica prima o dopo.
-//     // Per il merge, facciamolo dopo che il record ha un ID (quindi dopo next).
-//     e.next();
-//
-//     console.log(">> Hook CREATE order_items:", e.record.id);
-//     const utils = require(`${__hooks}/utils.js`);
-//     // Usiamo una transazione nidificata o sfruttiamo quella corrente
-//     try {
-//         $app.runInTransaction((txApp) => {
-//
-//             // Ricarichiamo il record fresco
-//             const currentRecord = txApp.findRecordById("order_items", e.record.id);
-//             utils.mergeItemIfPossible(currentRecord, txApp);
-//         });
-//     } catch (ex) {
-//         console.warn(`[MERGE CREATE ERROR] Impossibile processare item ${e.record.id}:`, ex);
-//     }
-//
-// }, "order_items");
-
 
 
 /**

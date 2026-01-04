@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:orderly/data/models/config/department.dart';
 import 'package:orderly/data/models/config/table.dart';
 import 'package:orderly/data/models/config/void_reason.dart';
@@ -12,7 +13,7 @@ import 'package:orderly/data/models/menu/course.dart';
 import 'package:orderly/data/models/menu/menu_item.dart';
 import 'package:orderly/data/models/session/order.dart';
 import 'package:orderly/data/models/session/order_item.dart';
-import 'package:pocketbase/pocketbase.dart';
+import 'package:pocketbase_drift/pocketbase_drift.dart';
 
 import '../../core/services/tenant_service.dart';
 import '../models/config/restaurant.dart';
@@ -24,8 +25,6 @@ import '../models/user.dart';
 import 'i_orderly_repository.dart';
 
 class PocketBaseRepository implements IOrderlyRepository {
-  late PocketBase _pb;
-
   // --- CONSTANTS ---
   // Espansione profonda per avere anche il tavolo dentro l'item (utile per cucina/bar)
   static const String _orderItemExpand =
@@ -38,18 +37,27 @@ class PocketBaseRepository implements IOrderlyRepository {
   static const String _activeOrderFilter = "session.status != 'closed'";
   static const String _activeItemFilter = "order.session.status != 'closed'";
 
-  PocketBaseRepository._(String baseUrl) {
-    _pb = PocketBase(baseUrl);
-  }
+  late final $PocketBase _pb;
 
+  // 1. Il costruttore diventa semplicissimo: riceve solo l'istanza già pronta
+  PocketBaseRepository._(this._pb);
+
+  // 2. Tutta la logica di inizializzazione va nel metodo factory statico
   static Future<PocketBaseRepository> create() async {
     final tenantService = await TenantService.create();
     final url = tenantService.getSavedTenantUrl();
+
     if (url == null) {
-      throw Exception(
-          "No saved tenant URL. Cannot initialize PocketBaseRepository.");
+      throw Exception("No saved tenant URL. Cannot initialize PocketBaseRepository.");
     }
-    return PocketBaseRepository._(url);
+
+    final schemaString = await rootBundle.loadString('web/pb_schema.json');
+
+    final client = $PocketBase.database(
+      url,
+    )..cacheSchema(schemaString);
+
+    return PocketBaseRepository._(client);
   }
 
   // --- AUTH & CONFIG ---
@@ -62,6 +70,7 @@ class PocketBaseRepository implements IOrderlyRepository {
       final result = await _pb.collection('users').getList(
             filter: 'pin_hash = "$hash"',
             perPage: 1,
+        requestPolicy: RequestPolicy.networkOnly,
           );
 
       if (result.items.isEmpty) {
@@ -75,7 +84,7 @@ class PocketBaseRepository implements IOrderlyRepository {
 
   @override
   Future<Restaurant> getRestaurantInfo() async {
-    final records = await _pb.collection('restaurants').getList(perPage: 1);
+    final records = await _pb.collection('restaurants').getList(perPage: 1, requestPolicy: RequestPolicy.networkFirst);
     if (records.items.isNotEmpty) {
       return Restaurant.fromJson(records.items.first.toJson());
     }
@@ -85,14 +94,14 @@ class PocketBaseRepository implements IOrderlyRepository {
   // --- MASTER DATA ---
   @override
   Future<List<Table>> getTables() async {
-    final records = await _pb.collection('tables').getFullList(sort: 'name');
+    final records = await _pb.collection('tables').getFullList(sort: 'name', requestPolicy: RequestPolicy.networkFirst);
     return records.map((r) => Table.fromJson(r.toJson())).toList();
   }
 
   @override
   Future<List<Category>> getCategories() async {
     final records =
-        await _pb.collection('categories').getFullList(sort: 'sort_order');
+        await _pb.collection('categories').getFullList(sort: 'sort_order', requestPolicy: RequestPolicy.networkFirst);
     return records.map((r) => Category.fromJson(r.toJson())).toList();
   }
 
@@ -100,6 +109,7 @@ class PocketBaseRepository implements IOrderlyRepository {
   Future<List<MenuItem>> getMenuItems() async {
     final records = await _pb.collection('menu_items').getFullList(
           expand: _menuItemExpand,
+        requestPolicy: RequestPolicy.networkFirst
         );
     // Usiamo fromExpandedJson per gestire le relazioni nel modello
     return records.map((r) => MenuItem.fromExpandedJson(r.toJson())).toList();
@@ -108,19 +118,19 @@ class PocketBaseRepository implements IOrderlyRepository {
   @override
   Future<List<Course>> getCourses() async {
     final records =
-        await _pb.collection('courses').getFullList(sort: 'sort_order');
+        await _pb.collection('courses').getFullList(sort: 'sort_order', requestPolicy: RequestPolicy.networkFirst);
     return records.map((r) => Course.fromJson(r.toJson())).toList();
   }
 
   @override
   Future<List<Department>> getDepartments() async {
-    final records = await _pb.collection('departments').getFullList();
+    final records = await _pb.collection('departments').getFullList(requestPolicy: RequestPolicy.networkFirst);
     return records.map((r) => Department.fromJson(r.toJson())).toList();
   }
 
   @override
   Future<List<VoidReason>> getVoidReasons() async {
-    final records = await _pb.collection('void_reasons').getFullList();
+    final records = await _pb.collection('void_reasons').getFullList(requestPolicy: RequestPolicy.networkFirst);
     return records.map((r) => VoidReason.fromJson(r.toJson())).toList();
   }
 
@@ -134,7 +144,7 @@ class PocketBaseRepository implements IOrderlyRepository {
     // 1. Initial Fetch
     _pb
         .collection('table_sessions')
-        .getFullList(filter: _activeSessionFilter)
+        .getFullList(filter: _activeSessionFilter, requestPolicy: RequestPolicy.cacheAndNetwork)
         .then((records) {
       if (controller.isClosed) return;
       currentList =
@@ -176,10 +186,11 @@ class PocketBaseRepository implements IOrderlyRepository {
 
     // 1. Initial Fetch OTTIMIZZATO (2 chiamate invece di N+1)
     Future.wait([
-      _pb.collection('orders').getFullList(filter: _activeOrderFilter),
+      _pb.collection('orders').getFullList(filter: _activeOrderFilter, requestPolicy: RequestPolicy.cacheAndNetwork),
       _pb.collection('order_items').getFullList(
             filter: _activeItemFilter,
             expand: _orderItemExpand,
+        requestPolicy: RequestPolicy.cacheAndNetwork
           ),
     ]).then((results) {
       if (controller.isClosed) return;
@@ -247,6 +258,7 @@ class PocketBaseRepository implements IOrderlyRepository {
         .getFullList(
           filter: _activeItemFilter,
           expand: _orderItemExpand,
+          requestPolicy: RequestPolicy.cacheAndNetwork,
         )
         .then((records) {
       if (controller.isClosed) return;
@@ -290,6 +302,7 @@ class PocketBaseRepository implements IOrderlyRepository {
     final records = await _pb.collection('order_items').getFullList(
           filter: 'order = "$orderId"',
           expand: _orderItemExpand,
+      requestPolicy: RequestPolicy.cacheAndNetwork
         );
     return records.map((r) => OrderItem.fromExpandedJson(r.toJson())).toList();
   }
@@ -303,7 +316,7 @@ class PocketBaseRepository implements IOrderlyRepository {
       'guests_count': guests,
       'waiter': waiterId,
       'status': TableSessionStatus.seated.name,
-    });
+    }, requestPolicy: RequestPolicy.cacheAndNetwork);
     return TableSession.fromJson(sessionRecord.toJson());
   }
 
@@ -311,7 +324,7 @@ class PocketBaseRepository implements IOrderlyRepository {
   Future<void> closeTableSession(String sessionId) async {
     await _pb
         .collection('table_sessions')
-        .update(sessionId, body: {'status': 'closed'});
+        .update(sessionId, body: {'status': 'closed'}, requestPolicy: RequestPolicy.cacheAndNetwork);
   }
 
   @override
@@ -388,14 +401,14 @@ class PocketBaseRepository implements IOrderlyRepository {
       'notes': notes,
       'voided_by': voidedBy,
       'status_when_voided': statusWhenVoided.name,
-    });
+    }, requestPolicy: RequestPolicy.cacheAndNetwork);
   }
 
   @override
   Future<void> moveTable(String sourceSessionId, String targetTableId) async {
     await _pb
         .collection('table_sessions')
-        .update(sourceSessionId, body: {'table': targetTableId});
+        .update(sourceSessionId, body: {'table': targetTableId}, requestPolicy: RequestPolicy.cacheAndNetwork);
   }
 
   @override
@@ -418,7 +431,7 @@ class PocketBaseRepository implements IOrderlyRepository {
     await _pb.send('/api/custom/update-order-item-status', method: 'POST', body: {
       'new_status': status.name,
       'items': orderItemIds,
-    });
+    }, requestPolicy: RequestPolicy.cacheAndNetwork);
   }
 
   @override
@@ -439,8 +452,6 @@ class PocketBaseRepository implements IOrderlyRepository {
       'new_selected_extras': newExtras.map((e) => e.id).toList(),
       'new_removed_ingredients':
           newRemovedIngredients.map((i) => i.id).toList(),
-    });
+    }, requestPolicy: RequestPolicy.cacheAndNetwork);
   }
-
-
 }
