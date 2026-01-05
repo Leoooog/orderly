@@ -51,6 +51,24 @@ class _HistoryTabState extends ConsumerState<HistoryTab>
     ref.read(tablesControllerProvider.notifier).markAsServed(item.id);
   }
 
+  void _performRecall(BuildContext context, WidgetRef ref, OrderItem item) {
+    if (table.sessionId == null) return;
+
+    // Chiama il metodo del controller (assicurati di averlo implementato nel TablesController)
+    // Se non hai "recallOrderItem", puoi usare un metodo generico "updateStatus"
+    // passando OrderItemStatus.pending
+    ref.read(tablesControllerProvider.notifier).recallOrderItem(item.id);
+
+    Navigator.pop(context); // Chiudi il bottom sheet
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          AppLocalizations.of(context)!.msgItemRecalled(item.menuItemName)),
+      backgroundColor: context.colors.primary,
+      duration: const Duration(seconds: 2),
+    ));
+  }
+
   void _performVoid(BuildContext context, WidgetRef ref, OrderItem item,
       int qty, VoidReason reasonId, bool refund, String? notes) {
     if (table.sessionId == null) return;
@@ -206,8 +224,9 @@ class _HistoryTabState extends ConsumerState<HistoryTab>
 
   void _showItemOptions(BuildContext context, WidgetRef ref, OrderItem item) {
     final colors = context.colors;
-    final bool canEdit = item.status == OrderItemStatus.pending;
-
+    final bool canEdit = item.status == OrderItemStatus.pending ||
+        item.status == OrderItemStatus.fired;
+    final bool canRecall = item.status == OrderItemStatus.fired;
     // Responsive Logic
     final isTablet = MediaQuery.sizeOf(context).shortestSide > 600;
     final double maxWidth = isTablet ? 600 : double.infinity;
@@ -258,6 +277,22 @@ class _HistoryTabState extends ConsumerState<HistoryTab>
                             onTap: () {
                               Navigator.pop(ctx);
                               _showEditDialog(context, ref, item);
+                            },
+                          ),
+                        if (canRecall)
+                          ListTile(
+                            leading: Icon(Icons.undo,
+                                color:
+                                    colors.warning), // Icona "Torna indietro"
+                            title: Text(AppLocalizations.of(context)!
+                                .titleRecallItemAction), // Usa Localizations se possibile
+
+                            subtitle:
+                                Text(AppLocalizations.of(context)!
+                                    .subtitleRecallItemAction),
+                            onTap: () {
+                              // Non serve chiudere qui, lo fa il metodo _performRecall
+                              _performRecall(context, ref, item);
                             },
                           ),
                         ListTile(

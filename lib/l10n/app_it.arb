@@ -139,6 +139,16 @@
       }
     }
   },
+  "msgItemRecalled": "{item} richiamato",
+  "@msgItemRecalled": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "titleRecallItemAction": "Richiama",
+  "subtitleRecallItemAction": "Richiama un piatto inviato in cucina",
   "itemStatusPending": "In Attesa",
   "itemStatusFired": "Inviato in cucina",
   "itemStatusCooking": "In Cottura",

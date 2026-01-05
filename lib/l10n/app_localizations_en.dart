@@ -244,6 +244,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String msgItemRecalled(String item) {
+    return '\'Recall\' requested for $item';
+  }
+
+  @override
+  String get titleRecallItemAction => 'Recall';
+
+  @override
+  String get subtitleRecallItemAction => 'Recall an item sent to kitchen';
+
+  @override
   String get itemStatusPending => 'Pending';
 
   @override

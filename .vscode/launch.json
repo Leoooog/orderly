@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Orderly: Camerieri (Release)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main_waiter.dart",
+            "flutterMode": "release", 
+            "args": [
+                "-d", "web-server",
+                "--web-hostname", "0.0.0.0",
+                "--web-port", "8080",
+                "--web-header=Cross-Origin-Opener-Policy=same-origin",
+                "--web-header=Cross-Origin-Embedder-Policy=require-corp"
+            ]
+        },
+        // ... stessa cosa per il POS se vuoi
+    ]
+}

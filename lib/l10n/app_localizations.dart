@@ -512,6 +512,24 @@ abstract class AppLocalizations {
   /// **'Richiesto \'Via\' per {course}'**
   String msgCourseFired(String course);
 
+  /// No description provided for @msgItemRecalled.
+  ///
+  /// In it, this message translates to:
+  /// **'{item} richiamato'**
+  String msgItemRecalled(String item);
+
+  /// No description provided for @titleRecallItemAction.
+  ///
+  /// In it, this message translates to:
+  /// **'Richiama'**
+  String get titleRecallItemAction;
+
+  /// No description provided for @subtitleRecallItemAction.
+  ///
+  /// In it, this message translates to:
+  /// **'Richiama un piatto inviato in cucina'**
+  String get subtitleRecallItemAction;
+
   /// No description provided for @itemStatusPending.
   ///
   /// In it, this message translates to:
