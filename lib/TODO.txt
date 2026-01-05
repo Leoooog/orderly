@@ -4,12 +4,9 @@
 - aggiungere logo
 - merge ordini quando si uniscono tavoli
 - merge order items quando si uniscono tavoli
-- merge order items quando si aggiungono ordini esistenti a un tavolo
-- merge order items quando si modificano ordini esistenti
 - gestire menu items non disponibili
 - richiamare un item una volta mandato in cucina se non è in cottura
 - implementare immagini per i menu items
-- aggiornare menu view dopo un nuovo ordine (al tavolo)
 - gestire errori di rete
 - aggiungere test
 - documentare il codice
@@ -28,5 +25,5 @@
 - logout automatico dopo un periodo di inattività
 - annullare tavoli
 - pin per operazioni sensibili
-- offline first
 - caricamento menu all'avvio
+- se è pending si può modificare anche la quantità di un ordine o addirittura cancellarlo
